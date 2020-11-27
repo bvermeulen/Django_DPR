@@ -12,7 +12,7 @@ from seismicreport.vars import (
     TCF_table, BGP_DR_table, SOURCETYPE_NAME, source_prod_schema, time_breakdown_schema,
     ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH
 )
-from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
 from daily_report.models.daily_models import (
     Daily, SourceProduction, TimeBreakdown, HseWeather, ToolBox,
@@ -125,7 +125,6 @@ class ReportInterface(HseInterface):
         return report_date
 
     @staticmethod
-    @timed(logger, print_log=True)
     def load_report_db(project, report_date):
         return_empty = (None, {})
 
@@ -147,7 +146,6 @@ class ReportInterface(HseInterface):
 
         return day, day_initial
 
-    @timed(logger, print_log=True)
     def populate_report(self, project, daily_report_file) -> datetime:
         ''' populates db with values from the daily report file
             daily report file is an excel file with fields according
@@ -273,7 +271,6 @@ class ReportInterface(HseInterface):
         return day.production_date
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_day_prod_totals(daily, sourcetype_name):
         try:
             prod = SourceProduction.objects.get(
@@ -302,7 +299,6 @@ class ReportInterface(HseInterface):
         return dp
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_month_prod_totals(daily, sourcetype_name):
         # filter for days in the month up to and including the production date
         sp_query = SourceProduction.objects.filter(
@@ -335,7 +331,6 @@ class ReportInterface(HseInterface):
 
         return mp
 
-    @timed(logger, print_log=True)
     def calc_proj_prod_totals(self, daily, sourcetype_name):
         # filter for all days in the project up to and including the production date
         sp_query = SourceProduction.objects.filter(
@@ -390,7 +385,6 @@ class ReportInterface(HseInterface):
         return pp, p_series
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_day_time_totals(daily):
         try:
             tb = TimeBreakdown.objects.get(daily=daily)
@@ -411,7 +405,6 @@ class ReportInterface(HseInterface):
         return dt
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_month_time_totals(daily):
         tb_query = TimeBreakdown.objects.filter(
             Q(daily__production_date__year=daily.production_date.year) &
@@ -437,7 +430,6 @@ class ReportInterface(HseInterface):
 
         return mt
 
-    @timed(logger, print_log=True)
     def calc_proj_time_totals(self, daily):
         tb_query = TimeBreakdown.objects.filter(
             daily__production_date__lte=daily.production_date,
@@ -472,7 +464,6 @@ class ReportInterface(HseInterface):
 
         return pt, ts
 
-    @timed(logger, print_log=True)
     def create_graphs(self, prod_series, time_series):
         date_series = prod_series['date_series']
         terrain_series = prod_series['terrain_series']
@@ -607,7 +598,6 @@ class ReportInterface(HseInterface):
         plt.savefig(plot_filename, format='png')
         plt.close()
 
-    @timed(logger, print_log=True)
     def calc_totals(self, daily):
         if not daily:
             return {}, {}, {}

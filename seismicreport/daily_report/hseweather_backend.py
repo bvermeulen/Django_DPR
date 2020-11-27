@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 from django.db.models import Q
 from seismicreport.vars import hse_weather_schema
-from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import nan_array
 from daily_report.models.daily_models import HseWeather
 
@@ -15,7 +15,6 @@ logger = Logger.getlogger()
 class HseInterface:
 
     @staticmethod
-    @timed(logger, print_log=True)
     def day_hse_totals(daily):
         try:
             hse = HseWeather.objects.get(daily=daily)
@@ -41,7 +40,6 @@ class HseInterface:
         return d_hse
 
     @staticmethod
-    @timed(logger, print_log=True)
     def month_hse_totals(daily):
 
         hse_query = HseWeather.objects.filter(
@@ -60,7 +58,6 @@ class HseInterface:
         return m_hse
 
     @staticmethod
-    @timed(logger, print_log=True)
     def proj_hse_totals(daily):
         hse_query = HseWeather.objects.filter(
             daily__production_date__lte=daily.production_date,
