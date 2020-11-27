@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Service{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Services
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+  {% if year %}
+    <li class="nav-item"><a class="nav-link" href="{% url 'monthly_service_page' daily_id year month %}">Quantities</a>
+    </li>
+  {% endif %}
+</ul>
+{% endblock %}
+
+{% block content %}
+<form id="form_id" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="edit_service"/>
+  <input type="hidden" name="edit_task" />
+  <input type="hidden" name="service_name" />
+
+  <a class="font-weight-bold h5">Setup services for {{ project_name }}</a>
+
+  <table class="table table-sm mt-1">
+    <thead class="custom-thead-grey">
+      <tr>
+        <th width="10%">Contract</th>
+        <th width="60%">Description</th>
+        <th width="20%">
+          <button type="button" class="btn btn-link text-light font-weight-bold my-0 py-0" data-toggle="modal" data-target="#ServiceModal"
+            data-project-data="{{ project_name }}">Create new service</button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for service in services %}
+        <tr class="table-primary">
+          <td width="10%">
+            {{ service.service_contract }}
+          </td>
+          <td width="60%">
+            {{ service.description }}
+          </td>
+          <td width="20%">
+            <button type="button" class="btn btn-link text-dark my-0 py-0 pr-0" data-toggle="modal" data-target="#ServiceModal"
+              data-project-data="{{ project_name }}, {{ service.service_contract }}, {{ service.description}} ">Edit service
+            </button>
+            <button type="submit" class="btn btn-link text-dark my-0 py-0 pr-0" name="delete_service" value="{{ service.service_contract }}"
+              onclick="return confirmDelete('{{ service.service_contract }}')">Delete</button>
+          </td>
+        </tr>
+        <tr>
+          <td width="10%"></td>
+          <td colspan="2" style="padding: 0px; ">
+            <table class="table table-sm mb-2">
+              <thead class="custom-thead-grey">
+                <tr>
+                  <th width="20%">Task name</th>
+                  <th width="40%">Description</th>
+                  <th width="20%">Unit</th>
+                  <th>
+                    <button type="button" class="btn btn-link text-light font-weight-bold my-0 py-0" data-toggle="modal" data-target="#TaskModal"
+                      data-task-data="{{ service.service_contract}}">Create new task
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for task in service.tasks.all|dictsort:"task_name" %}
+                  <tr>
+                    <td width="20%">
+                      {{ task.task_name }}
+                    </td>
+                    <td width="40%">
+                      {{ task.task_description }}
+                    </td>
+                    <td width="20%">
+                      {{ task.task_unit }}
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-link text-dark my-0 py-0 pr-0" data-toggle="modal" data-target="#TaskModal"
+                        data-task-data="{{ service.service_contract}}, {{ task.task_name }}, {{ task.task_description }}, {{ task.task_unit }}">Edit task
+                      </button>
+                      <button type="submit" class="btn btn-link text-dark my-0 py-0 pr-0" name="delete_task" value="{{ service.service_contract }}, {{ task.task_name }}"
+                        onclick="return confirmDelete('{{ task.task_name }}')">Delete</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Modal for Service -->
+  <div class="modal fade" id="ServiceModal" tabindex="-1" role="dialog" aria-labelledby="ServiceModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ServiceModalLabel">Modal title</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="service-name" class="control-label">Service:</label>
+            <input type="text" class="form-control" name="new_service_name" id="service-name">
+          </div>
+          <div class="form-group">
+            <label for="service-description" class="control-label">Description:</label>
+            <textarea class="form-control" name="new_service_description" id="service-description"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Task -->
+  <div class="modal fade" id="TaskModal" tabindex="-1" role="dialog" aria-labelledby="TaskModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="TaskModalLabel">Modal title</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="task-name" class="control-label">Task:</label>
+            <input type="text" class="form-control" name="new_task_name" id="task-name">
+          </div>
+          <div class="form-group">
+            <label for="task-unit" class="control-label">Unit (like hours, days, ea ...):</label>
+            <input type="text" class="form-control" name="new_task_unit" id="task-unit">
+          </div>
+          <div class="form-group">
+            <label for="task-description" class="control-label">Description:</label>
+            <textarea class="form-control" name="new_task_description" id="task-description"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</form>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+
+  var form = document.getElementById("form_id");
+
+  $('#ServiceModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var projectData = button.data('project-data').split(","); // Extract info from data-* attributes
+    var modal = $(this);
+    if (projectData.length > 1) {
+      modal.find('.modal-title').text('Edit service ' + projectData[1].trim() + ' for project ' + projectData[0].trim());
+      form.edit_service.value = projectData[1].trim();
+      modal.find('.modal-body input').val(projectData[1].trim());
+      modal.find('.modal-body textarea').val(projectData[2].trim());
+    }
+    else {
+      modal.find('.modal-title').text('Create a new service for project ' + projectData[0].trim());
+    }
+  })
+
+  $('#TaskModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var taskData = button.data('task-data').split(",");
+    var modal = $(this);
+    form.service_name.value = taskData[0].trim();
+    if (taskData.length > 1) {
+      modal.find('.modal-title').text('Edit task ' + taskData[1].trim() + ' for service ' + taskData[0].trim());
+      form.edit_task.value = taskData[1].trim();
+      form.new_task_name.value = taskData[1].trim();
+      form.new_task_description.value = taskData[2].trim();
+      form.new_task_unit.value = taskData[3].trim();
+    }
+    else {
+      modal.find('.modal-title').text('Create a new task for ' + taskData[0].trim());
+    }
+  })
+
+  function confirmDelete(object_name) {
+    confirmed = confirm('Do you really want to delete: ' + object_name + '?');
+    if (confirmed) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+
+</script>
+{% endblock %}

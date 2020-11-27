@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load humanize %}
+
+{% block title %}Monthly services{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+
+  <style>
+    /* remove spinners for numeric input */
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+      -moz-appearance: textfield;
+      border-radius: 0px;
+    }
+  </style>
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Monthly services
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'daily_page' daily_id %}">Daily</a>
+      <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <button class="btn btn-primary btn-sm my-1 mb-1" type="submit" value="submit_quantities" name="button_pressed">
+    Submit
+  </button>
+  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
+  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
+  <a class="font-weight-bold h5 ml-4">Services for {{ services.project }}: {{ services.month }} {{ services.year }}</a>
+
+  <div class="container" style="overflow-x: auto">
+    {% for service_id, service in services.items %}
+      <h5 class="font-weight-bold">{{ service.name }}</h5>
+
+      {% for task_id, task in service.tasks.items %}
+        <a class="font-weight-bold">{{ task.name }}</a>
+        <table style="table-layout: fixed;" class="table table-sm mb-2">
+          <thead class="custom-thead-grey">
+            <tr>
+              {% for row in task.form_task %}
+                <th style="width:34px; padding:0px">
+                  <small>{{ row.name|slice:"8:" }}</small>
+                </th>
+              {% endfor %}
+              <th style="width:35px; padding:0px">
+                <small>Total</small>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for row in task.form_task %}
+                <td style="padding:0px; margin:0px;">
+                  <small>{{ row }}</small>
+                </td>
+              {% endfor %}
+              <td style="padding:0px; margin:0px;">
+                <small>{{ task.total }}</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <br class="mb-5"></br>
+
+</form>
+{% endblock content %}
+
+{% block javascript %}
+{% endblock %}

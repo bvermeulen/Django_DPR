@@ -1,0 +1,491 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load humanize %}
+
+{% block title %}Daily{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Daily
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<form id="id_form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="dropdown">
+    <button type="button" class="dropdown-toggle btn btn-primary btn-sm">Select project</button>
+    <div class="dropdown-content">
+      {% for project in form_project_control.projects %}
+        <button class="btn btn-link my-0" value="{{ project.data.value }}" name="{{ project.data.name }}">
+          <a>{{ project.choice_label }}</a>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+  <input type="hidden" name="report_date"/>
+  <button class="btn btn-primary btn-sm my-1" onclick="return promptProductionDate()">Select date</button>
+  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
+  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
+  <div class="fileUpload btn btn-primary btn-sm my-1 mx-0">
+    <span>Choose report</span>
+    <input type="file" class="upload" name="daily_report_file" onchange="form.submit()"/>
+  </div>
+  {% if form_daily.id.value %}
+    {% with year=form_daily.production_date.value|date:"Y" %}
+    {% with month=form_daily.production_date.value|date:"m" %}
+      <a class="btn btn-primary btn-sm my-1" href="{% url 'monthly_service_page' form_daily.id.value year month %}">
+        Services</a>
+    {% endwith %}
+    {% endwith %}
+  {% endif %}
+  <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
+    onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
+  </button>
+
+  <strong class="ml-4">Project: {{ form_project_control.projects.value }} - Daily report: {{ form_project_control.report_date.value }}</a></strong>
+  <div class="d-md-flex h-md-100 mb-3">
+    <div class="form-group col-md-6">
+      <label>CSR comment</label>
+        <textarea type="text" class="form-control" rows="6" name="csr_comment">{{ form_daily.csr_comment.value }}</textarea>
+        <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="csr_comment" name="button_pressed">Submit</button>
+    </div>
+    <div class="form-group col-md-6">
+      <label>PM comment</label>
+        <textarea type="text" class="form-control" rows="6" readonly>{{ form_daily.pm_comment.value }}</textarea>
+    </div>
+  </div>
+  {% if form_daily.production_date.value %}
+    <div class="d-md-flex h-md-100 mb-3">
+      <img width="50%" src="/media/images/daily_prod.png">
+      <img width="50%" src="/media/images/cumul_prod.png">
+    </div>
+    <div class="d-md-flex h-md-100 mb-3">
+      <img width="50%" src="/media/images/rec_hours.png">
+      <img width="50%" src="/media/images/app_ctm.png">
+    </div>
+
+    <div class="row align-items-top mb-5">
+      <div style="max-width: 80vw" class="col-lg-4 mb-3">
+        <strong>Production</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody">
+            <tr>
+              <td>flat</td>
+              <td class="text-right">{{ totals_production.sp_t1|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t1|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t1|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>rough</td>
+              <td class="text-right">{{ totals_production.sp_t2|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t2|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t2|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>facilities</td>
+              <td class="text-right">{{ totals_production.sp_t3|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t3|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t3|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>dunes</td>
+              <td class="text-right">{{ totals_production.sp_t4|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t4|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t4|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>sabkha</td>
+              <td class="text-right">{{ totals_production.sp_t5|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t5|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t5|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>skips</td>
+              <td class="text-right">{{ totals_production.skips|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_skips|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_skips|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Total SP's</td>
+              <td class="text-right">{{ totals_production.total_sp|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_total|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_total|intcomma }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <strong>Targets</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TCF</td>
+              <td class="text-right">{{ totals_production.tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_tcf|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>CTM</td>
+              <td class="text-right">{{ totals_production.ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.0|floatformat:0|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>APP/CTM</td>
+              <td class="text-right">{{ totals_production.ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.1|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>Rate</td>
+              <td class="text-right">{{ totals_production.ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.2|floatformat:4 }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div>
+          <label>Weather</label>
+          <textarea type="text" class="form-control" rows="4" readonly>{{ totals_hse.weather_text }}</textarea>
+        </div>
+      </div>
+
+      <div style="max-width: 80vw" class="col-lg-4 mb-3">
+        <strong>Time breakdown (hours)</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>recording hours</td>
+              <td class="text-right">{{ totals_time.rec_hours|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_rec_hours|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_rec_hours|floatformat:3 }}</td>
+            </tr>
+            {% if totals_time.proj_rec_moveup > 0 %}
+              <tr>
+                <td>rt move</td>
+                <td class="text-right">{{ totals_time.rec_moveup|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_rec_moveup|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_rec_moveup|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_logistics > 0 %}
+              <tr>
+                <td>logistics time</td>
+                <td class="text-right">{{ totals_time.logistics|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_logistics|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_logistics|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_camp_move > 0 %}
+              <tr>
+                <td>camp move time</td>
+                <td class="text-right">{{ totals_time.camp_move|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_camp_move|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_camp_move|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_wait_source > 0 %}
+              <tr>
+                <td>waiting on source</td>
+                <td class="text-right">{{ totals_time.wait_source|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_wait_source|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_wait_source|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_wait_layout > 0 %}
+              <tr>
+                <td>waiting on layout</td>
+                <td class="text-right">{{ totals_time.wait_layout|floatformat:3}}</td>
+                <td class="text-right">{{ totals_time.month_wait_layout|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_wait_layout|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_wait_shift_change > 0 %}
+              <tr>
+                <td>delayes shift change</td>
+                <td class="text-right">{{ totals_time.wait_shift_change|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_wait_shift_change|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_wait_shift_change|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_company_suspension > 0 %}
+              <tr>
+                <td>company suspension</td>
+                <td class="text-right">{{ totals_time.company_suspension|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_company_suspension|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_company_suspension|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_company_tests > 0 %}
+              <tr>
+                <td>tests (company)</td>
+                <td class="text-right">{{ totals_time.company_tests|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_company_tests|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_company_tests|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_beyond_control > 0 %}
+              <tr>
+                <td>delays beyond control</td>
+                <td class="text-right">{{ totals_time.beyond_control|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_beyond_control|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_beyond_control|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_line_fault > 0 %}
+              <tr>
+                <td>line fault</td>
+                <td class="text-right">{{ totals_time.line_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_line_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_line_fault|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_instrument_fault > 0 %}
+              <tr>
+                <td>instrument fault</td>
+                <td class="text-right">{{ totals_time.instrument_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_instrument_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_instrument_fault|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_vibrator_fault > 0 %}
+              <tr>
+                <td>vibrator fault</td>
+                <td class="text-right">{{ totals_time.vibrator_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_vibrator_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_vibrator_fault|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_incident > 0 %}
+              <tr>
+                <td>time lost for incident</td>
+                <td class="text-right">{{ totals_time.incident|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_incident|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_incident|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_holiday > 0 %}
+              <tr>
+                <td>holiday</td>
+                <td class="text-right">{{ totals_time.holiday|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_holiday|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_holiday|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_recovering > 0 %}
+              <tr>
+                <td>recovering</td>
+                <td class="text-right">{{ totals_time.recovering|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_recovering|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_recovering|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            {% if totals_time.proj_other_downtime > 0 %}
+              <tr>
+                <td>other downtime</td>
+                <td class="text-right">{{ totals_time.other_downtime|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_other_downtime|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_other_downtime|floatformat:3 }}</td>
+              </tr>
+            {% endif %}
+            <tr>
+              <td>Total recording</td>
+              <td class="text-right">{{ totals_time.rec_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_rec_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_rec_time|floatformat:3 }}</td>
+            </tr>
+            <tr>
+              <td>Total operational</td>
+              <td class="text-right">{{ totals_time.ops_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_ops_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_ops_time|floatformat:3 }}</td>
+            </tr>
+            <tr>
+              <td>Total standby</td>
+              <td class="text-right">{{ totals_time.standby|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_standby|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_standby|floatformat:3 }}</td>
+            </tr>
+            <tr>
+              <td>Total downtime</td>
+              <td class="text-right">{{ totals_time.downtime|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_downtime|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_downtime|floatformat:3 }}</td>
+            </tr>
+            <tr>
+              <td>Total time</td>
+              <td class="text-right">{{ totals_time.total_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_total_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_total_time|floatformat:3 }}</td>
+            </tr>
+        </table>
+      </div>
+
+      <div style="max-width: 80vw" class="col-lg-4 mb-3">
+        <strong>HSSE</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody">
+            <tr>
+              <td>Ethimam/ Stop</td>
+              <td class="text-right">{{ totals_hse.stop|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_stop|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_stop|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>LTI</td>
+              <td class="text-right">{{ totals_hse.lti|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_lti|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_lti|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>FAC</td>
+              <td class="text-right">{{ totals_hse.fac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_fac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_fac|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>MTC</td>
+              <td class="text-right">{{ totals_hse.mtc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_mtc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_mtc|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>RWC</td>
+              <td class="text-right">{{ totals_hse.rwc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_rwc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_rwc|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Incident/ NM</td>
+              <td class="text-right">{{ totals_hse.incident_nm|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_incident_nm|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_incident_nm|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Medevac</td>
+              <td class="text-right">{{ totals_hse.medevac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_medevac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_medevac|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Drills</td>
+              <td class="text-right">{{ totals_hse.drills|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_drills|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_drills|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Audits</td>
+              <td class="text-right">{{ totals_hse.audits|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_audits|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_audits|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>LSR violation</td>
+              <td class="text-right">{{ totals_hse.lsr_violations|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_lsr_violations|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_lsr_violations|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Ops time</td>
+              <td class="text-right">{{ totals_hse.ops_time|floatformat:1 }}</td>
+              <td class="text-right">{{ totals_hse.month_ops_time|floatformat:1 }}</td>
+              <td class="text-right">{{ totals_hse.proj_ops_time|floatformat:1 }}</td>
+            </tr>
+            <tr>
+              <td>Exposure</td>
+              <td class="text-right">{{ totals_hse.day_time|floatformat:1 }}</td>
+              <td class="text-right">{{ totals_hse.month_day_time|floatformat:1 }}</td>
+              <td class="text-right">{{ totals_hse.proj_day_time|floatformat:1 }}</td>
+            </tr>
+            </tbody>
+        </table>
+        <div>
+          <label>Toolboxes</label>
+          <textarea type="text" class="form-control" rows="6" readonly>{{ totals_hse.toolbox_text }}</textarea>
+        </div>
+      </div>
+
+    </div>
+  {% endif %}
+</form>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+var form = document.getElementById("id_form");
+
+function promptProductionDate() {
+  var date_regex = /^(19|20)\d{2}-([0-9]|0[1-9]|1[0-2])-([1-9]|0[1-9]|1\d|2\d|3[01])$/;
+
+  var productionDate = ''
+  while (!(date_regex.test(productionDate))) {
+
+    productionDate = prompt('What is the production date [YYYY-MM-DD]', '');
+    // cancel if empy or null
+    if (productionDate == "" | productionDate == null) {
+      return false;
+    }
+  }
+
+  form.report_date.value = productionDate;
+  return true;
+}
+
+function confirmDeleteReport(productionDate) {
+  confirmed = confirm('Do you really want to delete the daily report for ' + productionDate + '?');
+  if (confirmed) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+
+</script>
+{% endblock %}

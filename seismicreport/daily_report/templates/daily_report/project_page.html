@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Project{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Projects
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+  {% if form_project_control.daily_id.value != 0 %}
+    <li class="nav-item"><a class="nav-link" href="{% url 'daily_page' form_project_control.daily_id.value %}">Daily</a></li>
+  {% endif %}
+</ul>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div style="display: none">{{ form_project_control.new_project_name }}{{ form_project_control.projects }}</div>
+  <div style="display: none">{{ form_block_control.new_block_name }}{{ form_block_control.blocks }}</div>
+  <div style="display: none">{{ form_sourcetype_control.new_sourcetype_name }}{{ form_sourcetype_control.sourcetypes }}</div>
+  <div style="display: none">{{ form_block}}{{ form_project }}{{ form_sourcetype}}</div>
+
+  <div class="row align-items-top mb-4">
+    <div class="col-lg-4 mb-4">
+      <div class="dropdown mb-2">
+        <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Project</button>
+        <div class="dropdown-content">
+          {% for project in form_project_control.projects %}
+            <button class="btn btn-link my-0" value="{{ project.data.value }}"
+              name="{{ project.data.name }}">
+            <a>{{ project.choice_label }}</a>
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% if form_project_control.projects.value != '' %}
+        <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit_project" name="button_pressed">
+          Submit
+        </button>
+      {% endif %}
+        <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="new_project  "
+          onclick="return promptNewProjectName()">New
+        </button>
+      {% if form_project_control.projects.value != '' %}
+        <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete_project"
+          onclick="return confirmDeleteProject('{{ form_project_control.projects.value }}')">Delete
+        </button>
+      {% endif %}
+
+      {% if form_project_control.projects.value != '' %}
+        <table>
+          {{ form_project.as_table }}
+          <tr>
+            <td>
+              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'download' form_project_control.projects.value %}">PDF work order</a></strong>
+            </td>
+            <td>
+              <div class="fileUpload btn btn-outline-dark btn-sm my-0 mx-0 w-100">
+                <span>Choose pdf workorder</span>
+                <input type="file" class="upload" name="pdf_workorder_file" onchange="form.submit()" />
+              </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'service_page' form_project_control.projects.value %}">Services</a></strong>
+            </td>
+        </tr>
+        </table>
+      {% endif %}
+    </div>
+
+    {% if form_project_control.projects.value != '' %}
+      <div class="col-lg-4 mb-4">
+        <div class="dropdown mb-2">
+          <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Block</button>
+          <div class="dropdown-content">
+            {% for block in form_block_control.blocks %}
+              <button class="btn btn-link my-0" value="{{ block.data.value }}" name="{{ block.data.name }}">
+                <a>{{ block.choice_label }}</a>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% if form_block_control.blocks.value != '' %}
+          <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit_block" name="button_pressed">
+            Submit
+          </button>
+        {% endif %}
+          <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="new_block"
+            onclick="return promptNewBlockName()">New
+          </button>
+        {% if form_block_control.blocks.value != '' %}
+          <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete_block"
+            onclick="return confirmDeleteBlock('{{ form_block_control.blocks.value }}')">Delete
+          </button>
+        {% endif %}
+
+        {% if form_block_control.blocks.value != '' %}
+          <table>
+            {{ form_block.as_table }}
+          </table>
+        {% endif %}
+      </div>
+
+      <div class="col-lg-4 mb-4">
+        <div class="dropdown mb-2">
+          <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Sourcetype</button>
+          <div class="dropdown-content">
+            {% for sourcetype in form_sourcetype_control.sourcetypes %}
+              <button class="btn btn-link my-0" value="{{ sourcetype.data.value }}" name="{{ sourcetype.data.name }}">
+                <a>{{ sourcetype.choice_label }}</a>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% if form_sourcetype_control.sourcetypes.value != '' %}
+          <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit_sourcetype" name="button_pressed">
+            Submit
+          </button>
+        {% endif %}
+        <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="new_sourcetype"
+          onclick="return promptNewSourceTypeName()">New
+        </button>
+
+        {% if form_sourcetype_control.sourcetypes.value != '' %}
+          <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete_sourcetype"
+            onclick="return confirmDeleteSourceType('{{ form_sourcetype_control.sourcetypes.value }}')">Delete
+          </button>
+        {% endif %}
+
+        {% if form_sourcetype_control.sourcetypes.value != '' %}
+          <table>
+            {{ form_sourcetype.as_table }}
+          </table>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+</form>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+
+function promptNewProjectName() {
+  var newProjectName = prompt('What is the name of the new project', '');
+
+  if (newProjectName != null && newProjectName != '' && newProjectName != "''") {
+    id_new_project_name.value = newProjectName;
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+function confirmDeleteProject(project) {
+  confirmed = confirm('Do you really want to delete project: ' + project + '?');
+  if (confirmed) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+function promptNewBlockName() {
+  var newBlockName = prompt('What is the name of the new block', '');
+
+  if (newBlockName != null && newBlockName != '' && newBlockName != "''") {
+    id_new_block_name.value = newBlockName;
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+function confirmDeleteBlock(block) {
+  confirmed = confirm('Do you really want to delete block: ' + block + '?');
+  if (confirmed) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+function promptNewSourceTypeName() {
+  var newSourceTypeName = prompt('What is the name of the new source type', '');
+
+  if (newSourceTypeName != null && newSourceTypeName != '' && newSourceTypeName != "''") {
+    id_new_sourcetype_name.value = newSourceTypeName;
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+function confirmDeleteSourceType(sourcetype) {
+  confirmed = confirm('Do you really want to delete block: ' + sourcetype + '?');
+  if (confirmed) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+</script>
+{% endblock %}
