@@ -29,8 +29,6 @@ class DailyView(View):
     arrow_symbols = {'right': RIGHT_ARROW, 'left': LEFT_ARROW}
 
     def get(self, request, daily_id):
-        day = None
-        report_date = None
         report_date_str = ''
         project_name = ''
 
@@ -62,6 +60,7 @@ class DailyView(View):
             }
 
         else:
+            # if there is a date format for display in template
             if report_date:
                 report_date_str = report_date.strftime('%#d %b %Y')
 
