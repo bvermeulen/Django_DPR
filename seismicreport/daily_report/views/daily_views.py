@@ -12,8 +12,9 @@ from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm, MonthDaysForm
 from daily_report.report_backend import ReportInterface
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
-from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
 from seismicreport.utils.plogger import Logger
+from seismicreport.utils.get_ip import get_client_ip
+from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
 
 
 logger = Logger.getlogger()
@@ -78,6 +79,8 @@ class DailyView(View):
     def post(self, request, daily_id):
         day = None
         if request.method == 'POST':
+            ip_address = get_client_ip(request)
+            user = request.user
             form_project_control = self.form_project_control(request.POST)
 
             if form_project_control.is_valid():
@@ -117,12 +120,20 @@ class DailyView(View):
                 # Keep the file name is session for later use.
                 report_file = request.FILES['daily_report_file']
                 report_date = self.ri.save_report_file(project, report_file)
+                logger.info(
+                    f'user {user.username} (ip: {ip_address}) '
+                    f'uploaded {report_file} for {report_date} for {project.project_name}'
+                )
 
             except MultiValueDictKeyError:
                 pass
 
             day, day_initial = self.ri.load_report_db(project, report_date)
             if day and button_pressed == 'delete':
+                logger.info(
+                    f'user {user.username} (ip: {ip_address}) '
+                    f'deleted report {day.production_date} for {day.project.project_name}'
+                )
                 day.delete()
                 day = None
                 report_date = string_to_date('1900-01-01')
@@ -132,6 +143,12 @@ class DailyView(View):
                     day.csr_comment = csr_comment
                     day.save()
                     day_initial['csr_comment'] = csr_comment
+                    logger.info(
+                        f'user {user.username} (ip: {ip_address}) made comment '
+                        f'in report {day.production_date} for '
+                        f'{day.project.project_name}:\n'
+                        f'{csr_comment}'
+                    )
 
             request.session['selected_project'] = project_name
             request.session['report_date'] = date_to_string(report_date)
@@ -201,6 +218,11 @@ class MonthlyServiceView(View):
 
         left = self.arrow_symbols['left']
         right = self.arrow_symbols['right']
+
+        logger.info(
+            f'user {request.user.username} (ip: {get_client_ip(request)}) is '
+            f'updating services {project.project_name} for {year}-{month}'
+        )
 
         if request.method == 'POST':
             button_pressed = request.POST.get('button_pressed')

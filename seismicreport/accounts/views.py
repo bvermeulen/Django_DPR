@@ -1,10 +1,16 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
+from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.generic import UpdateView
 from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
+from seismicreport.utils.plogger import Logger
+from seismicreport.utils.get_ip import get_client_ip
 from .models import Home
+
+logger = Logger.getlogger()
 
 
 def home_page(request):
@@ -39,4 +45,45 @@ class UserUpdateView(UpdateView):
     success_url = reverse_lazy('home')
 
     def get_object(self):  #pylint: disable=arguments-differ
+        logger.info(
+            f'user: {self.request.user.username} (ip: {get_client_ip(self.request)}) '
+            f'is updating account'
+        )
         return self.request.user
+
+
+@receiver(user_logged_in)
+def user_logged_in_callback(sender, request, user, **kwargs):
+    # in tests there is no attribute user
+    try:
+        logger.info(
+            f'user: {request.user.username} (ip: {get_client_ip(request)}) has logged in'
+        )
+
+    except AttributeError:
+        pass
+
+
+@receiver(user_logged_out)
+def user_logged_out_callback(sender, request, user, **kwargs):
+    # in tests there is no attribute user
+    try:
+        logger.info(
+            f'user: {request.user.username} (ip: {get_client_ip(request)}) has logged out'
+        )
+
+    except AttributeError:
+        pass
+
+
+@receiver(user_login_failed)
+def user_login_failed_callback(sender, request, credentials, **kwargs):
+    try:
+        username = credentials["username"]
+
+    except KeyError:
+        username = ''
+
+    logger.info(
+        f'login failed for user: {username} (ip: {get_client_ip(request)})'
+    )

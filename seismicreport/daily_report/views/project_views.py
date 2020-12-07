@@ -8,6 +8,7 @@ from django.views.generic import View
 from django.db.utils import IntegrityError
 from seismicreport.utils.utils_funcs import date_to_string
 from seismicreport.utils.plogger import Logger
+from seismicreport.utils.get_ip import get_client_ip
 from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH
 from daily_report.forms.project_forms import (
     ProjectControlForm, BlockControlForm, SourceTypeControlForm,
@@ -314,6 +315,11 @@ class ProjectView(View):
             request.session['selected_block'] = self.selected_block
             request.session['selected_sourcetype'] = self.selected_sourcetype
 
+            logger.info(
+                f'user {request.user.username} (ip: {get_client_ip(request)}) '
+                f'made changes in project: {self.selected_project}'
+            )
+
         else:
             form_project = self.form_project()
             form_block = self.form_block()
@@ -331,6 +337,7 @@ class ProjectView(View):
                 'sourcetypes': '',
                 'new_sourcetype_name': '',
                 })
+
         context = {
             'form_project': form_project,
             'form_block': form_block,
@@ -493,6 +500,12 @@ class ServiceView(View):
             'year': year,
             'month': month,
         }
+
+        logger.info(
+            f'user {request.user.username} (ip: {get_client_ip(request)}) '
+            f'made changes in services for {project_name}'
+        )
+
         return render(request, self.template_services_page, context)
 
     @staticmethod
