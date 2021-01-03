@@ -51,10 +51,11 @@
         Services</a>
     {% endwith %}
     {% endwith %}
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
+    <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
+      onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
+    </button>
   {% endif %}
-  <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
-    onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
-  </button>
 
   <strong class="ml-4">Project: {{ form_project_control.projects.value }} - Daily report: {{ form_project_control.report_date.value }}</a></strong>
   <div class="d-md-flex h-md-100 mb-3">

@@ -6,10 +6,6 @@ from django.utils.datastructures import MultiValueDictKeyError
 from django.contrib.auth.decorators import login_required
 from django.views.generic import View
 from django.db.utils import IntegrityError
-from seismicreport.utils.utils_funcs import date_to_string
-from seismicreport.utils.plogger import Logger
-from seismicreport.utils.get_ip import get_client_ip
-from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH
 from daily_report.forms.project_forms import (
     ProjectControlForm, BlockControlForm, SourceTypeControlForm,
     ProjectForm, BlockForm, SourceTypeForm
@@ -18,6 +14,10 @@ from daily_report.models.project_models import (
     Project, Block, SourceType, Service, ServiceTask,
 )
 from daily_report.report_backend import ReportInterface
+from seismicreport.utils.utils_funcs import date_to_string
+from seismicreport.utils.plogger import Logger
+from seismicreport.utils.get_ip import get_client_ip
+from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH
 
 
 logger = Logger.getlogger()
@@ -617,4 +617,5 @@ def download_pdf_workorder(request, project_name):
     project = Project.objects.get(project_name=project_name)
     f_pdf = io.BytesIO(project.pdf_work_order.tobytes())
     f_pdf.seek(0)
+    # note FileResponse will close the file/ buffer - do not use with block
     return FileResponse(f_pdf, content_type='application/pdf', as_attachment=False)

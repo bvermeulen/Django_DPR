@@ -1,10 +1,10 @@
 import warnings
 import numpy as np
 from django.db.models import Q
+from daily_report.models.daily_models import HseWeather
 from seismicreport.vars import hse_weather_schema
 from seismicreport.utils.plogger import timed, Logger
 from seismicreport.utils.utils_funcs import nan_array
-from daily_report.models.daily_models import HseWeather
 
 
 #pylint: disable=no-value-for-parameter

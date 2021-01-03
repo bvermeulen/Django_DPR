@@ -1,6 +1,7 @@
 from datetime import timedelta
 import calendar
 from django.conf import settings
+from django.http import FileResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.utils.datastructures import MultiValueDictKeyError
@@ -11,11 +12,11 @@ from daily_report.models.project_models import TaskQuantity
 from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm, MonthDaysForm
 from daily_report.report_backend import ReportInterface
+from daily_report.excel_backend import ExcelReport
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
 from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
-
 
 logger = Logger.getlogger()
 
@@ -283,3 +284,94 @@ class MonthlyServiceView(View):
                         date=task_date,
                         quantity=float(qty)
                     )
+
+
+def csr_excel_report(request, daily_id):
+    ri = ReportInterface(settings.MEDIA_ROOT)
+    try:
+        # get daily report from id
+        day = Daily.objects.get(id=daily_id)
+        project = day.project
+        day, _ = ri.load_report_db(project, day.production_date)
+
+    except Daily.DoesNotExist:
+        return redirect('daily_page', 0)
+
+    totals_production, totals_time, totals_hse = ri.calc_totals(day)
+    project = day.project
+    report_data = {}
+    report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
+
+    #TODO project: include area in project and block
+    report_data['project_table'] = {
+        'Project': project.project_name,
+        'Project VPs': project.planned_vp,
+        'Area (km\u00B2)': 0,
+        'Proj. Start': project.planned_start_date.strftime('%#d %b %Y'),
+        'Crew': project.crew_name,
+    }
+
+    report_data['daily_table'] = {
+        'Oper Day': 0,
+        'Total VPs': totals_production['total_sp'],
+        'Target VPs': totals_production['ctm'][0],
+        '% Target': totals_production['ctm'][1],
+        'Recording Hrs': totals_time['rec_time'],
+        'Standby Hrs': totals_time['standby'],
+        'Downtime Hrs': totals_time['downtime'],
+        'Skip VPs': totals_production['skips'],
+    }
+
+    #TODO personnel: include XG01 and CSR
+    report_data['csr_table'] = {
+        'XG01': 'Taimur Wadhani',
+        'CSR_1': 'Aamer Ali',
+        'CSR_2': "Sa'ad Hanna",
+        'CSR_3': 'Bruno Vermeulen',
+    }
+
+    #TODO project_stats: include calculate area and estimation completion time
+    proj_total = totals_production['proj_total']
+    if project.planned_vp > 0:
+        proj_complete = proj_total / project.planned_vp
+
+    else:
+        proj_complete = 0
+
+    report_data['proj_stats_table'] = {
+        'Recorded VPs': proj_total,
+        'Area (km\u00B2)': 0,
+        'Skip VPs': totals_production['proj_skips'],
+        '% Complete': proj_complete,
+        'Est. Complete': '20-May-2020',
+    }
+
+    #TODO block_stats: sort out calculations for block
+    report_data['block_stats_table'] = {
+        'Block': 'A',
+        'Area (km\u00B2)': 539,
+        '% Complete': 0.7130,
+        'Est. Complete': '20-May-20',
+    }
+
+    report_data['hse_stats_table'] = {
+        'LTI': totals_hse['lti'],
+        'RWC': totals_hse['rwc'],
+        'MTC': totals_hse['mtc'],
+        'FAC': totals_hse['fac'],
+        'NM/ Incidents': totals_hse['incident_nm'],
+        'LSR': totals_hse['lsr_violations'],
+        'STOP': totals_hse['stop'],
+    }
+
+    report_data['csr_comment_table'] = {
+        'Comments': day.csr_comment,
+    }
+
+    csr_report = ExcelReport(report_data)
+    csr_report.create_dailyreport()
+
+    #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
+    # note FileResponse will close the file/ buffer - do not use with block
+    f_excel = csr_report.save_excel(settings.MEDIA_ROOT)
+    return FileResponse(f_excel, as_attachment=True, filename='csr_report.xlsx')
