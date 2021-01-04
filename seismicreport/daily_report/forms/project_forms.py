@@ -117,7 +117,7 @@ class SourceTypeForm(forms.ModelForm):
             max_length=NAME_LENGTH, label='source type name', required=False)
         self.fields['sourcetype'] = forms.CharField(
             max_length=TYPE_LENGTH, label='source type', required=False)
-        self.fields['source_spacing'] = forms.FloatField(required=False)
+        self.fields['sourcepoint_spacing'] = forms.FloatField(required=False)
         self.fields['mpr_vibes'] = forms.IntegerField(
             label='mpr vibes', required=False)
         self.fields['mpr_sweep_length'] = forms.IntegerField(
@@ -130,7 +130,7 @@ class SourceTypeForm(forms.ModelForm):
     class Meta:
         model = SourceType
         fields = (
-            'sourcetype_name', 'sourcetype', 'source_spacing',
+            'sourcetype_name', 'sourcetype', 'sourcepoint_spacing',
             'mpr_vibes', 'mpr_sweep_length', 'mpr_moveup',
             'mpr_rec_hours',
         )
