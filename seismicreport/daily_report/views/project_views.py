@@ -32,6 +32,7 @@ def get_project_values(selected_project):
                 'projects': project.project_name,
                 'project_name': project.project_name,
                 'crew_name': project.crew_name,
+                'planned_area': project.planned_area,
                 'planned_vp': project.planned_vp,
                 'planned_receivers': project.planned_receivers,
                 'planned_start_date': project.planned_start_date,
@@ -71,6 +72,7 @@ def get_block_values(project, selected_block):
         selected_block = block.block_name
         initial_block_form = {
             'block_name': block.block_name,
+            'block_planned_area': block.block_planned_area,
             'block_planned_vp': block.block_planned_vp,
             'block_planned_receivers': block.block_planned_receivers,
             }
@@ -106,7 +108,8 @@ def get_sourcetype_values(project, selected_sourcetype_name):
         initial_sourcetype_form = {
             'sourcetype_name': sourcetype.sourcetype_name,
             'sourcetype': sourcetype.sourcetype,
-            'source_spacing': sourcetype.source_spacing,
+            'sourcepoint_spacing': sourcetype.sourcepoint_spacing,
+            'sourceline_spacing': sourcetype.sourceline_spacing,
             'mpr_vibes': sourcetype.mpr_vibes,
             'mpr_sweep_length': sourcetype.mpr_sweep_length,
             'mpr_moveup': sourcetype.mpr_moveup,

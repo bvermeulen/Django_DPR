@@ -21,7 +21,10 @@ class HseInterface:
             hse = HseWeather.objects.get(daily=daily)
 
         except HseWeather.DoesNotExist:
-            return {}
+            d_hse = {f'{key}': '' for key in hse_weather_schema}
+            d_hse['toolbox_text'] = ''
+            d_hse['weather_text'] = ''
+            return d_hse
 
         # HSE stats
         d_hse = {f'{key}': np.nan_to_num(getattr(hse, key))

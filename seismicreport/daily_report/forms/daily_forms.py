@@ -13,12 +13,13 @@ class DailyForm(forms.ModelForm):
         self.fields['id'] = forms.IntegerField(disabled=True, widget=forms.HiddenInput(), required=False)
         self.fields['production_date'] = forms.DateField(required=False)
         self.fields['project_name'] = forms.CharField(max_length=NAME_LENGTH, required=False)
+        self.fields['block_name'] = forms.CharField(max_length=NAME_LENGTH, required=False)
         self.fields['csr_comment'] = forms.CharField(max_length=COMMENT_LENGTH, required=False, widget=forms.Textarea)
         self.fields['pm_comment'] = forms.CharField(max_length=COMMENT_LENGTH, required=False, widget=forms.Textarea)
 
     class Meta:
         model = Daily
-        exclude = ['project']
+        exclude = ['project', 'block']
         fields = (
             'id', 'production_date', 'csr_comment', 'pm_comment',
         )

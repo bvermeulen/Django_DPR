@@ -299,20 +299,21 @@ def csr_excel_report(request, daily_id):
 
     totals_production, totals_time, totals_hse = ri.calc_totals(day)
     project = day.project
+
     report_data = {}
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
 
-    #TODO project: include area in project and block
+
     report_data['project_table'] = {
         'Project': project.project_name,
         'Project VPs': project.planned_vp,
-        'Area (km\u00B2)': 0,
+        'Area (km\u00B2)': project.planned_area,
         'Proj. Start': project.planned_start_date.strftime('%#d %b %Y'),
         'Crew': project.crew_name,
     }
 
     report_data['daily_table'] = {
-        'Oper Day': 0,
+        'Oper Day': (day.production_date - project.planned_start_date).days,
         'Total VPs': totals_production['total_sp'],
         'Target VPs': totals_production['ctm'][0],
         '% Target': totals_production['ctm'][1],
@@ -330,27 +331,42 @@ def csr_excel_report(request, daily_id):
         'CSR_3': 'Bruno Vermeulen',
     }
 
-    #TODO project_stats: include calculate area and estimation completion time
+    #TODO proj_stats_table: calculate estimated completion
     proj_total = totals_production['proj_total']
+    proj_skips = totals_production['proj_skips']
     if project.planned_vp > 0:
-        proj_complete = proj_total / project.planned_vp
+        proj_complete = (proj_total + proj_skips) / project.planned_vp
 
     else:
         proj_complete = 0
 
     report_data['proj_stats_table'] = {
         'Recorded VPs': proj_total,
-        'Area (km\u00B2)': 0,
-        'Skip VPs': totals_production['proj_skips'],
+        'Area (km\u00B2)': project.planned_area * proj_complete,
+        'Skip VPs': proj_skips,
         '% Complete': proj_complete,
         'Est. Complete': '20-May-2020',
     }
 
-    #TODO block_stats: sort out calculations for block
+    #TODO block_stats_table: calculate estimated completion
+    totals_block = ri.calc_block_totals(day)
+    if totals_block:
+        block_name = day.block.block_name
+        block_complete = (
+            (totals_block['block_total'] + totals_block['block_skips']) /
+            day.block.block_planned_vp
+        )
+        block_area = day.block.block_planned_area * block_complete
+
+    else:
+        block_name = ''
+        block_complete = 0
+        block_area = 0
+
     report_data['block_stats_table'] = {
-        'Block': 'A',
-        'Area (km\u00B2)': 539,
-        '% Complete': 0.7130,
+        'Block': block_name,
+        'Area (km\u00B2)': block_area,
+        '% Complete': block_complete,
         'Est. Complete': '20-May-20',
     }
 

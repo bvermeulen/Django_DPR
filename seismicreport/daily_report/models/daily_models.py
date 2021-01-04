@@ -6,8 +6,7 @@ class Daily(models.Model):
     production_date = models.DateField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='dailies')
     block = models.ForeignKey(
-        Block, on_delete=models.CASCADE, limit_choices_to={'project': project},
-        related_name='dailies', blank=True, null=True)
+        Block, on_delete=models.CASCADE, related_name='dailies', blank=True, null=True)
     csr_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
     pm_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
 
@@ -18,6 +17,9 @@ class Daily(models.Model):
         # possible to have two daily reports for two different projects
         unique_together = ['production_date', 'project']
 
+    @classmethod
+    def get_project(cls):
+        return Daily.objects.get()
 
 class SourceProduction(models.Model):
     daily = models.ForeignKey(Daily, on_delete=models.CASCADE)

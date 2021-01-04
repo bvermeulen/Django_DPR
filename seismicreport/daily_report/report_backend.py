@@ -8,17 +8,17 @@ import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 from django.db.utils import IntegrityError
 from django.db.models import Q
-from seismicreport.vars import (
-    TCF_table, BGP_DR_table, SOURCETYPE_NAME, source_prod_schema, time_breakdown_schema,
-    ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH
-)
-from seismicreport.utils.plogger import timed, Logger
-from seismicreport.utils.utils_funcs import calc_ratio, nan_array
 from daily_report.models.daily_models import (
     Daily, SourceProduction, TimeBreakdown, HseWeather, ToolBox,
 )
-from daily_report.models.project_models import Project
+from daily_report.models.project_models import Project, Block
 from daily_report.hseweather_backend import HseInterface
+from seismicreport.vars import (
+    TCF_table, BGP_DR_table, SOURCETYPE_NAME, source_prod_schema, time_breakdown_schema,
+    ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH,
+)
+from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.utils_funcs import calc_ratio, nan_array
 
 
 #pylint: disable=no-value-for-parameter
@@ -137,10 +137,17 @@ class ReportInterface(HseInterface):
         except Daily.DoesNotExist:
             return return_empty
 
+        if day.block:
+            block_name = day.block.block_name
+
+        else:
+            block_name = ''
+
         day_initial = {
             'id': day.id,
             'production_date': day.production_date,
             'project_name': day.project.project_name,
+            'block_name': block_name,
             'csr_comment': day.csr_comment,
             'pm_comment': day.pm_comment,
         }
@@ -173,6 +180,12 @@ class ReportInterface(HseInterface):
                        if not pd.isnull(self.get_value(
                            day_df, f'comment {i}'))])[:COMMENT_LENGTH]
         )
+
+        # add block to daily if block name is valid for the project
+        block_name = self.get_value(day_df, 'block')
+        if block_name in [b.block_name for b in project.blocks.all()]:
+            day.block = Block.objects.get(project=project, block_name=block_name)
+
         day.save()
 
         # create/ update source production values
@@ -674,3 +687,33 @@ class ReportInterface(HseInterface):
         self.create_graphs(prod_series, time_series)
 
         return prod_total, times_total, hse_total
+
+    @timed(logger, print_log=True)
+    def calc_block_totals(self, daily):
+        ''' A naive method to calculate block production totals
+            Block totals are calculated for the block reported for the day
+            All Vps for a day that have the same block name will be included
+            even Vps are acquired on different blocks
+            Also it takes Vps for all sourcetypes
+        '''
+        if not daily:
+            return {}
+
+        sp_query = SourceProduction.objects.filter(
+            daily__production_date__lte=daily.production_date,
+            daily__project=daily.project,
+            daily__block=daily.block,
+        ).order_by('daily__production_date')
+
+        if not sp_query:
+            return {}
+
+        bp = {f'block_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
+              for key in source_prod_schema}
+
+        # exclude last key for skips to calculate the total
+        bp['block_total'] = np.sum(
+            bp[f'block_{key[:5]}'] for key in source_prod_schema[:-1]
+        )
+
+        return bp
