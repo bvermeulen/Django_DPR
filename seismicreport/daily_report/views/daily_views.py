@@ -13,7 +13,7 @@ from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm, MonthDaysForm
 from daily_report.report_backend import ReportInterface
 from daily_report.excel_backend import ExcelReport
-from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
+from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW, AVG_PERIOD, NO_DATE_STR
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
 from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
@@ -303,17 +303,24 @@ def csr_excel_report(request, daily_id):
     report_data = {}
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
 
+    if project.planned_start_date:
+        proj_start_str = project.planned_start_date.strftime('%#d %b %Y')
+        ops_days = (day.production_date - project.planned_start_date).days
+
+    else:
+        proj_start_str = NO_DATE_STR
+        ops_days = NO_DATE_STR
 
     report_data['project_table'] = {
         'Project': project.project_name,
         'Project VPs': project.planned_vp,
         'Area (km\u00B2)': project.planned_area,
-        'Proj. Start': project.planned_start_date.strftime('%#d %b %Y'),
+        'Proj. Start': proj_start_str,
         'Crew': project.crew_name,
     }
 
     report_data['daily_table'] = {
-        'Oper Day': (day.production_date - project.planned_start_date).days,
+        'Oper Day': ops_days,
         'Total VPs': totals_production['total_sp'],
         'Target VPs': totals_production['ctm'][0],
         '% Target': totals_production['ctm'][1],
@@ -331,7 +338,7 @@ def csr_excel_report(request, daily_id):
         'CSR_3': 'Bruno Vermeulen',
     }
 
-    #TODO proj_stats_table: calculate estimated completion
+    # proj_stats
     proj_total = totals_production['proj_total']
     proj_skips = totals_production['proj_skips']
     if project.planned_vp > 0:
@@ -340,34 +347,39 @@ def csr_excel_report(request, daily_id):
     else:
         proj_complete = 0
 
+
     report_data['proj_stats_table'] = {
         'Recorded VPs': proj_total,
         'Area (km\u00B2)': project.planned_area * proj_complete,
         'Skip VPs': proj_skips,
         '% Complete': proj_complete,
-        'Est. Complete': '20-May-2020',
+        'Est. Complete': ri.calc_est_completion_date(
+            day, AVG_PERIOD, project.planned_vp, proj_complete),
     }
 
-    #TODO block_stats_table: calculate estimated completion
+    # block_stats
+    block = day.block
     totals_block = ri.calc_block_totals(day)
-    if totals_block:
-        block_name = day.block.block_name
-        block_complete = (
-            (totals_block['block_total'] + totals_block['block_skips']) /
-            day.block.block_planned_vp
-        )
-        block_area = day.block.block_planned_area * block_complete
+    if block and totals_block:
+        block_name = block.block_name
+        block_total = totals_block['block_total'] + totals_block['block_skips']
+        block_complete = block_total / block.block_planned_vp
+        block_area = block.block_planned_area * block_complete
+        block_completion_date = ri.calc_est_completion_date(
+            day, AVG_PERIOD, block.block_planned_vp, block_complete)
 
     else:
         block_name = ''
         block_complete = 0
         block_area = 0
+        block_total = 0
+        block_completion_date = NO_DATE_STR
 
     report_data['block_stats_table'] = {
         'Block': block_name,
         'Area (km\u00B2)': block_area,
         '% Complete': block_complete,
-        'Est. Complete': '20-May-20',
+        'Est. Complete': block_completion_date,
     }
 
     report_data['hse_stats_table'] = {

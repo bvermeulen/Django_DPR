@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import pandas as pd
 import numpy as np
@@ -16,6 +16,7 @@ from daily_report.hseweather_backend import HseInterface
 from seismicreport.vars import (
     TCF_table, BGP_DR_table, SOURCETYPE_NAME, source_prod_schema, time_breakdown_schema,
     ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH,
+    NO_DATE_STR,
 )
 from seismicreport.utils.plogger import timed, Logger
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
@@ -717,3 +718,74 @@ class ReportInterface(HseInterface):
         )
 
         return bp
+
+    def calc_est_completion_date(
+        self, daily, period: int, planned: int, complete: float) -> str:
+        ''' Method to calculate the estimated completion date based on:
+            current date, avg production over period before current date,
+            planned points and percemtage complete to date.
+            returns: str with date in format "DD MM YYYY" or NO_DATE_STR
+        '''
+        if not daily or period < 1:
+            return NO_DATE_STR
+
+        # check if we have passed the last production date, based on zero production today
+        # and completion greater than (arbitrary) 0.97, in that case find the last
+        # production date
+        if complete > 0.97:
+            if SourceProduction.objects.filter(
+                Q(sp_t1_flat=0) &
+                Q(sp_t2_rough=0) &
+                Q(sp_t3_facilities=0) &
+                Q(sp_t4_dunes=0) &
+                Q(sp_t5_sabkha=0),
+                daily=daily):
+                return self.get_last_production_date(daily.project)
+
+        # calculate total sp including skips and avg_prod
+        end_date = daily.production_date
+        start_date = end_date - timedelta(days=period)
+        sp_query = SourceProduction.objects.filter(
+            daily__production_date__range=(start_date, end_date),
+            daily__project=daily.project,
+        )
+
+        if not sp_query:
+            return NO_DATE_STR
+
+        sps_dict = {f'{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
+                    for key in source_prod_schema}
+        total_sp = np.sum(sps_dict[f'{key[:5]}'] for key in source_prod_schema)
+        avg_prod = total_sp / period
+
+        remaining = (1 - complete) * planned
+        if avg_prod > 0:
+            est_completion = (daily.production_date + timedelta(
+                    days=remaining / avg_prod)).strftime('%#d %b %Y')
+
+        else:
+            est_completion = NO_DATE_STR
+
+
+        return est_completion
+
+    def get_last_production_date(self, project) -> str:
+        ''' Method to get the last date where was production for project
+            Returns: date in format "DD MMM YYYY" or NO_DATE_STR
+        '''
+        if not project:
+            return NO_DATE_STR
+
+        last_production = SourceProduction.objects.filter(
+            Q(sp_t1_flat__gt=0) |
+            Q(sp_t2_rough__gt=0) |
+            Q(sp_t3_facilities__gt=0) |
+            Q(sp_t4_dunes__gt=0) |
+            Q(sp_t5_sabkha__gt=0),
+            daily__project=project).order_by('daily__production_date').last()
+
+        if last_production:
+            return last_production.daily.production_date.strftime('%#d %b %Y')
+
+        else:
+            return NO_DATE_STR

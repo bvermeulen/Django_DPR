@@ -107,9 +107,12 @@ hse_weather_schema = [
     'temp_min', 'temp_max',
 ]
 
+AVG_PERIOD = 14
+NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'
 NAME_LENGTH = 20
 DESCR_LENGTH = 100
 TYPE_LENGTH = 10
 COMMENT_LENGTH = 5000
+
