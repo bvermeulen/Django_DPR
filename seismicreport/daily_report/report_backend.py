@@ -151,6 +151,7 @@ class ReportInterface(HseInterface):
             'block_name': block_name,
             'csr_comment': day.csr_comment,
             'pm_comment': day.pm_comment,
+            'staff': [person.id for person in day.staff.all()]
         }
 
         return day, day_initial

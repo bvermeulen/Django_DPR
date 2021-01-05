@@ -110,10 +110,12 @@ class DailyView(View):
                 report_date -= timedelta(days=1)
 
             csr_comment = ''
-            if button_pressed == 'csr_comment':
+            staff_selected = []
+            if button_pressed == 'submit':
                 daily_form = self.form_daily(request.POST)
                 if daily_form.is_valid():
                     csr_comment = daily_form.cleaned_data.get('csr_comment', '')
+                    staff_selected = daily_form.cleaned_data.get('staff')
 
             try:
                 # Get the report_file from request and store it as a standard report
@@ -129,7 +131,7 @@ class DailyView(View):
             except MultiValueDictKeyError:
                 pass
 
-            day, day_initial = self.ri.load_report_db(project, report_date)
+            day, _ = self.ri.load_report_db(project, report_date)
             if day and button_pressed == 'delete':
                 logger.info(
                     f'user {user.username} (ip: {ip_address}) '
@@ -140,10 +142,10 @@ class DailyView(View):
                 report_date = string_to_date('1900-01-01')
 
             else:
-                if day and csr_comment:
+                if day and button_pressed == "submit":
                     day.csr_comment = csr_comment
+                    day.staff.set(staff_selected)
                     day.save()
-                    day_initial['csr_comment'] = csr_comment
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
                         f'in report {day.production_date} for '
@@ -330,12 +332,8 @@ def csr_excel_report(request, daily_id):
         'Skip VPs': totals_production['skips'],
     }
 
-    #TODO personnel: include XG01 and CSR
     report_data['csr_table'] = {
-        'XG01': 'Taimur Wadhani',
-        'CSR_1': 'Aamer Ali',
-        'CSR_2': "Sa'ad Hanna",
-        'CSR_3': 'Bruno Vermeulen',
+        f'{p.department}_{i:02}': p.name for i, p in enumerate(day.staff.all())
     }
 
     # proj_stats

@@ -103,7 +103,7 @@ class ExcelReport:
 
         # XG01 and CSR
         self.set_vertical_cells(
-            'D10', [re.sub(r'_\d', '', key) for key in self.csr_table], font_bold,
+            'D10', [key[:-3] for key in self.csr_table], font_bold,
             Alignment(horizontal='right'))
         self.set_vertical_cells(
             'E10', [val for _, val in self.csr_table.items()], font_normal,
