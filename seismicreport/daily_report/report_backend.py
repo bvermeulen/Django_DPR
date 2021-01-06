@@ -680,7 +680,6 @@ class ReportInterface(HseInterface):
 
         return prod_total, times_total, hse_total
 
-    @timed(logger, print_log=True)
     def calc_block_totals(self, daily):
         ''' A naive method to calculate block production totals
             Block totals are calculated for the block reported for the day
