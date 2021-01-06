@@ -47,7 +47,7 @@
   {% if form_daily.id.value %}
   <div class="dropdown">
     <button type="button" class="dropdown-toggle btn btn-primary btn-sm">Select staff</button>
-    <div class="dropdown-content">
+    <div class="dropdown-content" style="height:250px; overflow-y:scroll">
       {% for name in form_daily.staff %}
         <a class="btn btn-link my-0">{{ name }}</a>
       {% endfor %}
