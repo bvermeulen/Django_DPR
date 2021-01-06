@@ -401,10 +401,10 @@ def csr_excel_report(request, daily_id):
         'Comments': day.csr_comment,
     }
 
-    csr_report = ExcelReport(report_data)
+    csr_report = ExcelReport(report_data, settings.MEDIA_ROOT, settings.STATIC_ROOT)
     csr_report.create_dailyreport()
 
     #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
     # note FileResponse will close the file/ buffer - do not use with block
-    f_excel = csr_report.save_excel(settings.MEDIA_ROOT)
+    f_excel = csr_report.save_excel()
     return FileResponse(f_excel, as_attachment=True, filename='csr_report.xlsx')
