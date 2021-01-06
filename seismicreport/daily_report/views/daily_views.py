@@ -332,9 +332,16 @@ def csr_excel_report(request, daily_id):
         'Skip VPs': totals_production['skips'],
     }
 
-    report_data['csr_table'] = {
-        f'{p.department}_{i:02}': p.name for i, p in enumerate(day.staff.all())
+    # cst table XG0 first then CSR
+    xg0_staff = {
+        f'{p.department}_{i:02}': p.name for i, p in
+        enumerate(day.staff.filter(department__startswith='X').order_by('department'))
     }
+    csr_staff = {
+        f'{p.department}_{i:02}': p.name for i, p in
+        enumerate(day.staff.filter(department__startswith='C').order_by('name'))
+    }
+    report_data['csr_table'] = {**xg0_staff, **csr_staff}
 
     # proj_stats
     proj_total = totals_production['proj_total']
