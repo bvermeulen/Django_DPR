@@ -1,10 +1,22 @@
 from django.db import models
-from daily_report.models.project_models import Project, SourceType
+from daily_report.models.project_models import Project, Block, SourceType
 from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH
+
+
+class Person(models.Model):
+    name = models.CharField(max_length=NAME_LENGTH, default='', unique=True)
+    department = models.CharField(max_length=NAME_LENGTH, default='')
+
+    def __str__(self):
+        return f'Name: {self.name}, department: {self.department}'
+
 
 class Daily(models.Model):
     production_date = models.DateField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='dailies')
+    block = models.ForeignKey(
+        Block, on_delete=models.CASCADE, related_name='dailies', blank=True, null=True)
+    staff = models.ManyToManyField(Person, related_name='dailies')
     csr_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
     pm_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
 

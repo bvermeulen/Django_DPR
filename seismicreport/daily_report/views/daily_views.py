@@ -1,6 +1,7 @@
 from datetime import timedelta
 import calendar
 from django.conf import settings
+from django.http import FileResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.utils.datastructures import MultiValueDictKeyError
@@ -11,11 +12,11 @@ from daily_report.models.project_models import TaskQuantity
 from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm, MonthDaysForm
 from daily_report.report_backend import ReportInterface
-from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
+from daily_report.excel_backend import ExcelReport
+from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW, AVG_PERIOD, NO_DATE_STR
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
 from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
-
 
 logger = Logger.getlogger()
 
@@ -109,10 +110,12 @@ class DailyView(View):
                 report_date -= timedelta(days=1)
 
             csr_comment = ''
-            if button_pressed == 'csr_comment':
+            staff_selected = []
+            if button_pressed == 'submit':
                 daily_form = self.form_daily(request.POST)
                 if daily_form.is_valid():
                     csr_comment = daily_form.cleaned_data.get('csr_comment', '')
+                    staff_selected = daily_form.cleaned_data.get('staff')
 
             try:
                 # Get the report_file from request and store it as a standard report
@@ -128,7 +131,7 @@ class DailyView(View):
             except MultiValueDictKeyError:
                 pass
 
-            day, day_initial = self.ri.load_report_db(project, report_date)
+            day, _ = self.ri.load_report_db(project, report_date)
             if day and button_pressed == 'delete':
                 logger.info(
                     f'user {user.username} (ip: {ip_address}) '
@@ -139,10 +142,10 @@ class DailyView(View):
                 report_date = string_to_date('1900-01-01')
 
             else:
-                if day and csr_comment:
+                if day and button_pressed == "submit":
                     day.csr_comment = csr_comment
+                    day.staff.set(staff_selected)
                     day.save()
-                    day_initial['csr_comment'] = csr_comment
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
                         f'in report {day.production_date} for '
@@ -283,3 +286,125 @@ class MonthlyServiceView(View):
                         date=task_date,
                         quantity=float(qty)
                     )
+
+
+def csr_excel_report(request, daily_id):
+    ri = ReportInterface(settings.MEDIA_ROOT)
+    try:
+        # get daily report from id
+        day = Daily.objects.get(id=daily_id)
+        project = day.project
+        day, _ = ri.load_report_db(project, day.production_date)
+
+    except Daily.DoesNotExist:
+        return redirect('daily_page', 0)
+
+    totals_production, totals_time, totals_hse = ri.calc_totals(day)
+    project = day.project
+
+    report_data = {}
+    report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
+
+    if project.planned_start_date:
+        proj_start_str = project.planned_start_date.strftime('%#d %b %Y')
+        ops_days = (day.production_date - project.planned_start_date).days
+
+    else:
+        proj_start_str = NO_DATE_STR
+        ops_days = NO_DATE_STR
+
+    report_data['project_table'] = {
+        'Project': project.project_name,
+        'Project VPs': project.planned_vp,
+        'Area (km\u00B2)': project.planned_area,
+        'Proj. Start': proj_start_str,
+        'Crew': project.crew_name,
+    }
+
+    report_data['daily_table'] = {
+        'Oper Day': ops_days,
+        'Total VPs': totals_production['total_sp'],
+        'Target VPs': totals_production['ctm'][0],
+        '% Target': totals_production['ctm'][1],
+        'Recording Hrs': totals_time['rec_time'],
+        'Standby Hrs': totals_time['standby'],
+        'Downtime Hrs': totals_time['downtime'],
+        'Skip VPs': totals_production['skips'],
+    }
+
+    # cst table XG0 first then CSR
+    xg0_staff = {
+        f'{p.department}_{i:02}': p.name for i, p in
+        enumerate(day.staff.filter(department__startswith='X').order_by('department'))
+    }
+    csr_staff = {
+        f'{p.department}_{i:02}': p.name for i, p in
+        enumerate(day.staff.filter(department__startswith='C').order_by('name'))
+    }
+    report_data['csr_table'] = {**xg0_staff, **csr_staff}
+
+    # proj_stats
+    proj_total = totals_production['proj_total']
+    proj_skips = totals_production['proj_skips']
+    if project.planned_vp > 0:
+        proj_complete = (proj_total + proj_skips) / project.planned_vp
+
+    else:
+        proj_complete = 0
+
+
+    report_data['proj_stats_table'] = {
+        'Recorded VPs': proj_total,
+        'Area (km\u00B2)': project.planned_area * proj_complete,
+        'Skip VPs': proj_skips,
+        '% Complete': proj_complete,
+        'Est. Complete': ri.calc_est_completion_date(
+            day, AVG_PERIOD, project.planned_vp, proj_complete),
+    }
+
+    # block_stats
+    block = day.block
+    totals_block = ri.calc_block_totals(day)
+    if block and totals_block:
+        block_name = block.block_name
+        block_total = totals_block['block_total'] + totals_block['block_skips']
+        block_complete = block_total / block.block_planned_vp
+        block_area = block.block_planned_area * block_complete
+        block_completion_date = ri.calc_est_completion_date(
+            day, AVG_PERIOD, block.block_planned_vp, block_complete)
+
+    else:
+        block_name = ''
+        block_complete = 0
+        block_area = 0
+        block_total = 0
+        block_completion_date = NO_DATE_STR
+
+    report_data['block_stats_table'] = {
+        'Block': block_name,
+        'Area (km\u00B2)': block_area,
+        '% Complete': block_complete,
+        'Est. Complete': block_completion_date,
+    }
+
+    report_data['hse_stats_table'] = {
+        'LTI': totals_hse['lti'],
+        'RWC': totals_hse['rwc'],
+        'MTC': totals_hse['mtc'],
+        'FAC': totals_hse['fac'],
+        'NM/ Incidents': totals_hse['incident_nm'],
+        'LSR': totals_hse['lsr_violations'],
+        'STOP': totals_hse['stop'],
+    }
+
+    report_data['csr_comment_table'] = {
+        'Comments': day.csr_comment,
+    }
+
+    csr_report = ExcelReport(report_data)
+    csr_report.create_dailyreport()
+
+    #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
+    # note FileResponse will close the file/ buffer - do not use with block
+    f_excel = csr_report.save_excel(settings.MEDIA_ROOT)
+    return FileResponse(f_excel, as_attachment=True, filename='csr_report.xlsx')

@@ -13,6 +13,8 @@ urlpatterns = [
          project_views.ServiceView.as_view(), name='service_page'),
     path('daily_report/daily_page/<int:daily_id>/',
          daily_views.DailyView.as_view(), name='daily_page'),
+    path('daily_report/csr_excel_report/<int:daily_id>/',
+         daily_views.csr_excel_report, name='csr_excel_report'),
     path('daily_report/monthly_services/<int:daily_id>/<int:year>/<int:month>/',
          daily_views.MonthlyServiceView.as_view(), name='monthly_service_page'),
 ]

@@ -73,6 +73,7 @@ class ProjectForm(forms.ModelForm):
             max_length=NAME_LENGTH, required=False)
         self.fields['crew_name'] = forms.CharField(
             max_length=NAME_LENGTH, required=False)
+        self.fields['planned_area'] = forms.FloatField(required=False)
         self.fields['planned_vp'] = forms.IntegerField(required=False)
         self.fields['planned_receivers'] = forms.IntegerField(required=False)
         self.fields['planned_start_date'] = forms.DateField(required=False)
@@ -85,7 +86,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = (
-            'project_name', 'crew_name',
+            'project_name', 'crew_name', 'planned_area',
             'planned_vp', 'planned_receivers',
             'planned_start_date', 'planned_end_date',
             'standby_rate', 'cap_rate', 'cap_app_ctm'
@@ -98,14 +99,15 @@ class BlockForm(forms.ModelForm):
 
         self.fields['block_name'] = forms.CharField(
             max_length=NAME_LENGTH, required=False)
+        self.fields['block_planned_area'] = forms.FloatField(required=False)
         self.fields['block_planned_vp'] = forms.IntegerField(required=False)
         self.fields['block_planned_receivers'] = forms.IntegerField(required=False)
 
     class Meta:
         model = Block
         fields = (
-            'block_name',
-            'block_planned_vp', 'block_planned_receivers',
+            'block_name', 'block_planned_area', 'block_planned_vp',
+            'block_planned_receivers',
         )
 
 
@@ -117,7 +119,8 @@ class SourceTypeForm(forms.ModelForm):
             max_length=NAME_LENGTH, label='source type name', required=False)
         self.fields['sourcetype'] = forms.CharField(
             max_length=TYPE_LENGTH, label='source type', required=False)
-        self.fields['source_spacing'] = forms.FloatField(required=False)
+        self.fields['sourcepoint_spacing'] = forms.FloatField(required=False)
+        self.fields['sourceline_spacing'] = forms.FloatField(required=False)
         self.fields['mpr_vibes'] = forms.IntegerField(
             label='mpr vibes', required=False)
         self.fields['mpr_sweep_length'] = forms.IntegerField(
@@ -130,7 +133,6 @@ class SourceTypeForm(forms.ModelForm):
     class Meta:
         model = SourceType
         fields = (
-            'sourcetype_name', 'sourcetype', 'source_spacing',
-            'mpr_vibes', 'mpr_sweep_length', 'mpr_moveup',
-            'mpr_rec_hours',
+            'sourcetype_name', 'sourcetype', 'sourcepoint_spacing', 'sourceline_spacing',
+            'mpr_vibes', 'mpr_sweep_length', 'mpr_moveup', 'mpr_rec_hours',
         )

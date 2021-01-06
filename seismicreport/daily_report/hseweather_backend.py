@@ -1,10 +1,10 @@
 import warnings
 import numpy as np
 from django.db.models import Q
+from daily_report.models.daily_models import HseWeather
 from seismicreport.vars import hse_weather_schema
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import nan_array
-from daily_report.models.daily_models import HseWeather
 
 
 #pylint: disable=no-value-for-parameter
@@ -20,7 +20,10 @@ class HseInterface:
             hse = HseWeather.objects.get(daily=daily)
 
         except HseWeather.DoesNotExist:
-            return {}
+            d_hse = {f'{key}': '' for key in hse_weather_schema}
+            d_hse['toolbox_text'] = ''
+            d_hse['weather_text'] = ''
+            return d_hse
 
         # HSE stats
         d_hse = {f'{key}': np.nan_to_num(getattr(hse, key))

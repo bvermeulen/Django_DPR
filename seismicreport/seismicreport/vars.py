@@ -82,29 +82,37 @@ source_prod_schema = [
     'sp_t1_flat', 'sp_t2_rough', 'sp_t3_facilities', 'sp_t4_dunes',
     'sp_t5_sabkha', 'skips',
 ]
+
 time_breakdown_schema = [
     'rec_hours', 'rec_moveup', 'logistics', 'camp_move', 'wait_source', 'wait_layout',
     'wait_shift_change', 'company_suspension', 'company_tests', 'beyond_control',
     'line_fault', 'instrument_fault', 'vibrator_fault', 'incident', 'holiday',
     'recovering', 'other_downtime',
 ]
+
 ops_time_keys = [
     'rec_moveup', 'logistics', 'wait_source', 'wait_layout', 'wait_shift_change',
 ]
+
 standby_keys = ['company_suspension', 'company_tests', 'beyond_control', 'camp_move']
+
 downtime_keys = [
     'line_fault', 'instrument_fault', 'vibrator_fault', 'incident', 'holiday',
     'recovering', 'other_downtime',
 ]
+
 hse_weather_schema = [
     'stop', 'lti', 'fac', 'mtc', 'rwc', 'incident_nm', 'medevac', 'drills', 'audits',
     'lsr_violations', 'ops_time', 'day_time', 'weather_condition', 'rain',
     'temp_min', 'temp_max',
 ]
 
+AVG_PERIOD = 14
+NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'
 NAME_LENGTH = 20
 DESCR_LENGTH = 100
 TYPE_LENGTH = 10
 COMMENT_LENGTH = 5000
+
