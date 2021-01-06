@@ -10,7 +10,9 @@ from openpyxl.formatting.rule import CellIsRule
 class ExcelReport:
     ''' class to create excel reports in CSR format
     '''
-    def __init__(self, report_data):
+    def __init__(self, report_data, media_root, static_root):
+        self.media_root = Path(media_root)
+        self.static_root = Path(static_root)
         self.wb = Workbook()
         self.ws = self.wb.active
         self.ws.sheet_view.showGridLines = False
@@ -29,7 +31,6 @@ class ExcelReport:
     def create_dailyreport(self):
         ''' method to create excel daily report
         '''
-        media_dir = Path('media/images')
         img_width =310
         img_height = 150
         fontname = 'Tahoma'
@@ -53,8 +54,7 @@ class ExcelReport:
         self.ws.column_dimensions['L'].width = 9.89
 
         # set logo
-        logo_path = Path('seismicreport/static/img')
-        img_logo = drawing.image.Image(logo_path / 'oil_gas_icon.png')
+        img_logo = drawing.image.Image(self.static_root / 'img/display_icon.png')
         img_logo.width = 75
         img_logo.height = 75
         self.ws.add_image(img_logo, 'C4')
@@ -164,22 +164,22 @@ class ExcelReport:
             Alignment(vertical='top', wrap_text=True))
 
         # add graphs
-        img_daily_prod = drawing.image.Image(media_dir / 'daily_prod.png')
+        img_daily_prod = drawing.image.Image(self.media_root / 'images/daily_prod.png')
         img_daily_prod.width = img_width
         img_daily_prod.height = img_height
         self.ws.add_image(img_daily_prod, 'C28')
 
-        img_app_ctm = drawing.image.Image(media_dir / 'app_ctm.png')
+        img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm.png')
         img_app_ctm.width = img_width
         img_app_ctm.height = img_height
         self.ws.add_image(img_app_ctm, 'H28')
 
-        img_cumul_prod = drawing.image.Image(media_dir / 'cumul_prod.png')
+        img_cumul_prod = drawing.image.Image(self.media_root / 'images/cumul_prod.png')
         img_cumul_prod.width = img_width
         img_cumul_prod.height = img_height
         self.ws.add_image(img_cumul_prod, 'C37')
 
-        img_rec_hours = drawing.image.Image(media_dir / 'rec_hours.png')
+        img_rec_hours = drawing.image.Image(self.media_root / 'images/rec_hours.png')
         img_rec_hours.width = img_width
         img_rec_hours.height = img_height
         self.ws.add_image(img_rec_hours, 'H37')
@@ -198,7 +198,7 @@ class ExcelReport:
         self.set_outer_border('B16:I26')
         self.ws['I3'].border = Border(top=Side(style='thin'), bottom=Side(style='thin'))
 
-    def save_excel(self, media_dir):
+    def save_excel(self):
         ''' method to save excel data to a BytesIO buffer
         '''
         f_excel = io.BytesIO()
