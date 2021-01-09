@@ -35,6 +35,8 @@ class ReportInterface(HseInterface):
 
     def __init__(self, media_dir):
         self.media_dir = media_dir
+        self.prod_series = None
+        self.time_series = None
 
     @staticmethod
     def get_value(day_df, kw):
@@ -488,11 +490,20 @@ class ReportInterface(HseInterface):
         return pt, ts
 
     @timed(logger, print_log=True)
-    def create_graphs(self, prod_series, time_series):
-        date_series = prod_series['date_series']
-        terrain_series = prod_series['terrain_series']
-        assert len(date_series) == len(terrain_series), \
-            'length date en terrain series must be equal'
+    def create_graphs(self):
+        ''' Method to make plots. This method works correctly once self.prod_series and
+            self.time_series have been calculated in method calc_totals. Reason to split
+            it out of that function is that this method is time consuming and better to
+            avoice to run it when it is not necessary.
+        '''
+        if self.prod_series and self.time_series:
+            date_series = self.prod_series['date_series']
+            terrain_series = self.prod_series['terrain_series']
+            assert len(date_series) == len(terrain_series), \
+                'length date en terrain series must be equal'
+
+        else:
+            return
 
         # stacked bar plot of daily production
         t1_series = np.array([val[0] for val in terrain_series]) * 0.001
@@ -577,7 +588,7 @@ class ReportInterface(HseInterface):
         plt.close()
 
         # line plot recording hours
-        rec_hours_series = time_series['rec_hours_series']
+        rec_hours_series = self.time_series['rec_hours_series']
         plot_filename = os.path.join(self.media_dir, 'images', 'rec_hours.png')
 
         plt.plot(date_series, rec_hours_series, label="Recording hours")
@@ -592,7 +603,7 @@ class ReportInterface(HseInterface):
         plt.close()
 
         # line plot target production and app
-        ctm_series = [val[0] for val in prod_series['ctm_series']]
+        ctm_series = [val[0] for val in self.prod_series['ctm_series']]
         plot_filename = os.path.join(self.media_dir, 'images', 'ctm.png')
 
         plt.plot(date_series, total_sp_series, label="APP")
@@ -608,7 +619,7 @@ class ReportInterface(HseInterface):
         # line plot production / target production ratio
         plot_filename = os.path.join(self.media_dir, 'images', 'app_ctm.png')
 
-        app_ctm_series = np.array([val[1] for val in prod_series['ctm_series']])
+        app_ctm_series = np.array([val[1] for val in self.prod_series['ctm_series']])
         target_series = np.ones(len(app_ctm_series))
         plt.plot(date_series, target_series, label="Target")
         plt.plot(date_series, app_ctm_series, label="Prod/Target")
@@ -630,7 +641,7 @@ class ReportInterface(HseInterface):
         # get time breakdown stats
         day_times = self.calc_day_time_totals(daily)
         month_times = self.calc_month_time_totals(daily)
-        proj_times, time_series = self.calc_proj_time_totals(daily)
+        proj_times, self.time_series = self.calc_proj_time_totals(daily)
 
         # TODO make loop over source types
         # get the production stats
@@ -640,7 +651,7 @@ class ReportInterface(HseInterface):
         month_prod = self.calc_month_prod_totals(daily, SOURCETYPE_NAME)
         month_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, month_prod['month_tcf'])
 
-        proj_prod, prod_series = self.calc_proj_prod_totals(daily, SOURCETYPE_NAME)
+        proj_prod, self.prod_series = self.calc_proj_prod_totals(daily, SOURCETYPE_NAME)
         proj_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, proj_prod['proj_tcf'])
 
         day_ctm *= (day_times['total_time'] - day_times['standby']) / 24
@@ -666,15 +677,17 @@ class ReportInterface(HseInterface):
         )
         proj_prod['proj_ctm'] = (proj_ctm, proj_app_ctm, proj_rate)
 
-        ctm_series = self.calc_ctm_series(daily, SOURCETYPE_NAME, prod_series['tcf_series'])  #pylint: disable=line-too-long
-        ops_time_series = time_series['total_time_series'] - time_series['standby_series']
+        ctm_series = self.calc_ctm_series(
+            daily, SOURCETYPE_NAME, self.prod_series['tcf_series'])
+        ops_time_series = (
+            self.time_series['total_time_series'] - self.time_series['standby_series'])
         ctm_series = ctm_series * ops_time_series / 24
         total_sp_series = np.array(
-            [sum(terrain) for terrain in prod_series['terrain_series']])
+            [sum(terrain) for terrain in self.prod_series['terrain_series']])
         app_ctm_series = np.array(
             [calc_ratio(total_sp, ctm)
              for total_sp, ctm in zip(total_sp_series, ctm_series)])
-        prod_series['ctm_series'] = np.array(list(zip(ctm_series, app_ctm_series)))
+        self.prod_series['ctm_series'] = np.array(list(zip(ctm_series, app_ctm_series)))
 
         # get the HSE stats
         day_hse = self.day_hse_totals(daily)
@@ -684,9 +697,6 @@ class ReportInterface(HseInterface):
         prod_total = {**day_prod, **month_prod, **proj_prod}
         times_total = {**day_times, **month_times, **proj_times}
         hse_total = {**day_hse, **month_hse, **proj_hse}
-
-        # make the graphs
-        self.create_graphs(prod_series, time_series)
 
         return prod_total, times_total, hse_total
 

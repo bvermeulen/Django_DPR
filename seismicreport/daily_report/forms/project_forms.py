@@ -1,5 +1,5 @@
 from django import forms
-from daily_report.models.project_models import Project, Block, SourceType
+from daily_report.models.project_models import Project, Block, SourceType, ReceiverType
 from seismicreport.vars import NAME_LENGTH, TYPE_LENGTH
 
 
@@ -64,6 +64,25 @@ class SourceTypeControlForm(forms.Form):
             max_length=NAME_LENGTH, required=False)
 
 
+class ReceiverTypeControlForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop('project', 0)
+        super(ReceiverTypeControlForm, self).__init__(*args, **kwargs)
+
+        rt_choices = [
+            (rt.receivertype_name, rt.receivertype_name)
+            for rt in ReceiverType.objects.filter(project=project).order_by(
+                'receivertype_name')]
+
+        self.fields['receivertypes'] = forms.ChoiceField(
+            widget=forms.Select(),
+            choices=rt_choices,
+            required=False,)
+
+        self.fields['new_receivertype_name'] = forms.CharField(
+            max_length=NAME_LENGTH, required=False)
+
+
 class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
@@ -119,8 +138,10 @@ class SourceTypeForm(forms.ModelForm):
             max_length=NAME_LENGTH, label='source type name', required=False)
         self.fields['sourcetype'] = forms.CharField(
             max_length=TYPE_LENGTH, label='source type', required=False)
-        self.fields['sourcepoint_spacing'] = forms.FloatField(required=False)
-        self.fields['sourceline_spacing'] = forms.FloatField(required=False)
+        self.fields['sourcepoint_spacing'] = forms.FloatField(
+            label='point spacing', required=False)
+        self.fields['sourceline_spacing'] = forms.FloatField(
+            label='line spacing', required=False)
         self.fields['mpr_vibes'] = forms.IntegerField(
             label='mpr vibes', required=False)
         self.fields['mpr_sweep_length'] = forms.IntegerField(
@@ -135,4 +156,31 @@ class SourceTypeForm(forms.ModelForm):
         fields = (
             'sourcetype_name', 'sourcetype', 'sourcepoint_spacing', 'sourceline_spacing',
             'mpr_vibes', 'mpr_sweep_length', 'mpr_moveup', 'mpr_rec_hours',
+        )
+
+
+class ReceiverTypeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ReceiverTypeForm, self).__init__(*args, **kwargs)
+
+        self.fields['receivertype_name'] = forms.CharField(
+            max_length=NAME_LENGTH, label='source type name', required=False)
+        self.fields['receovertype'] = forms.CharField(
+            max_length=TYPE_LENGTH, label='source type', required=False)
+        self.fields['receiverpoint_spacing'] = forms.FloatField(
+            label='point spacing', required=False)
+        self.fields['receiverline_spacing'] = forms.FloatField(
+            label='line spacing', required=False)
+        self.fields['receiver_per_station'] = forms.FloatField(
+            label='sensors per station', required=False)
+        self.fields['field_qc_rqrmt'] = forms.FloatField(
+            label='field qc', required=False)
+        self.fields['camp_qc_rqrmt'] = forms.FloatField(
+            label='camp qc', required=False)
+
+    class Meta:
+        model = ReceiverType
+        fields = (
+            'receivertype_name', 'receivertype', 'receiverpoint_spacing',
+            'receiverline_spacing', 'field_qc_rqrmt', 'camp_qc_rqrmt',
         )

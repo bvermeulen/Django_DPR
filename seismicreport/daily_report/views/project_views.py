@@ -5,120 +5,20 @@ from django.utils.decorators import method_decorator
 from django.utils.datastructures import MultiValueDictKeyError
 from django.contrib.auth.decorators import login_required
 from django.views.generic import View
-from django.db.utils import IntegrityError
 from daily_report.forms.project_forms import (
-    ProjectControlForm, BlockControlForm, SourceTypeControlForm,
-    ProjectForm, BlockForm, SourceTypeForm
+    ProjectControlForm, BlockControlForm, SourceTypeControlForm, ReceiverTypeControlForm,
+    ProjectForm, BlockForm, SourceTypeForm, ReceiverTypeForm
 )
-from daily_report.models.project_models import (
-    Project, Block, SourceType, Service, ServiceTask,
-)
+from daily_report.models.project_models import Project
+from daily_report.project_backend import ProjectInterface
 from daily_report.report_backend import ReportInterface
 from seismicreport.utils.utils_funcs import date_to_string
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
-from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH
+from seismicreport.vars import NAME_LENGTH
 
 
 logger = Logger.getlogger()
-
-def get_project_values(selected_project):
-    initial_project_form = {}
-    project = None
-    if selected_project:
-        try:
-            project = Project.objects.get(project_name=selected_project)
-            initial_project_form = {
-                'projects': project.project_name,
-                'project_name': project.project_name,
-                'crew_name': project.crew_name,
-                'planned_area': project.planned_area,
-                'planned_vp': project.planned_vp,
-                'planned_receivers': project.planned_receivers,
-                'planned_start_date': project.planned_start_date,
-                'planned_end_date': project.planned_end_date,
-                'standby_rate': project.standby_rate,
-                'cap_rate': project.cap_rate,
-                'cap_app_ctm': project.cap_app_ctm,
-            }
-
-        except Project.DoesNotExist:
-            selected_project = ''
-
-    return selected_project, project, initial_project_form
-
-
-def get_block_values(project, selected_block):
-    initial_block_form = {}
-    block = None
-    if not project:
-        return '', block, initial_block_form
-
-    if selected_block:
-        try:
-            block = Block.objects.get(project=project, block_name=selected_block)
-
-        except Block.DoesNotExist:
-            pass
-
-    if not block:
-        try:
-            block = Block.objects.filter(project=project).first()
-
-        except Block.DoesNotExist:
-            pass
-
-    if block:
-        selected_block = block.block_name
-        initial_block_form = {
-            'block_name': block.block_name,
-            'block_planned_area': block.block_planned_area,
-            'block_planned_vp': block.block_planned_vp,
-            'block_planned_receivers': block.block_planned_receivers,
-            }
-        return selected_block, block, initial_block_form
-
-    else:
-        return '', block, initial_block_form
-
-
-def get_sourcetype_values(project, selected_sourcetype_name):
-    initial_sourcetype_form = {}
-    sourcetype = None
-    if not project:
-        return '', sourcetype, initial_sourcetype_form
-
-    if selected_sourcetype_name:
-        try:
-            sourcetype = SourceType.objects.get(
-                project=project, sourcetype_name=selected_sourcetype_name)
-
-        except SourceType.DoesNotExist:
-            pass
-
-    if not sourcetype:
-        try:
-            sourcetype = SourceType.objects.filter(project=project).first()
-
-        except SourceType.DoesNotExist:
-            pass
-
-    if sourcetype:
-        selected_sourcetype_name = sourcetype.sourcetype_name
-        initial_sourcetype_form = {
-            'sourcetype_name': sourcetype.sourcetype_name,
-            'sourcetype': sourcetype.sourcetype,
-            'sourcepoint_spacing': sourcetype.sourcepoint_spacing,
-            'sourceline_spacing': sourcetype.sourceline_spacing,
-            'mpr_vibes': sourcetype.mpr_vibes,
-            'mpr_sweep_length': sourcetype.mpr_sweep_length,
-            'mpr_moveup': sourcetype.mpr_moveup,
-            'mpr_rec_hours': sourcetype.mpr_rec_hours,
-        }
-        return selected_sourcetype_name, sourcetype, initial_sourcetype_form
-
-    else:
-        return '', sourcetype, initial_sourcetype_form
 
 
 @method_decorator(login_required, name='dispatch')
@@ -127,32 +27,41 @@ class ProjectView(View):
     form_project_control = ProjectControlForm
     form_block_control = BlockControlForm
     form_sourcetype_control = SourceTypeControlForm
+    form_receivertype_control = ReceiverTypeControlForm
     form_project = ProjectForm
     form_block = BlockForm
     form_sourcetype = SourceTypeForm
+    form_receivertype = ReceiverTypeControlForm
     template_project_page = 'daily_report/project_page.html'
     ri = ReportInterface('')
+    pi = ProjectInterface()
     new_project_name = ''
 
     def get(self, request):
         selected_project = request.session.get('selected_project', '')
         selected_block = request.session.get('selected_block', '')
         selected_sourcetype = request.session.get('selected_sourcetype', '')
+        selected_receivertype = request.session.get('selected_receivertype', '')
+
 
         selected_project, project, initial_project_form = (
-            get_project_values(selected_project))
+            self.pi.get_project_values(selected_project))
         daily_id, report_date = self.ri.get_latest_report_id(selected_project)
         request.session['report_date'] = date_to_string(report_date)
 
         selected_block, _, initial_block_form = (
-            get_block_values(project, selected_block))
+            self.pi.get_block_values(project, selected_block))
 
         selected_sourcetype, _, initial_sourcetype_form = (
-            get_sourcetype_values(project, selected_sourcetype))
+            self.pi.get_sourcetype_values(project, selected_sourcetype))
+
+        selected_receivertype, _, initial_receivertype_form = (
+            self.pi.get_receivertype_values(project, selected_receivertype))
 
         form_project = self.form_project(initial=initial_project_form)
         form_block = self.form_block(initial=initial_block_form)
         form_sourcetype = self.form_sourcetype(initial=initial_sourcetype_form)
+        form_receivertype = self.form_receivertype(initial=initial_receivertype_form)
 
         form_project_control = self.form_project_control(
             initial={
@@ -172,12 +81,20 @@ class ProjectView(View):
                 'sourcetypes': selected_sourcetype,
                 'new_sourcetype_name': '', })
 
+        form_receivertype_control = self.form_receivertype_control(
+            project=project,
+            initial={
+                'receivertypes': selected_receivertype,
+                'new_receivertype_name': '', })
+
         context = {'form_project': form_project,
                    'form_block': form_block,
                    'form_sourcetype': form_sourcetype,
+                   'form_receivertype': form_receivertype,
                    'form_project_control': form_project_control,
                    'form_block_control': form_block_control,
                    'form_sourcetype_control': form_sourcetype_control,
+                   'form_receivertype_control': form_receivertype_control,
                   }
 
         return render(request, self.template_project_page, context)
@@ -195,16 +112,11 @@ class ProjectView(View):
                 'button_pressed', '')
 
             #get project object
-            _, self.project, _ = get_project_values(self.selected_project)
+            _, self.project, _ = self.pi.get_project_values(self.selected_project)
 
-            # Get the pdf_workorder_file from request
+            # Get the pdf_workorder_file from request and store in project
             try:
-                pdf_workorder_file = request.FILES['pdf_workorder_file']
-                f = open(pdf_workorder_file.temporary_file_path(), 'rb')
-                f.seek(0)
-                self.project.pdf_work_order = f.read()
-                f.close()
-                self.project.save()
+                self.pi.store_workorder(self.project, request.FILES['pdf_workorder_file'])
 
             except MultiValueDictKeyError:
                 pass
@@ -234,9 +146,22 @@ class ProjectView(View):
                 self.selected_sourcetype = ''
                 self.new_sourcetype_name = ''
 
+            # get receivertype controls
+            form_receivertype_control = self.form_sourcetype_control(
+                request.POST, project=self.project)
+            if form_receivertype_control.is_valid():
+                self.selected_receivertype = form_receivertype_control.cleaned_data.get(
+                    'receivertypes', '')
+                self.new_receivertype_name = form_receivertype_control.cleaned_data.get(
+                    'new_receivertype_name', '')[:NAME_LENGTH]
+
+            else:
+                self.selected_receivertype = ''
+                self.new_receivertype_name = ''
+
             # get block and source type objects
-            _, self.block, _ = get_block_values(self.project, self.selected_block)
-            _, self.sourcetype, _ = get_sourcetype_values(
+            _, self.block, _ = self.pi.get_block_values(self.project, self.selected_block)
+            _, self.sourcetype, _ = self.pi.get_sourcetype_values(
                 self.project, self.selected_sourcetype)
 
             # action for project submit button
@@ -246,8 +171,7 @@ class ProjectView(View):
                 if form_project.is_valid():
                     form_project.save(commit=True)
                     # in case the name of the project has been changed
-                    self.selected_project = form_project.cleaned_data.get(
-                        'project_name')
+                    self.selected_project = form_project.cleaned_data.get('project_name')
                     # disable button pressed
                     self.button_pressed = ''
 
@@ -273,6 +197,18 @@ class ProjectView(View):
                         'sourcetype_name')[:NAME_LENGTH]
                     self.button_pressed = ''
 
+            # action for receivertype submit button
+            if self.button_pressed == 'submit_receivertype':
+                form_receivertype = ReceiverTypeForm(
+                    request.POST, instance=self.receivertype)
+
+                if form_receivertype.is_valid():
+                    form_receivertype.save(commit=True)
+                    # in case the name of the receivertype has been changed
+                    self.selected_receivertype = form_receivertype.cleaned_data.get(
+                        'receivertype_name')[:NAME_LENGTH]
+                    self.button_pressed = ''
+
             # actions for new or delete buttons are pressed
             if self.button_pressed in ['new_project', 'delete_project']:
                 self.create_or_delete_project()
@@ -283,21 +219,29 @@ class ProjectView(View):
             if self.button_pressed in ['new_sourcetype', 'delete_sourcetype']:
                 self.create_or_delete_sourcetype()
 
+            if self.button_pressed in ['new_receivertype', 'delete_receivertype']:
+                self.create_or_delete_receivertype()
+
             #get latest values after changes
             self.selected_project, _, initial_project_form = (
-                get_project_values(self.selected_project))
+                self.pi.get_project_values(self.selected_project))
             daily_id, report_date = self.ri.get_latest_report_id(self.selected_project)
             request.session['report_date'] = date_to_string(report_date)
 
             self.selected_block, _, initial_block_form = (
-                get_block_values(self.project, self.selected_block))
+                self.pi.get_block_values(self.project, self.selected_block))
 
             self.selected_sourcetype, _, initial_sourcetype_form = (
-                get_sourcetype_values(self.project, self.selected_sourcetype))
+                self.pi.get_sourcetype_values(self.project, self.selected_sourcetype))
+
+            self.selected_receivertype, _, initial_receivertype_form = (
+                self.pi.get_receivertype_values(self.project, self.selected_receivertype))
 
             form_project = self.form_project(initial=initial_project_form)
             form_block = self.form_block(initial=initial_block_form)
             form_sourcetype = self.form_sourcetype(initial=initial_sourcetype_form)
+            form_receivertype = self.form_receivertype(initial=initial_receivertype_form)
+
             form_project_control = self.form_project_control(
                 initial={
                     'projects': self.selected_project,
@@ -314,9 +258,16 @@ class ProjectView(View):
                     'sourcetypes': self.selected_sourcetype,
                     'new_sourcetype_name': '',
                     })
+            form_receivertype_control = self.form_receivertype_control(
+                project=self.project, initial={
+                    'receivertypes': self.selected_receivertype,
+                    'new_receivertype_name': '',
+                    })
+
             request.session['selected_project'] = self.selected_project
             request.session['selected_block'] = self.selected_block
             request.session['selected_sourcetype'] = self.selected_sourcetype
+            request.session['selected_receivertype'] = self.selected_receivertype
 
             logger.info(
                 f'user {request.user.username} (ip: {get_client_ip(request)}) '
@@ -340,280 +291,74 @@ class ProjectView(View):
                 'sourcetypes': '',
                 'new_sourcetype_name': '',
                 })
+            form_receivertype_control = self.form_receivertype_control(initial={
+                'receivertypes': '',
+                'new_receivertype_name': '',
+                })
 
         context = {
             'form_project': form_project,
             'form_block': form_block,
             'form_sourcetype': form_sourcetype,
+            'form_receivertype': form_receivertype,
             'form_project_control': form_project_control,
             'form_block_control': form_block_control,
             'form_sourcetype_control': form_sourcetype_control,
+            'form_receivertype_control': form_receivertype_control,
         }
 
         return render(request, self.template_project_page, context)
 
     def create_or_delete_project(self):
         if self.button_pressed == 'new_project':
-            try:
-                self.project = Project.objects.create(
-                    project_name=self.new_project_name
-                )
-                self.selected_project = self.new_project_name
-
-            except IntegrityError:
-                self.project = None
-
-            self.new_project_name = ''
+            self.project, self.selected_project = self.pi.create_project(
+                self.new_project_name
+            )
 
         elif self.button_pressed == 'delete_project':
-            if not self.project:
-                return
+            self.project, self.selected_project = self.pi.delete_project(self.project)
 
-            self.project.delete()
-            self.project = None
-            self.selected_project = ''
-            self.new_project_name = ''
-
-        else:
-            pass
-
+        self.new_project_name = ''
         self.button_pressed = ''
 
     def create_or_delete_block(self):
         if self.button_pressed == 'new_block':
-            try:
-                self.block = Block.objects.create(
-                    project=self.project,
-                    block_name=self.new_block_name
-                )
-                self.selected_block = self.new_block_name
-
-            except IntegrityError:
-                pass
-
-            self.new_block_name = ''
+            self.block, self.selected_block = self.pi.create_block(
+                self.project, self.new_block_name
+            )
 
         elif self.button_pressed == 'delete_block':
-            if not self.block:
-                return
+            self.block, self.selected_project = self.pi.delete_block(self.block)
 
-            self.block.delete()
-            self.block = None
-            self.selected_block = ''
-            self.new_block_name = ''
-
-        else:
-            pass
-
+        self.new_project_name = ''
         self.button_pressed = ''
 
     def create_or_delete_sourcetype(self):
         if self.button_pressed == 'new_sourcetype':
-            try:
-                self.sourcetype = SourceType.objects.create(
-                    project=self.project,
-                    sourcetype_name=self.new_sourcetype_name
-                )
-                self.selected_sourcetype = self.new_sourcetype_name
-
-            except IntegrityError:
-                pass
-
-            self.new_sourcetype_name = ''
-
-        elif self.button_pressed == 'delete_sourcetype':
-            if not self.sourcetype:
-                return
-
-            self.sourcetype.delete()
-            self.sourcetype = None
-            self.selected_sourcetype = ''
-            self.new_sourcetype_name = ''
-
-        else:
-            pass
-
-        self.button_pressed = ''
-
-
-@method_decorator(login_required, name='dispatch')
-class ServiceView(View):
-
-    template_services_page = 'daily_report/services_page.html'
-    ri = ReportInterface('')
-
-    def get(self, request, project_name):
-        services = Service.objects.filter(
-            project__project_name=project_name).order_by('service_contract')
-        daily_id, report_date = self.ri.get_latest_report_id(project_name)
-        try:
-            year = report_date.year
-            month = report_date.month
-
-        except AttributeError:
-            year = None
-            month = None
-
-        context = {
-            'services': services,
-            'project_name': project_name,
-            'daily_id': daily_id,
-            'year': year,
-            'month': month,
-        }
-        return render(request, self.template_services_page, context)
-
-    def post(self, request, project_name):
-        new_service_name = request.POST.get('new_service_name', '')[:NAME_LENGTH]
-        new_service_description = request.POST.get('new_service_description', '')[:DESCR_LENGTH]  #pylint: disable=line-too-long
-        edit_service = request.POST.get('edit_service', '')[:NAME_LENGTH]
-        new_task_name = request.POST.get('new_task_name', '')[:NAME_LENGTH]
-        new_task_description = request.POST.get('new_task_description', '')[:DESCR_LENGTH]
-        new_task_unit = request.POST.get('new_task_unit', '')[:NAME_LENGTH]
-        edit_task = request.POST.get('edit_task', '')[:NAME_LENGTH]
-        service_name = request.POST.get('service_name', '')[:NAME_LENGTH]
-        delete_service = request.POST.get('delete_service', '')[:NAME_LENGTH]
-        delete_task = request.POST.get('delete_task', '')
-        if delete_task:
-            service_name, delete_task = [v.strip()[:NAME_LENGTH]
-                                         for v in delete_task.split(',')]
-        project = Project.objects.get(project_name=project_name)
-        daily_id, report_date = self.ri.get_latest_report_id(project_name)
-        try:
-            year = report_date.year
-            month = report_date.month
-
-        except AttributeError:
-            year = None
-            month = None
-
-        self.create_edit_delete_service(
-            project, new_service_name, new_service_description,
-            edit_service, delete_service,
-        )
-        self.create_edit_delete_task(
-            project, service_name, new_task_name, new_task_description, new_task_unit,
-            edit_task, delete_task,
-        )
-        services = Service.objects.filter(project=project).order_by('service_contract')
-        context = {
-            'services': services,
-            'project_name': project_name,
-            'daily_id': daily_id,
-            'year': year,
-            'month': month,
-        }
-
-        logger.info(
-            f'user {request.user.username} (ip: {get_client_ip(request)}) '
-            f'made changes in services for {project_name}'
-        )
-
-        return render(request, self.template_services_page, context)
-
-    @staticmethod
-    def create_edit_delete_service(
-            project, service_name, service_description, edit_service, delete_service,
-        ):
-
-        if not (delete_service or edit_service or service_name):
-            return
-
-        # delete service
-        if delete_service:
-            try:
-                service = Service.objects.get(
-                    project=project, service_contract=delete_service)
-                service.delete()
-                return
-
-            except Service.DoesNotExist:
-                return
-
-         # edit an existing service
-        if edit_service and service_name:
-            try:
-                service = Service.objects.get(
-                    project=project, service_contract=edit_service)
-                service.service_contract = service_name
-                service.description = service_description
-                service.save()
-                return
-
-            except (Service.DoesNotExist, IntegrityError):
-                return
-
-        # create a new service
-        if not edit_service and service_name:
-            try:
-                Service.objects.create(
-                    project=project,
-                    service_contract=service_name,
-                    description=service_description,
-                )
-
-            except IntegrityError:
-                pass
-
-        return
-
-    @staticmethod
-    def create_edit_delete_task(
-            project, service_name, task_name, task_description, task_unit,
-            edit_task, delete_task,
-        ):
-
-        if not (delete_task or edit_task or task_name):
-            return
-
-        try:
-            service = Service.objects.get(
-                project=project,
-                service_contract=service_name,
+            self.sourcetype, self.selected_sourcetype = self.pi.create_sourcetype(
+                self.project, self.new_sourcetype_name
             )
 
-        except Service.DoesNotExist:
-            return
+        elif self.button_pressed == 'delete_sourcetype':
+            self.sourcetype, self.selected_sourcetype = self.pi.delete_sourcetype(
+                self.sourcetype)
 
-        # delete task
-        if delete_task:
-            try:
-                task = ServiceTask.objects.get(
-                    service=service, task_name=delete_task)
-                task.delete()
-                return
+        self.new_sourcetype_name = ''
+        self.button_pressed = ''
 
-            except ServiceTask.DoesNotExist:
-                return
+    def create_or_delete_receivertype(self):
+        if self.button_pressed == 'new_receivertype':
+            self.receivertype, self.selected_receivertype = self.pi.create_receivertype(
+                self.project, self.new_receivertype_name
+            )
 
-        # edit an existing task
-        if edit_task and task_name:
-            try:
-                task = ServiceTask.objects.get(
-                    service=service, task_name=edit_task)
-                task.task_name = task_name
-                task.task_description = task_description
-                task.task_unit = task_unit
-                task.save()
-                return
+        elif self.button_pressed == 'delete_receivertype':
+            self.receivertype, self.selected_receivertype = self.pi.delete_receivertype(
+                self.receivertype)
 
-            except (ServiceTask.DoesNotExist, IntegrityError):
-                return
+        self.new_receivertype_name = ''
+        self.button_pressed = ''
 
-        # create a new task
-        if not edit_task:
-            try:
-                ServiceTask.objects.create(
-                    service=service,
-                    task_name=task_name,
-                    task_description=task_description,
-                    task_unit=task_unit,
-                )
-
-            except IntegrityError:
-                pass
-
-        return
 
 
 def download_pdf_workorder(request, project_name):

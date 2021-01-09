@@ -1,5 +1,4 @@
 from datetime import timedelta
-import calendar
 from django.conf import settings
 from django.http import FileResponse
 from django.shortcuts import render, redirect
@@ -8,15 +7,14 @@ from django.utils.datastructures import MultiValueDictKeyError
 from django.contrib.auth.decorators import login_required
 from django.views.generic import View
 from daily_report.models.daily_models import Daily
-from daily_report.models.project_models import TaskQuantity
 from daily_report.forms.project_forms import ProjectControlForm
-from daily_report.forms.daily_forms import DailyForm, MonthDaysForm
+from daily_report.forms.daily_forms import DailyForm
 from daily_report.report_backend import ReportInterface
 from daily_report.excel_backend import ExcelReport
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW, AVG_PERIOD, NO_DATE_STR
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
-from seismicreport.utils.utils_funcs import toggle_month, string_to_date, date_to_string
+from seismicreport.utils.utils_funcs import string_to_date, date_to_string
 
 logger = Logger.getlogger()
 
@@ -52,6 +50,7 @@ class DailyView(View):
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
             totals_production, totals_time, totals_hse = self.ri.calc_totals(day)
+            self.ri.create_graphs()
             context = {
                 'form_daily': self.form_daily(initial=day_initial),
                 'totals_production': totals_production,
@@ -160,132 +159,6 @@ class DailyView(View):
         return redirect('daily_page', day_id)
 
 
-@method_decorator(login_required, name='dispatch')
-class MonthlyServiceView(View):
-
-    form_days = MonthDaysForm
-    template_monthly_services = 'daily_report/monthly_services.html'
-    arrow_symbols = {'right': RIGHT_ARROW, 'left': LEFT_ARROW}
-
-    def get(self, request, daily_id, year, month):
-        try:
-            day = Daily.objects.get(id=daily_id)
-            project = day.project
-            request.session['report_date'] = date_to_string(day.production_date)
-
-        except Daily.DoesNotExist:
-            return redirect('daily_page', daily_id)
-
-        dayrange = range(1, calendar.monthrange(year, month)[1] + 1)
-        _my = string_to_date('-'.join([str(year), str(month), '1']))
-        services = {
-            'project': project.project_name,
-            'year': _my.strftime('%Y'),
-            'month':_my.strftime('%B')
-        }
-        for service in project.services.all().order_by('service_contract'):
-            services[service.id] = {}
-            services[service.id]['name'] = service.description
-            services[service.id]['tasks'] = {}
-            for task in service.tasks.all().order_by('task_name'):
-                services[service.id]['tasks'][task.id] = {}
-                services[service.id]['tasks'][task.id]['name'] = task.task_name
-
-                day_qties = task.get_monthly_task_quantities(year, month)
-                initial = {f'{year}-{month:02}-{day:02}': 0 for day in dayrange}
-                total = 0
-                for dq in day_qties:
-                    total += dq.quantity
-                    initial[f'{year}-{month:02}-{dq.date.day:02}'] = dq.quantity
-
-                services[service.id]['tasks'][task.id]['form_task'] = (
-                    self.form_days(year, month, initial=initial, prefix=task.id)
-                )
-                services[service.id]['tasks'][task.id]['total'] = total
-
-        context = {
-            'daily_id': daily_id,
-            'services': services,
-            'arrow_symbols': self.arrow_symbols,
-        }
-        return render(request, self.template_monthly_services, context)
-
-    def post(self, request, daily_id, year, month):
-        try:
-            day = Daily.objects.get(id=daily_id)
-            project = day.project
-            request.session['report_date'] = date_to_string(day.production_date)
-
-        except Daily.DoesNotExist:
-            return redirect('daily_page', daily_id)
-
-        left = self.arrow_symbols['left']
-        right = self.arrow_symbols['right']
-
-        logger.info(
-            f'user {request.user.username} (ip: {get_client_ip(request)}) is '
-            f'updating services {project.project_name} for {year}-{month}'
-        )
-
-        if request.method == 'POST':
-            button_pressed = request.POST.get('button_pressed')
-
-            if button_pressed in [left, right]:
-                if button_pressed == left:
-                    year, month = toggle_month(year, month, -1)
-
-                if button_pressed == right:
-                    year, month = toggle_month(year, month, +1)
-
-                redirect('monthly_service_page', daily_id, year, month)
-
-            for task in [task for srv in project.services.all()
-                         for task in srv.tasks.all()]:
-                form_tsk_qts = self.form_days(year, month, request.POST, prefix=task.id)
-
-                if form_tsk_qts.is_valid():
-                    tsk_qts = form_tsk_qts.cleaned_data
-                    self.update_task_quantity(task, tsk_qts)
-
-                else:
-                    continue
-
-        return redirect('monthly_service_page', daily_id, year, month)
-
-    @staticmethod
-    def update_task_quantity(task, task_qts: dict) -> None:
-        for task_date, qty in task_qts.items():
-            # check quantity (float) and date ('YYYY-MM-DD')
-            if qty is None or not isinstance(qty, float) or task_date is None:
-                continue
-
-            if not string_to_date(task_date):
-                continue
-
-            # create/ update TaskQuantity object
-            try:
-                tq = TaskQuantity.objects.get(
-                    task=task,
-                    date=task_date,
-                )
-
-                if abs(float(qty)) < 0.01:
-                    tq.delete()
-
-                else:
-                    tq.quantity = float(qty)
-                    tq.save()
-
-            except TaskQuantity.DoesNotExist:
-                if abs(float(qty)) < 0.01:
-                    continue
-
-                else:
-                    tq = TaskQuantity.objects.create(
-                        task=task,
-                        date=task_date,
-                        quantity=float(qty)
-                    )
 
 
 def csr_excel_report(request, daily_id):
@@ -300,6 +173,7 @@ def csr_excel_report(request, daily_id):
         return redirect('daily_page', 0)
 
     totals_production, totals_time, totals_hse = ri.calc_totals(day)
+    # no need to call create_graphs as this has been done in DailyView
     project = day.project
 
     report_data = {}
