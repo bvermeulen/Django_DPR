@@ -31,7 +31,7 @@ class ProjectView(View):
     form_project = ProjectForm
     form_block = BlockForm
     form_sourcetype = SourceTypeForm
-    form_receivertype = ReceiverTypeControlForm
+    form_receivertype = ReceiverTypeForm
     template_project_page = 'daily_report/project_page.html'
     ri = ReportInterface('')
     pi = ProjectInterface()
@@ -80,7 +80,6 @@ class ProjectView(View):
             initial={
                 'sourcetypes': selected_sourcetype,
                 'new_sourcetype_name': '', })
-
         form_receivertype_control = self.form_receivertype_control(
             project=project,
             initial={
@@ -102,7 +101,6 @@ class ProjectView(View):
     def post(self, request):
         form_project_control = self.form_project_control(request.POST)
         if form_project_control.is_valid():
-
             # get project controls
             self.selected_project = form_project_control.cleaned_data.get(
                 'projects', '')
@@ -147,7 +145,7 @@ class ProjectView(View):
                 self.new_sourcetype_name = ''
 
             # get receivertype controls
-            form_receivertype_control = self.form_sourcetype_control(
+            form_receivertype_control = self.form_receivertype_control(
                 request.POST, project=self.project)
             if form_receivertype_control.is_valid():
                 self.selected_receivertype = form_receivertype_control.cleaned_data.get(
@@ -159,10 +157,12 @@ class ProjectView(View):
                 self.selected_receivertype = ''
                 self.new_receivertype_name = ''
 
-            # get block and source type objects
+            # get block and source, receiver type objects
             _, self.block, _ = self.pi.get_block_values(self.project, self.selected_block)
             _, self.sourcetype, _ = self.pi.get_sourcetype_values(
                 self.project, self.selected_sourcetype)
+            _, self.receivertype, _ = self.pi.get_receivertype_values(
+                self.project, self.selected_receivertype)
 
             # action for project submit button
             if self.button_pressed == 'submit_project':

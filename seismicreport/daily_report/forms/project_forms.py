@@ -1,6 +1,6 @@
 from django import forms
 from daily_report.models.project_models import Project, Block, SourceType, ReceiverType
-from seismicreport.vars import NAME_LENGTH, TYPE_LENGTH
+from seismicreport.vars import NAME_LENGTH, TYPE_LENGTH, WIDGET_WIDTH_PROJECT_FIELDS
 
 
 class ProjectControlForm(forms.Form):
@@ -102,6 +102,9 @@ class ProjectForm(forms.ModelForm):
         self.fields['cap_app_ctm'] = forms.FloatField(
             label='Cap app/ctm', required=False)
 
+        for key in self.fields:
+            self.fields[key].widget.attrs['style'] = WIDGET_WIDTH_PROJECT_FIELDS
+
     class Meta:
         model = Project
         fields = (
@@ -121,6 +124,9 @@ class BlockForm(forms.ModelForm):
         self.fields['block_planned_area'] = forms.FloatField(required=False)
         self.fields['block_planned_vp'] = forms.IntegerField(required=False)
         self.fields['block_planned_receivers'] = forms.IntegerField(required=False)
+
+        for key in self.fields:
+            self.fields[key].widget.attrs['style'] = WIDGET_WIDTH_PROJECT_FIELDS
 
     class Meta:
         model = Block
@@ -151,6 +157,9 @@ class SourceTypeForm(forms.ModelForm):
         self.fields['mpr_rec_hours'] = forms.FloatField(
             label='mpr recording hours', required=False)
 
+        for key in self.fields:
+            self.fields[key].widget.attrs['style'] = WIDGET_WIDTH_PROJECT_FIELDS
+
     class Meta:
         model = SourceType
         fields = (
@@ -164,23 +173,27 @@ class ReceiverTypeForm(forms.ModelForm):
         super(ReceiverTypeForm, self).__init__(*args, **kwargs)
 
         self.fields['receivertype_name'] = forms.CharField(
-            max_length=NAME_LENGTH, label='source type name', required=False)
-        self.fields['receovertype'] = forms.CharField(
-            max_length=TYPE_LENGTH, label='source type', required=False)
+            max_length=NAME_LENGTH, label='recv. type name', required=False)
+        self.fields['receivertype'] = forms.CharField(
+            max_length=TYPE_LENGTH, label='recv. type', required=False)
         self.fields['receiverpoint_spacing'] = forms.FloatField(
             label='point spacing', required=False)
         self.fields['receiverline_spacing'] = forms.FloatField(
             label='line spacing', required=False)
-        self.fields['receiver_per_station'] = forms.FloatField(
+        self.fields['receivers_per_station'] = forms.FloatField(
             label='sensors per station', required=False)
         self.fields['field_qc_rqrmt'] = forms.FloatField(
             label='field qc', required=False)
         self.fields['camp_qc_rqrmt'] = forms.FloatField(
             label='camp qc', required=False)
 
+        for key in self.fields:
+            self.fields[key].widget.attrs['style'] = WIDGET_WIDTH_PROJECT_FIELDS
+
     class Meta:
         model = ReceiverType
         fields = (
             'receivertype_name', 'receivertype', 'receiverpoint_spacing',
-            'receiverline_spacing', 'field_qc_rqrmt', 'camp_qc_rqrmt',
+            'receiverline_spacing', 'receivers_per_station',
+            'field_qc_rqrmt', 'camp_qc_rqrmt',
         )
