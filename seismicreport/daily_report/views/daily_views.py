@@ -10,6 +10,7 @@ from daily_report.models.daily_models import Daily
 from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm
 from daily_report.report_backend import ReportInterface
+from daily_report.receiver_backend import ReceiverInterface
 from daily_report.excel_backend import ExcelReport
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW, AVG_PERIOD, NO_DATE_STR
 from seismicreport.utils.plogger import Logger
@@ -25,7 +26,8 @@ class DailyView(View):
     form_daily = DailyForm
     form_project_control = ProjectControlForm
     template_daily_page = 'daily_report/daily_page.html'
-    ri = ReportInterface(settings.MEDIA_ROOT)
+    rprt_iface = ReportInterface(settings.MEDIA_ROOT)
+    rcvr_iface = ReceiverInterface()
     arrow_symbols = {'right': RIGHT_ARROW, 'left': LEFT_ARROW}
 
     def get(self, request, daily_id):
@@ -35,25 +37,28 @@ class DailyView(View):
         try:
             # get daily report from id
             day = Daily.objects.get(id=daily_id)
-            day, day_initial = self.ri.load_report_db(day.project, day.production_date)
+            day, day_initial = self.rprt_iface.load_report_db(
+                day.project, day.production_date)
 
         except Daily.DoesNotExist:
             # get daily report from session project_name and report_date
             project_name = request.session.get('selected_project', '')
-            project = self.ri.get_project(project_name)
+            project = self.rprt_iface.get_project(project_name)
             report_date = string_to_date(request.session.get('report_date', ''))
-            day, day_initial = self.ri.load_report_db(project, report_date)
+            day, day_initial = self.rprt_iface.load_report_db(project, report_date)
 
         if day:
             form_project_control = self.form_project_control(initial={
                 'projects': day.project.project_name,
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
-            totals_production, totals_time, totals_hse = self.ri.calc_totals(day)
-            self.ri.create_graphs()
+            totals_production, totals_time, totals_hse = self.rprt_iface.calc_totals(day)
+            totals_receiver = self.rcvr_iface.calc_receiver_totals(day)
+            self.rprt_iface.create_graphs()
             context = {
                 'form_daily': self.form_daily(initial=day_initial),
                 'totals_production': totals_production,
+                'totals_receiver': totals_receiver,
                 'totals_time': totals_time,
                 'totals_hse': totals_hse,
                 'arrow_symbols': self.arrow_symbols,
@@ -90,7 +95,7 @@ class DailyView(View):
                 else:
                     project_name = request.session.get('selected_project', '')
 
-            project = self.ri.get_project(project_name)
+            project = self.rprt_iface.get_project(project_name)
 
             button_pressed = request.POST.get('button_pressed', '')
             new_report_date = request.POST.get('report_date', '')
@@ -121,7 +126,7 @@ class DailyView(View):
                 # file in media. Close the report_file to delete it.
                 # Keep the file name is session for later use.
                 report_file = request.FILES['daily_report_file']
-                report_date = self.ri.save_report_file(project, report_file)
+                report_date = self.rprt_iface.save_report_file(project, report_file)
                 logger.info(
                     f'user {user.username} (ip: {ip_address}) '
                     f'uploaded {report_file} for {report_date} for {project.project_name}'
@@ -130,7 +135,7 @@ class DailyView(View):
             except MultiValueDictKeyError:
                 pass
 
-            day, _ = self.ri.load_report_db(project, report_date)
+            day, _ = self.rprt_iface.load_report_db(project, report_date)
             if day and button_pressed == 'delete':
                 logger.info(
                     f'user {user.username} (ip: {ip_address}) '
@@ -159,20 +164,18 @@ class DailyView(View):
         return redirect('daily_page', day_id)
 
 
-
-
 def csr_excel_report(request, daily_id):
-    ri = ReportInterface(settings.MEDIA_ROOT)
+    rprt_iface = ReportInterface(settings.MEDIA_ROOT)
     try:
         # get daily report from id
         day = Daily.objects.get(id=daily_id)
         project = day.project
-        day, _ = ri.load_report_db(project, day.production_date)
+        day, _ = rprt_iface.load_report_db(project, day.production_date)
 
     except Daily.DoesNotExist:
         return redirect('daily_page', 0)
 
-    totals_production, totals_time, totals_hse = ri.calc_totals(day)
+    totals_production, totals_time, totals_hse = rprt_iface.calc_totals(day)
     # no need to call create_graphs as this has been done in DailyView
     project = day.project
 
@@ -232,19 +235,19 @@ def csr_excel_report(request, daily_id):
         'Area (km\u00B2)': project.planned_area * proj_complete,
         'Skip VPs': proj_skips,
         '% Complete': proj_complete,
-        'Est. Complete': ri.calc_est_completion_date(
+        'Est. Complete': rprt_iface.calc_est_completion_date(
             day, AVG_PERIOD, project.planned_vp, proj_complete),
     }
 
     # block_stats
     block = day.block
-    totals_block = ri.calc_block_totals(day)
+    totals_block = rprt_iface.calc_block_totals(day)
     if block and totals_block:
         block_name = block.block_name
         block_total = totals_block['block_total'] + totals_block['block_skips']
         block_complete = block_total / block.block_planned_vp
         block_area = block.block_planned_area * block_complete
-        block_completion_date = ri.calc_est_completion_date(
+        block_completion_date = rprt_iface.calc_est_completion_date(
             day, AVG_PERIOD, block.block_planned_vp, block_complete)
 
     else:

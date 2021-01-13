@@ -9,14 +9,14 @@ import matplotlib.dates as mdates
 from django.db.utils import IntegrityError
 from django.db.models import Q
 from daily_report.models.daily_models import (
-    Daily, SourceProduction, TimeBreakdown, HseWeather, ToolBox,
+    Daily, SourceProduction, ReceiverProduction, TimeBreakdown, HseWeather, ToolBox,
 )
 from daily_report.models.project_models import Project, Block
 from daily_report.hseweather_backend import HseInterface
 from seismicreport.vars import (
-    TCF_table, BGP_DR_table, SOURCETYPE_NAME, source_prod_schema, time_breakdown_schema,
-    ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH,
-    NO_DATE_STR,
+    TCF_table, BGP_DR_table, SOURCETYPE_NAME, RECEIVERTYPE_NAME, source_prod_schema,
+    time_breakdown_schema, ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH,
+    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR,
 )
 from seismicreport.utils.plogger import timed, Logger
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
@@ -214,6 +214,28 @@ class ReportInterface(HseInterface):
         prod.sp_t5_sabkha = int(np.nan_to_num(self.get_value(day_df, 'sp_t5')))
         prod.skips = int(np.nan_to_num(self.get_value(day_df, 'skips')))
         prod.save()
+
+        # create/ update receiver production value
+        try:
+            rcvr = ReceiverProduction.objects.create(
+                daily=day,
+                receivertype=day.project.receivertypes.get(
+                    receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH])
+            )
+
+        except IntegrityError:
+            rcvr = ReceiverProduction.objects.get(
+                daily=day,
+                receivertype=day.project.receivertypes.get(
+                    receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH])
+            )
+
+        rcvr.layout = int(np.nan_to_num(self.get_value(day_df, 'layout')))
+        rcvr.pickup = int(np.nan_to_num(self.get_value(day_df, 'pickup')))
+        rcvr.qc_field = int(np.nan_to_num(self.get_value(day_df, 'qc_field')))
+        rcvr.qc_camp = int(np.nan_to_num(self.get_value(day_df, 'qc_camp')))
+        rcvr.upload = int(np.nan_to_num(self.get_value(day_df, 'upload')))
+        rcvr.save()
 
         # create/ update time breakdown values
         try:

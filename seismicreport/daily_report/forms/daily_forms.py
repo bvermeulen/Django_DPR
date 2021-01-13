@@ -1,4 +1,3 @@
-import calendar
 from django import forms
 from daily_report.models.daily_models import Daily, Person
 from seismicreport.vars import NAME_LENGTH, COMMENT_LENGTH
@@ -38,6 +37,7 @@ class DailyForm(forms.ModelForm):
             choices=person_choices,
             widget=forms.CheckboxSelectMultiple(),
             initial=staff_initial,
+            required=False,
         )
 
     class Meta:

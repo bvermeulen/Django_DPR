@@ -1,5 +1,5 @@
 from django.db import models
-from daily_report.models.project_models import Project, Block, SourceType
+from daily_report.models.project_models import Project, Block, SourceType, ReceiverType
 from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH
 
 
@@ -43,6 +43,22 @@ class SourceProduction(models.Model):
 
     class Meta:
         unique_together = ['daily', 'sourcetype']
+
+
+class ReceiverProduction(models.Model):
+    daily = models.ForeignKey(Daily, on_delete=models.CASCADE)
+    receivertype = models.ForeignKey(ReceiverType, on_delete=models.CASCADE)
+    layout = models.IntegerField(default=0)
+    pickup = models.IntegerField(default=0)
+    qc_field = models.FloatField(default=0.0)
+    qc_camp = models.FloatField(default=0.0)
+    upload = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.daily.production_date} - {self.receivertype.receivertype_name}'
+
+    class Meta:
+        unique_together = ['daily', 'receivertype']
 
 
 class TimeBreakdown(models.Model):

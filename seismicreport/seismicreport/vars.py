@@ -9,6 +9,7 @@ TCF_table = {
 }
 
 SOURCETYPE_NAME = 'vibe_25m'
+RECEIVERTYPE_NAME = 'receiver_25m'
 
 BGP_DR_table = {
     'date': (0, 1),
@@ -40,8 +41,8 @@ BGP_DR_table = {
     'holiday': (41, 1),
     'recovering': (42, 1),
     'other dt': (43, 1),
-    'Front crew': (46, 5),
-    'Back crew': (47, 5),
+    'layout': (46, 5),
+    'pickup': (47, 5),
     'comment 1': (0, 4),
     'comment 2': (1, 4),
     'comment 3': (2, 4),
@@ -81,6 +82,10 @@ BGP_DR_table = {
 source_prod_schema = [
     'sp_t1_flat', 'sp_t2_rough', 'sp_t3_facilities', 'sp_t4_dunes',
     'sp_t5_sabkha', 'skips',
+]
+
+receiver_prod_schema = [
+    'layout', 'pickup', 'qc_field', 'qc_camp', 'upload',
 ]
 
 time_breakdown_schema = [

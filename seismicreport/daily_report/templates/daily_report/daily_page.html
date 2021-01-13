@@ -185,10 +185,88 @@
             </tr>
           </tbody>
         </table>
-        <div>
-          <label>Weather</label>
-          <textarea type="text" class="form-control" rows="4" readonly>{{ totals_hse.weather_text }}</textarea>
-        </div>
+
+        <strong>Targets</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TCF</td>
+              <td class="text-right">{{ totals_production.tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_tcf|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>CTM</td>
+              <td class="text-right">{{ totals_production.ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.0|floatformat:0|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>APP/CTM</td>
+              <td class="text-right">{{ totals_production.ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.1|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>Rate</td>
+              <td class="text-right">{{ totals_production.ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm.2|floatformat:4 }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <strong>Receivers</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Layout</td>
+              <td class="text-right">{{ totals_receiver.layout|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_layout|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_layout|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Pickup</td>
+              <td class="text-right">{{ totals_receiver.pickup|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_pickup|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_pickup|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>QC field</td>
+              <td class="text-right">{{ totals_receiver.qc_field|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_qc_field|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_qc_field|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>QC camp</td>
+              <td class="text-right">{{ totals_receiver.qc_camp|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_qc_camp|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_qc_camp|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>Upload</td>
+              <td class="text-right">{{ totals_receiver.upload|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_upload|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_upload|floatformat:4 }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div style="max-width: 80vw" class="col-lg-4 mb-3">
@@ -368,6 +446,10 @@
               <td class="text-right">{{ totals_time.proj_total_time|floatformat:3 }}</td>
             </tr>
         </table>
+        <div>
+          <label>Weather</label>
+          <textarea type="text" class="form-control" rows="4" readonly>{{ totals_hse.weather_text }}</textarea>
+        </div>
       </div>
 
       <div style="max-width: 80vw" class="col-lg-4 mb-3">
