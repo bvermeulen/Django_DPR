@@ -3,7 +3,7 @@ from django.db.models import Q
 from daily_report.models.project_models import ReceiverType
 from daily_report.models.daily_models import ReceiverProduction
 from seismicreport.vars import RECEIVERTYPE_NAME, receiver_prod_schema
-from seismicreport.utils.plogger import Logger
+from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import nan_array
 
 logger = Logger.getlogger()
@@ -61,6 +61,7 @@ class ReceiverInterface:
 
         return p_rcvr
 
+    @timed(logger, print_log=True)
     def calc_receiver_totals(self, daily):
         ''' method to calc the receiver totals. Outstanding:
             loop over receivertypes and handling of qc_field, qc_camp, upload

@@ -1,9 +1,11 @@
 '''  module for project backend tasks
 '''
 from django.db.utils import IntegrityError
+from django.db.models import ProtectedError
 from daily_report.models.project_models import (
     Project, Block, SourceType, ReceiverType,
 )
+from daily_report.models.daily_models import SourceProduction, ReceiverProduction
 from seismicreport.utils.plogger import Logger
 
 
@@ -167,6 +169,15 @@ class ProjectInterface:
     @staticmethod
     def delete_project(project):
         if project:
+            for sourcetype in SourceProduction.objects.filter(daily__project=project):
+                sourcetype.delete()
+
+            for receivertype in ReceiverProduction.objects.filter(daily__project=project):
+                receivertype.delete()
+
+            for day in project.dailies.all():
+                day.delete()
+
             project.delete()
 
         return None, ''
@@ -189,7 +200,11 @@ class ProjectInterface:
     @staticmethod
     def delete_block(block):
         if block:
-            block.delete()
+            try:
+                block.delete()
+
+            except ProtectedError:
+                logger.info(f'"{block}" is used by daily reports')
 
         return None, ''
 
@@ -211,7 +226,11 @@ class ProjectInterface:
     @staticmethod
     def delete_sourcetype(sourcetype):
         if sourcetype:
-            sourcetype.delete()
+            try:
+                sourcetype.delete()
+
+            except ProtectedError:
+                logger.info(f'sourcetype "{sourcetype}" is used by daily reports')
 
         return None, ''
 
@@ -233,7 +252,11 @@ class ProjectInterface:
     @staticmethod
     def delete_receivertype(receivertype):
         if receivertype:
-            receivertype.delete()
+            try:
+                receivertype.delete()
+
+            except ProtectedError:
+                logger.info(f'receivertype "{receivertype}" is used by daily reports')
 
         return None, ''
 

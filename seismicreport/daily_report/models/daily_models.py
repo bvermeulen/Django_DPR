@@ -14,8 +14,9 @@ class Person(models.Model):
 class Daily(models.Model):
     production_date = models.DateField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='dailies')
+    # disable deleting a block if already exists in a daily report
     block = models.ForeignKey(
-        Block, on_delete=models.CASCADE, related_name='dailies', blank=True, null=True)
+        Block, on_delete=models.PROTECT, related_name='dailies', blank=True, null=True)
     staff = models.ManyToManyField(Person, related_name='dailies')
     csr_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
     pm_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
@@ -30,7 +31,8 @@ class Daily(models.Model):
 
 class SourceProduction(models.Model):
     daily = models.ForeignKey(Daily, on_delete=models.CASCADE)
-    sourcetype = models.ForeignKey(SourceType, on_delete=models.CASCADE)
+    # disable delete SourceType if already used in a daily report
+    sourcetype = models.ForeignKey(SourceType, on_delete=models.PROTECT)
     sp_t1_flat = models.IntegerField(default=0)
     sp_t2_rough = models.IntegerField(default=0)
     sp_t3_facilities = models.IntegerField(default=0)
@@ -47,7 +49,8 @@ class SourceProduction(models.Model):
 
 class ReceiverProduction(models.Model):
     daily = models.ForeignKey(Daily, on_delete=models.CASCADE)
-    receivertype = models.ForeignKey(ReceiverType, on_delete=models.CASCADE)
+    # disable delete ReceiverType if already used in a daily report
+    receivertype = models.ForeignKey(ReceiverType, on_delete=models.PROTECT)
     layout = models.IntegerField(default=0)
     pickup = models.IntegerField(default=0)
     qc_field = models.FloatField(default=0.0)

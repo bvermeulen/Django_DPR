@@ -22,7 +22,6 @@ from seismicreport.utils.plogger import timed, Logger
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
 
 
-#pylint: disable=no-value-for-parameter
 matplotlib.use('Agg')
 
 TICK_SPACING_PROD = 5  # x 1000
@@ -166,6 +165,14 @@ class ReportInterface(HseInterface):
         '''
         day_df = pd.read_excel(daily_report_file, header=None)
         if project.project_name != self.get_value(day_df, 'project'):
+            return None
+
+        if not project.sourcetypes.filter(
+                sourcetype_name=SOURCETYPE_NAME[:NAME_LENGTH]):
+            return None
+
+        if not project.receivertypes.filter(
+                receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH]):
             return None
 
         # create/ update day values

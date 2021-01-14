@@ -328,9 +328,9 @@ class ProjectView(View):
             )
 
         elif self.button_pressed == 'delete_block':
-            self.block, self.selected_project = self.pi.delete_block(self.block)
+            self.block, self.selected_bklock = self.pi.delete_block(self.block)
 
-        self.new_project_name = ''
+        self.new_block_name = ''
         self.button_pressed = ''
 
     def create_or_delete_sourcetype(self):
