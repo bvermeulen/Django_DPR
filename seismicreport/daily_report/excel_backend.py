@@ -7,7 +7,6 @@ from openpyxl import Workbook, drawing
 from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
 from openpyxl.formatting.rule import CellIsRule
 from daily_report.report_backend import ReportInterface
-from daily_report.receiver_backend import ReceiverInterface
 from seismicreport.vars import AVG_PERIOD, NO_DATE_STR
 
 
@@ -253,10 +252,9 @@ class ExcelReport:
 
 def collate_excel_dailyreport_data(day):
     rprt_iface = ReportInterface('')
-    rcvr_iface = ReceiverInterface()
     totals_production, totals_time, totals_hse = rprt_iface.calc_totals(day)
-    totals_receiver = rcvr_iface.calc_receiver_totals(day)
-    # no need to call create_graphs as this has been done in DailyView
+    totals_receiver = rprt_iface.calc_receiver_totals(day)
+    # no need to call create_daily_graphs as this has been done in DailyView
 
     project = day.project
 

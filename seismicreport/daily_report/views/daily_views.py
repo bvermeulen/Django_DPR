@@ -10,7 +10,6 @@ from daily_report.models.daily_models import Daily
 from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm
 from daily_report.report_backend import ReportInterface
-from daily_report.receiver_backend import ReceiverInterface
 from daily_report.excel_backend import ExcelReport, collate_excel_dailyreport_data
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
 from seismicreport.utils.plogger import Logger
@@ -27,7 +26,6 @@ class DailyView(View):
     form_project_control = ProjectControlForm
     template_daily_page = 'daily_report/daily_page.html'
     rprt_iface = ReportInterface(settings.MEDIA_ROOT)
-    rcvr_iface = ReceiverInterface()
     arrow_symbols = {'right': RIGHT_ARROW, 'left': LEFT_ARROW}
 
     def get(self, request, daily_id):
@@ -53,8 +51,8 @@ class DailyView(View):
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
             totals_production, totals_time, totals_hse = self.rprt_iface.calc_totals(day)
-            totals_receiver = self.rcvr_iface.calc_receiver_totals(day)
-            self.rprt_iface.create_graphs()
+            totals_receiver = self.rprt_iface.calc_receiver_totals(day)
+            self.rprt_iface.create_daily_graphs()
             context = {
                 'form_daily': self.form_daily(initial=day_initial),
                 'totals_production': totals_production,
@@ -153,8 +151,7 @@ class DailyView(View):
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
                         f'in report {day.production_date} for '
-                        f'{day.project.project_name}:\n'
-                        f'{csr_comment}'
+                        f'{day.project.project_name}:\n{csr_comment}'
                     )
 
             request.session['selected_project'] = project_name

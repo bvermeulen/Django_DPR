@@ -1,39 +1,30 @@
+from pathlib import Path
 from datetime import datetime, timedelta
-import os
 import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-import matplotlib.dates as mdates
 from django.db.utils import IntegrityError
 from django.db.models import Q
 from daily_report.models.daily_models import (
     Daily, SourceProduction, ReceiverProduction, TimeBreakdown, HseWeather, ToolBox,
 )
 from daily_report.models.project_models import Project, Block
-from daily_report.hseweather_backend import HseInterface
+import daily_report.receiver_backend as _receiver_backend
+import daily_report.hseweather_backend as  _hse_backend
+import daily_report.graph_backend as _graph_backend
 from seismicreport.vars import (
     TCF_table, BGP_DR_table, SOURCETYPE_NAME, RECEIVERTYPE_NAME, source_prod_schema,
     time_breakdown_schema, ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH,
-    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR,
+    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR, WEEKDAYS,
 )
-from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
-
-
-matplotlib.use('Agg')
-
-TICK_SPACING_PROD = 5  # x 1000
-TICK_SPACING_CUMUL = 1000  # x 1000
-TICK_DATE_FORMAT = mdates.DateFormatter('%d-%b-%y')
 
 logger = Logger.getlogger()
 
-class ReportInterface(HseInterface):
+class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backend.Mixin):
 
     def __init__(self, media_dir):
-        self.media_dir = media_dir
+        self.media_dir = Path(media_dir)
         self.prod_series = None
         self.time_series = None
 
@@ -319,7 +310,6 @@ class ReportInterface(HseInterface):
         return day.production_date
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_day_prod_totals(daily, sourcetype_name):
         try:
             prod = SourceProduction.objects.get(
@@ -328,7 +318,10 @@ class ReportInterface(HseInterface):
             )
 
         except SourceProduction.DoesNotExist:
-            return {}
+            dp = {f'{key[:5]}': np.nan for key in source_prod_schema}
+            dp['total_sp'] = np.nan
+            dp['tcf'] = np.nan
+            return dp
 
         dp = {f'{key[:5]}': np.nan_to_num(getattr(prod, key))
               for key in source_prod_schema}
@@ -348,7 +341,43 @@ class ReportInterface(HseInterface):
         return dp
 
     @staticmethod
-    @timed(logger, print_log=True)
+    def calc_week_prod_totals(daily, sourcetype_name):
+        end_date = daily.production_date
+        start_date = end_date - timedelta(days=WEEKDAYS)
+
+        sp_query = SourceProduction.objects.filter(
+            Q(daily__production_date__gte=start_date),
+            Q(daily__production_date__lte=end_date),
+            sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
+        )
+
+        if not sp_query:
+            wp = {f'week_{key[:5]}': np.nan for key in source_prod_schema}
+            wp['week_sp'] = np.nan
+            wp['week_tcf'] = np.nan
+            return wp
+
+
+        wp = {f'week_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
+              for key in source_prod_schema}
+
+        # exclude last key for skips
+        wp['week_total'] = np.sum(
+            wp[f'week_{key[:5]}'] for key in source_prod_schema[:-1]
+        )
+
+        if wp['week_total'] > 0:
+            wp['week_tcf'] = sum(
+                wp[f'week_{key[:5]}'] / wp['week_total'] * TCF_table[key[6:]]
+                for key in source_prod_schema[:-1]
+            )
+
+        else:
+            wp['week_tcf'] = np.nan
+
+        return wp
+
+    @staticmethod
     def calc_month_prod_totals(daily, sourcetype_name):
         # filter for days in the month up to and including the production date
         sp_query = SourceProduction.objects.filter(
@@ -356,11 +385,14 @@ class ReportInterface(HseInterface):
             Q(daily__production_date__month=daily.production_date.month) &
             Q(daily__production_date__day__lte=daily.production_date.day),
             sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
-            daily__project=daily.project,
         )
 
         if not sp_query:
-            return {}
+            mp = {f'month_{key[:5]}': np.nan for key in source_prod_schema}
+            mp['month_sp'] = np.nan
+            mp['month_tcf'] = np.nan
+            return mp
+
 
         mp = {f'month_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
               for key in source_prod_schema}
@@ -381,17 +413,18 @@ class ReportInterface(HseInterface):
 
         return mp
 
-    @timed(logger, print_log=True)
     def calc_proj_prod_totals(self, daily, sourcetype_name):
         # filter for all days in the project up to and including the production date
         sp_query = SourceProduction.objects.filter(
             daily__production_date__lte=daily.production_date,
             sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
-            daily__project=daily.project,
         ).order_by('daily__production_date')
 
         if not sp_query:
-            return {}
+            pp = {f'proj_{key[:5]}': np.nan for key in source_prod_schema}
+            pp['proj_sp'] = np.nan
+            pp['proj_tcf'] = np.nan
+            return pp, {}
 
         p_series = {f'{key[:5]}_series': nan_array(
             [val[key] for val in sp_query.values()]) for key in source_prod_schema}
@@ -436,13 +469,18 @@ class ReportInterface(HseInterface):
         return pp, p_series
 
     @staticmethod
-    @timed(logger, print_log=True)
     def calc_day_time_totals(daily):
         try:
             tb = TimeBreakdown.objects.get(daily=daily)
 
         except TimeBreakdown.DoesNotExist:
-            return {}
+            dt = {f'{key}': np.nan for key in time_breakdown_schema}
+            dt['rec_time'] = np.nan
+            dt['ops_time'] = np.nan
+            dt['standby'] = np.nan
+            dt['downtime'] = np.nan
+            dt['total_time'] = np.nan
+            return dt
 
         dt = {f'{key}': np.nan_to_num(getattr(tb, key)) for key in time_breakdown_schema}
 
@@ -457,7 +495,40 @@ class ReportInterface(HseInterface):
         return dt
 
     @staticmethod
-    @timed(logger, print_log=True)
+    def calc_week_time_totals(daily):
+        end_date = daily.production_date
+        start_date = end_date - timedelta(days=WEEKDAYS)
+
+        tb_query = TimeBreakdown.objects.filter(
+            Q(daily__production_date__gte=start_date),
+            Q(daily__production_date__lte=end_date),
+            daily__project=daily.project,
+        )
+
+        if not tb_query:
+            wt = {f'week_{key}': np.nan for key in time_breakdown_schema}
+            wt['week_rec_time'] = np.nan
+            wt['week_ops_time'] = np.nan
+            wt['week_standby'] = np.nan
+            wt['week_downtime'] = np.nan
+            wt['week_total_time'] = np.nan
+            return wt
+
+        wt = {f'week_{key}': np.nansum([val[key] for val in tb_query.values()])
+              for key in time_breakdown_schema}
+
+        wt['week_rec_time'] = wt['week_rec_hours']
+        wt['week_ops_time'] = np.nansum([wt[f'week_{key}'] for key in ops_time_keys])
+        wt['week_standby'] = np.nansum([wt[f'week_{key}'] for key in standby_keys])
+        wt['week_downtime'] = np.nansum([wt[f'week_{key}'] for key in downtime_keys])
+        wt['week_total_time'] = np.nansum([
+            wt['week_rec_time'], wt['week_ops_time'], wt['week_standby'],
+            wt['week_downtime']
+        ])
+
+        return wt
+
+    @staticmethod
     def calc_month_time_totals(daily):
         tb_query = TimeBreakdown.objects.filter(
             Q(daily__production_date__year=daily.production_date.year) &
@@ -467,7 +538,14 @@ class ReportInterface(HseInterface):
         )
 
         if not tb_query:
-            return {}
+            mt = {f'month_{key}': np.nan for key in time_breakdown_schema}
+            mt['month_rec_time'] = np.nan
+            mt['month_ops_time'] = np.nan
+            mt['month_standby'] = np.nan
+            mt['month_downtime'] = np.nan
+            mt['month_total_time'] = np.nan
+            return mt
+
 
         mt = {f'month_{key}': np.nansum([val[key] for val in tb_query.values()])
               for key in time_breakdown_schema}
@@ -483,7 +561,6 @@ class ReportInterface(HseInterface):
 
         return mt
 
-    @timed(logger, print_log=True)
     def calc_proj_time_totals(self, daily):
         tb_query = TimeBreakdown.objects.filter(
             daily__production_date__lte=daily.production_date,
@@ -491,7 +568,14 @@ class ReportInterface(HseInterface):
         ).order_by('daily__production_date')
 
         if not tb_query:
-            return {}
+            pt = {f'proj_{key}': np.nan for key in time_breakdown_schema}
+            pt['proj_rec_time'] = np.nan
+            pt['proj_ops_time'] = np.nan
+            pt['proj_standby'] = np.nan
+            pt['proj_downtime'] = np.nan
+            pt['proj_total_time'] = np.nan
+            return pt, {}
+
 
         ts = {f'{key}_series': nan_array([val[key] for val in tb_query.values()])
               for key in time_breakdown_schema}
@@ -519,156 +603,13 @@ class ReportInterface(HseInterface):
         return pt, ts
 
     @timed(logger, print_log=True)
-    def create_graphs(self):
-        ''' Method to make plots. This method works correctly once self.prod_series and
-            self.time_series have been calculated in method calc_totals. Reason to split
-            it out of that function is that this method is time consuming and better to
-            avoice to run it when it is not necessary.
-        '''
-        if self.prod_series and self.time_series:
-            date_series = self.prod_series['date_series']
-            terrain_series = self.prod_series['terrain_series']
-            assert len(date_series) == len(terrain_series), \
-                'length date en terrain series must be equal'
-
-        else:
-            return
-
-        # stacked bar plot of daily production
-        t1_series = np.array([val[0] for val in terrain_series]) * 0.001
-        t2_series = np.array([val[1] for val in terrain_series]) * 0.001
-        t3_series = np.array([val[2] for val in terrain_series]) * 0.001
-        t4_series = np.array([val[3] for val in terrain_series]) * 0.001
-        t5_series = np.array([val[4] for val in terrain_series]) * 0.001
-        base = np.zeros(len(date_series))
-
-        width = 1
-        plot_filename = os.path.join(self.media_dir, 'images', 'daily_prod.png')
-
-        if any(t1_series):
-            plt.bar(date_series, t1_series, width, label="Flat")
-            base += t1_series
-
-        if any(t2_series):
-            plt.bar(date_series, t2_series, width, bottom=base, label="Rough")
-            base += t2_series
-
-        if any(t3_series):
-            plt.bar(date_series, t3_series, width, bottom=base, label="Facilities")
-            base += t3_series
-
-        if any(t4_series):
-            plt.bar(date_series, t4_series, width, bottom=base, label="Dunes")
-            base += t4_series
-
-        if any(t5_series):
-            plt.bar(date_series, t5_series, width, bottom=base, label="Sabkha")
-
-        total_sp_series = (base + t5_series) * 1000
-
-        plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
-        plt.xticks(rotation=70)
-        plt.legend()
-        plt.gca().yaxis.set_major_formatter(mtick.StrMethodFormatter('{x:,.0f}k'))
-        plt.gca().yaxis.set_major_locator(mtick.MultipleLocator(TICK_SPACING_PROD))
-        plt.gca().yaxis.grid()
-        plt.tight_layout()
-        plt.savefig(plot_filename, format='png')
-        plt.close()
-
-        # line plot of cumulative production
-        t1_cum = np.cumsum(t1_series)
-        t2_cum = np.cumsum(t2_series)
-        t3_cum = np.cumsum(t3_series)
-        t4_cum = np.cumsum(t4_series)
-        t5_cum = np.cumsum(t5_series)
-        base = np.zeros(len(date_series))
-
-        plot_filename = os.path.join(self.media_dir, 'images', 'cumul_prod.png')
-
-        if any(t1_cum):
-            base += t1_cum
-            plt.plot(date_series, base, label="Flat")
-
-        if any(t2_cum):
-            base += t2_cum
-            plt.plot(date_series, base, label="Rough")
-
-        if any(t3_cum):
-            base += t3_cum
-            plt.plot(date_series, base, label="Facilities")
-
-        if any(t4_cum):
-            base += t4_cum
-            plt.plot(date_series, base, label="Dunes")
-
-        if any(t5_cum):
-            base += t5_cum
-            plt.plot(date_series, base, label="Sabkha")
-
-        plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
-        plt.xticks(rotation=70)
-        plt.legend()
-        plt.gca().yaxis.set_major_formatter(mtick.StrMethodFormatter('{x:,.0f}k'))
-        plt.gca().yaxis.set_major_locator(mtick.MultipleLocator(TICK_SPACING_CUMUL))
-        plt.gca().yaxis.grid()
-        plt.tight_layout()
-        plt.savefig(plot_filename, format='png')
-        plt.close()
-
-        # line plot recording hours
-        rec_hours_series = self.time_series['rec_hours_series']
-        plot_filename = os.path.join(self.media_dir, 'images', 'rec_hours.png')
-
-        plt.plot(date_series, rec_hours_series, label="Recording hours")
-        target_rec_hours_series = np.ones(len(rec_hours_series)) * 22
-        plt.plot(date_series, target_rec_hours_series, label="Target")
-        plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
-        plt.xticks(rotation=70)
-        plt.gca().yaxis.grid()
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(plot_filename, format='png')
-        plt.close()
-
-        # line plot target production and app
-        ctm_series = [val[0] for val in self.prod_series['ctm_series']]
-        plot_filename = os.path.join(self.media_dir, 'images', 'ctm.png')
-
-        plt.plot(date_series, total_sp_series, label="APP")
-        plt.plot(date_series, ctm_series, label="CTM")
-        plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
-        plt.xticks(rotation=70)
-        plt.gca().yaxis.grid()
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(plot_filename, format='png')
-        plt.close()
-
-        # line plot production / target production ratio
-        plot_filename = os.path.join(self.media_dir, 'images', 'app_ctm.png')
-
-        app_ctm_series = np.array([val[1] for val in self.prod_series['ctm_series']])
-        target_series = np.ones(len(app_ctm_series))
-        plt.plot(date_series, target_series, label="Target")
-        plt.plot(date_series, app_ctm_series, label="Prod/Target")
-        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
-        plt.yticks([0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5])
-        plt.gca().yaxis.grid()
-        plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
-        plt.xticks(rotation=70)
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(plot_filename, format='png')
-        plt.close()
-
-    @timed(logger, print_log=True)
     def calc_totals(self, daily):
         if not daily:
             return {}, {}, {}
 
         # get time breakdown stats
         day_times = self.calc_day_time_totals(daily)
+        week_times = self.calc_week_time_totals(daily)
         month_times = self.calc_month_time_totals(daily)
         proj_times, self.time_series = self.calc_proj_time_totals(daily)
 
@@ -676,6 +617,9 @@ class ReportInterface(HseInterface):
         # get the production stats
         day_prod = self.calc_day_prod_totals(daily, SOURCETYPE_NAME)
         day_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, day_prod['tcf'])
+
+        week_prod = self.calc_week_prod_totals(daily, SOURCETYPE_NAME)
+        week_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, week_prod['week_tcf'])
 
         month_prod = self.calc_month_prod_totals(daily, SOURCETYPE_NAME)
         month_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, month_prod['month_tcf'])
@@ -689,6 +633,14 @@ class ReportInterface(HseInterface):
             daily, day_app_ctm, day_times['total_time'], day_times['standby']
         )
         day_prod['ctm'] = (day_ctm, day_app_ctm, day_rate)
+
+        week_ctm *= (week_times['week_total_time'] - week_times['week_standby']) / 24
+        week_app_ctm = calc_ratio(week_prod['week_total'], week_ctm)
+        week_rate = self.calc_rate_current(
+            daily, week_app_ctm,
+            week_times['week_total_time'], week_times['week_standby']
+        )
+        week_prod['week_ctm'] = (week_ctm, week_app_ctm, week_rate)
 
         month_ctm *= (month_times['month_total_time'] - month_times['month_standby']) / 24
         month_app_ctm = calc_ratio(month_prod['month_total'], month_ctm)
@@ -720,12 +672,13 @@ class ReportInterface(HseInterface):
 
         # get the HSE stats
         day_hse = self.day_hse_totals(daily)
+        week_hse = self.week_hse_totals(daily)
         month_hse = self.month_hse_totals(daily)
         proj_hse = self.proj_hse_totals(daily)
 
-        prod_total = {**day_prod, **month_prod, **proj_prod}
-        times_total = {**day_times, **month_times, **proj_times}
-        hse_total = {**day_hse, **month_hse, **proj_hse}
+        prod_total = {**day_prod, **week_prod, **month_prod, **proj_prod}
+        times_total = {**day_times, **week_times, **month_times, **proj_times}
+        hse_total = {**day_hse, **week_hse, **month_hse, **proj_hse}
 
         return prod_total, times_total, hse_total
 

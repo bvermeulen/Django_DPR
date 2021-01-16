@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load humanize %}
+
+{% block title %}Weekly{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Weekly
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'daily_page' daily_id %}">Daily</a>
+      <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<form id="id_form" method="post" novalidate>
+  {% csrf_token %}
+  <a class="btn btn-primary btn-sm my-1" href="{% url 'daily_page' daily_id %}">Daily</a>
+  <div class="dropdown">
+    <button type="button" class="dropdown-toggle btn btn-primary btn-sm">Author</button>
+    <div class="dropdown-content" style="height:250px; overflow-y:scroll">
+      {% for name in form_week.author %}
+      <a class="btn btn-link my-0">{{ name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <a class="btn btn-primary btn-sm my-1" href="#">Print</a>
+  <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
+    onclick="return confirmDeleteWeekly('{{ form_daily.production_date.value }}')">Delete
+  </button>
+
+  <strong class="ml-4">
+    Project: {{ form_week.project_name.value }}
+    Weekly report: {{ form_week.week_start_date.value }} / {{ form_week.week_report_date.value }}
+  </strong>
+
+  <div class="d-md-flex h-md-100 mb-3">
+    <div class="form-group col-md-6">
+      <label>CSR weekly comment</label>
+      <textarea type="text" class="form-control" rows="6" name="csr_week_comment">{{ form_week.csr_week_comment.value }}</textarea>
+      <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit"
+        name="button_pressed">Submit</button>
+    </div>
+    <div class="form-group col-md-6">
+    </div>
+  </div>
+
+</form>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+function confirmDeleteReport(reportdate) {
+  confirmed = confirm('Do you really want to delete the weekly report for ' + reportdate + '?');
+  if (confirmed) {
+    return true;
+  }
+  else {
+  return false;
+  }
+}
+</script>
+{% endblock %}

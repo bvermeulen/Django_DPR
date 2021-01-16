@@ -112,6 +112,8 @@ hse_weather_schema = [
     'temp_min', 'temp_max',
 ]
 
+WEEKDAYS = 7
+WEEKS = 6
 AVG_PERIOD = 14
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'

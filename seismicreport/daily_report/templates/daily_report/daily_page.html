@@ -62,13 +62,16 @@
     {% endwith %}
 
     <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
     <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
       onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
     </button>
   {% endif %}
 
-  <strong class="ml-4">Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
-    Daily report: {{ form_project_control.report_date.value }}</a></strong>
+  <strong class="ml-4">
+    Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
+    Daily report: {{ form_project_control.report_date.value }}
+  </strong>
   <div class="d-md-flex h-md-100 mb-3">
     <div class="form-group col-md-6">
       <label>CSR comment</label>
