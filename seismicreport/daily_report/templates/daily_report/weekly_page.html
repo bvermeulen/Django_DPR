@@ -38,12 +38,11 @@
   </div>
   <a class="btn btn-primary btn-sm my-1" href="#">Print</a>
   <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
-    onclick="return confirmDeleteWeekly('{{ form_daily.production_date.value }}')">Delete
+    onclick="return confirmDeleteWeekly('{{ form_week.week_report_date.value }}')">Delete
   </button>
 
   <strong class="ml-4">
-    Project: {{ form_week.project_name.value }}
-    Weekly report: {{ form_week.week_start_date.value }} / {{ form_week.week_report_date.value }}
+    Weekly report: {{ form_week.week_start_date.value|date:'d b Y' }} - {{ form_week.week_report_date.value|date:'d b Y' }}
   </strong>
 
   <div class="d-md-flex h-md-100 mb-3">
@@ -53,16 +52,71 @@
       <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit"
         name="button_pressed">Submit</button>
     </div>
-    <div class="form-group col-md-6">
+    <div class="form-group col-md-3">
+      <strong>Project</strong>
+      <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+        <tbody">
+          <tr>
+            <td>Project</td>
+            <td class="text-right">{{ form_week.proj_name.value }}</td>
+          </tr>
+          <tr>
+            <td>Project VPs</td>
+            <td class="text-right">{{ form_week.proj_vps.value|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Area (km{{ SS_2 }})</td>
+            <td class="text-right">{{ form_week.proj_area.value|floatformat:1 }}</td>
+          </tr>
+          <tr>
+            <td>Project start</td>
+            <td class="text-right">{{ form_week.proj_start.value|date:'d b Y' }}</td>
+          </tr>
+          <tr>
+            <td>Crew</td>
+            <td class="text-right">{{ form_week.proj_crew.value }}</td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="form-group col-md-3">
+      <strong>Project Statistics</strong>
+      <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+        <tbody">
+          <tr>
+            <td>Recorded VPs</td>
+            <td class="text-right">{{ totals_production.proj_total|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Area (km{{ SS_2 }})</td>
+            <td class="text-right">{{ totals_production.proj_area|floatformat:1 }}</td>
+          </tr>
+          <tr>
+            <td>Skip VPs</td>
+            <td class="text-right">{{ totals_production.proj_skips|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>% Complete</td>
+            <td class="text-right">{{ totals_production.proj_complete|floatformat:2 }}%</td>
+          </tr>
+          <tr>
+            <td>Est. Complete</td>
+            <td class="text-right">{{ totals_production.est_complete }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
+
+
+
 
 </form>
 {% endblock content %}
 
 {% block javascript %}
 <script>
-function confirmDeleteReport(reportdate) {
+function confirmDeleteWeekly(reportdate) {
   confirmed = confirm('Do you really want to delete the weekly report for ' + reportdate + '?');
   if (confirmed) {
     return true;

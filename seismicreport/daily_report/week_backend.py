@@ -33,7 +33,11 @@ class WeeklyInterface:
             initial_week_form = {
                 'week_start_date': start_week,
                 'week_report_date': week.week_report_date,
-                'project_name': week.project.project_name,
+                'proj_name': week.project.project_name,
+                'proj_vps': day.project.planned_vp,
+                'proj_area': day.project.planned_area,
+                'proj_start': day.project.planned_start_date,
+                'proj_crew': day.project.crew_name,
                 'author': [week.author.id],
                 'csr_week_comment': week.csr_week_comment,
             }
@@ -42,7 +46,11 @@ class WeeklyInterface:
             initial_week_form = {
                 'week_start_date': start_week,
                 'week_report_date': end_week,
-                'project_name': day.project.project_name,
+                'proj_name': day.project.project_name,
+                'proj_vps': day.project.planned_vp,
+                'proj_area': day.project.planned_area,
+                'proj_start': day.project.planned_start_date,
+                'proj_crew': day.project.crew_name,
                 'author': [],
                 'csr_week_comment': '',
             }

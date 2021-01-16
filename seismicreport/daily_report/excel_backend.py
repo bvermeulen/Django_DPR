@@ -7,7 +7,7 @@ from openpyxl import Workbook, drawing
 from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
 from openpyxl.formatting.rule import CellIsRule
 from daily_report.report_backend import ReportInterface
-from seismicreport.vars import AVG_PERIOD, NO_DATE_STR
+from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2
 
 
 class ExcelReport:
@@ -272,7 +272,7 @@ def collate_excel_dailyreport_data(day):
     report_data['project_table'] = {
         'Project': project.project_name,
         'Project VPs': project.planned_vp,
-        'Area (km\u00B2)': project.planned_area,
+        f'Area (km{SS_2})': project.planned_area,
         'Proj. Start': proj_start_str,
         'Crew': project.crew_name,
     }
@@ -318,7 +318,7 @@ def collate_excel_dailyreport_data(day):
 
     report_data['proj_stats_table'] = {
         'Recorded VPs': proj_total,
-        'Area (km\u00B2)': project.planned_area * proj_complete,
+        f'Area (km{SS_2})': project.planned_area * proj_complete,
         'Skip VPs': proj_skips,
         '% Complete': proj_complete,
         'Est. Complete': rprt_iface.calc_est_completion_date(
@@ -345,7 +345,7 @@ def collate_excel_dailyreport_data(day):
 
     report_data['block_stats_table'] = {
         'Block': block_name,
-        'Area (km\u00B2)': block_area,
+        f'Area (km{SS_2})': block_area,
         '% Complete': block_complete,
         'Est. Complete': block_completion_date,
     }

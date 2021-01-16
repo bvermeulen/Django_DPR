@@ -7,11 +7,13 @@ from daily_report.models.daily_models import Daily
 from daily_report.forms.weekly_forms import WeeklyForm
 from daily_report.report_backend import ReportInterface
 from daily_report.week_backend import WeeklyInterface
+from seismicreport.vars import AVG_PERIOD, SS_2
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
 from seismicreport.utils.utils_funcs import string_to_date, date_to_string
 
 logger = Logger.getlogger()
+#TODO first button to be a dropdown list of last 10 weekly reports
 
 
 @method_decorator(login_required, name='dispatch')
@@ -31,14 +33,35 @@ class WeeklyView(View):
             return redirect('daily_page', daily_id)
 
         week_initial = self.w_iface.get_week_values(day)
-        totals_production, totals_time, totals_hse = self.r_iface.calc_totals(day)
-        totals_receiver = self.r_iface.calc_receiver_totals(day)
+        totals_prod, totals_time, totals_hse = self.r_iface.calc_totals(day)
+        totals_rcvr = self.r_iface.calc_receiver_totals(day)
         days, weeks = self.w_iface.collate_weekdata(day)
 
+        if day.project.planned_vp > 0:
+            proj_complete = (
+                (totals_prod['proj_total'] + totals_prod['proj_skips']) /
+                day.project.planned_vp
+            )
+
+        else:
+            proj_complete = 0
+
+        est_complete = self.r_iface.calc_est_completion_date(
+            day, AVG_PERIOD, day.project.planned_vp, proj_complete)
+
+        totals_prod['proj_area'] = day.project.planned_area * proj_complete
+        totals_prod['proj_complete'] = proj_complete * 100
+        totals_prod['est_complete'] = est_complete
+
         context = {
+            'daily_id': daily_id,
+            'SS_2': SS_2,
+            'totals_production': totals_prod,
+            'totals_time': totals_time,
+            'totals_hse': totals_hse,
+            'totals_receiver': totals_rcvr,
             'days': days,
             'weeks': weeks,
-            'daily_id': daily_id,
             'form_week': self.form_week(initial=week_initial),
         }
 

@@ -713,7 +713,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return bp
 
     def calc_est_completion_date(
-        self, daily, period: int, planned: int, complete: float) -> str:
+        self, daily, period: int, planned: int, complete: float):
         ''' Method to calculate the estimated completion date based on:
             current date, avg production over period before current date,
             planned points and percemtage complete to date.

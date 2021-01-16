@@ -12,7 +12,11 @@ class WeeklyForm(forms.ModelForm):
 
         self.fields['week_start_date'] =  forms.DateField(required=False)
         self.fields['week_report_date'] = forms.DateField(required=False)
-        self.fields['project_name'] = forms.CharField(max_length=NAME_LENGTH, required=False)
+        self.fields['proj_name'] = forms.CharField(max_length=NAME_LENGTH, required=False)
+        self.fields['proj_vps'] = forms.IntegerField(required=False)
+        self.fields['proj_area'] = forms.FloatField(required=False)
+        self.fields['proj_start'] = forms.DateField(required=False)
+        self.fields['proj_crew'] = forms.CharField(max_length=NAME_LENGTH, required=False)
         self.fields['csr_week_comment'] = forms.CharField(max_length=COMMENT_LENGTH, required=False, widget=forms.Textarea)
 
         author_choices = [
