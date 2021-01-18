@@ -96,7 +96,7 @@ time_breakdown_schema = [
 ]
 
 ops_time_keys = [
-    'rec_moveup', 'logistics', 'wait_source', 'wait_layout', 'wait_shift_change',
+    'rec_hours', 'rec_moveup', 'logistics', 'wait_source', 'wait_layout', 'wait_shift_change',
 ]
 
 standby_keys = ['company_suspension', 'company_tests', 'beyond_control', 'camp_move']
@@ -118,7 +118,7 @@ AVG_PERIOD = 14
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'
-SS_2 = '\u00B2'
+SS_2 = '\u00B2'  # superscript 2 for like km2
 NAME_LENGTH = 20
 DESCR_LENGTH = 100
 TYPE_LENGTH = 10

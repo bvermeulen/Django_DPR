@@ -32,7 +32,7 @@ class Mixin:
     @staticmethod
     def week_receiver_total(daily, receivertype_name):
         end_date = daily.production_date
-        start_date = end_date - timedelta(days=WEEKDAYS)
+        start_date = end_date - timedelta(days=WEEKDAYS-1)
         rcvr_query = ReceiverProduction.objects.filter(
             Q(daily__production_date__gte=start_date),
             Q(daily__production_date__lte=end_date),
@@ -44,12 +44,12 @@ class Mixin:
         if not rcvr_query:
             return {}
 
-        m_rcvr = {
-            f'month_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
+        w_rcvr = {
+            f'week_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
             for key in receiver_prod_schema
         }
 
-        return m_rcvr
+        return w_rcvr
 
     @staticmethod
     def month_receiver_total(daily, receivertype_name):

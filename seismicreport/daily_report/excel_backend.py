@@ -58,7 +58,7 @@ class ExcelReport:
         self.ws.column_dimensions['L'].width = 11.00
 
         # set logo
-        img_logo = drawing.image.Image(self.static_root / 'img/display_icon.png')
+        img_logo = drawing.image.Image(self.static_root / 'img/client_icon.png')
         img_logo.width = 75
         img_logo.height = 75
         self.ws.add_image(img_logo, 'C4')

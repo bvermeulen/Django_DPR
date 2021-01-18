@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load humanize %}
+{% load mytags %}
 
 {% block title %}Weekly{% endblock %}
 
@@ -85,30 +86,357 @@
         <tbody">
           <tr>
             <td>Recorded VPs</td>
-            <td class="text-right">{{ totals_production.proj_total|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_total|intcomma }}</td>
           </tr>
           <tr>
             <td>Area (km{{ SS_2 }})</td>
-            <td class="text-right">{{ totals_production.proj_area|floatformat:1 }}</td>
+            <td class="text-right">{{ totals_prod.proj_area|floatformat:1 }}</td>
           </tr>
           <tr>
             <td>Skip VPs</td>
-            <td class="text-right">{{ totals_production.proj_skips|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_skips|intcomma }}</td>
           </tr>
           <tr>
             <td>% Complete</td>
-            <td class="text-right">{{ totals_production.proj_complete|floatformat:2 }}%</td>
+            <td class="text-right">{{ totals_prod.proj_complete|f_format:".2%" }}</td>
           </tr>
           <tr>
             <td>Est. Complete</td>
-            <td class="text-right">{{ totals_production.est_complete }}</td>
+            <td class="text-right">{{ totals_prod.est_complete }}</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <div class="row align-items-top mb-2">
+    <div style="max-width: 80vw" class="col-lg-6 mb-1">
+      <strong>HSE Statistics</strong>
+      <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+        <thead class="custom-thead-grey">
+          <tr>
+            <th></th>
+            <th>Week</th>
+            <th>Month</th>
+            <th>Project</th>
+          </tr>
+        </thead>
+        <tbody">
+          <tr>
+            <td>LTI</td>
+            <td class="text-right">{{ totals_hse.week_lti|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_lti|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_lti|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>RWC</td>
+            <td class="text-right">{{ totals_hse.week_rwc|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_rwc|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_rwc|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>FAC</td>
+            <td class="text-right">{{ totals_hse.week_fac|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_fac|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_fac|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>NM/ Incident</td>
+            <td class="text-right">{{ totals_hse.week_incident_nm|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_incident_nm|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_incident_nm|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>LSR</td>
+            <td class="text-right">{{ totals_hse.week_lsr_violations|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_lsr_violations|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_lsr_violations|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>STOP Cards</td>
+            <td class="text-right">{{ totals_hse.week_stop|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_stop|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_stop|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Drills</td>
+            <td class="text-right">{{ totals_hse.week_drills|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_drills|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_drills|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Audits</td>
+            <td class="text-right">{{ totals_hse.week_audits|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_audits|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_audits|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Medivac</td>
+            <td class="text-right">{{ totals_hse.week_medevac|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.month_medevac|intcomma }}</td>
+            <td class="text-right">{{ totals_hse.proj_medevac|intcomma }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
+    <div style="max-width: 80vw" class="col-lg-6 mb-1">
+      <strong>Production Statistics</strong>
+      <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+        <thead class="custom-thead-grey">
+          <tr>
+            <th></th>
+            <th>Week</th>
+            <th>Month</th>
+            <th>Project</th>
+          </tr>
+        </thead>
+        <tbody">
+          <tr>
+            <td>Total VPs</td>
+            <td class="text-right">{{ totals_prod.week_total|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.month_total|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_total|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Target VPs</td>
+            <td class="text-right">{{ totals_prod.week_ctm.0|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.month_ctm.0|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_ctm.0|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>% Target</td>
+            <td class="text-right">{{ totals_prod.week_ctm.1|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.month_ctm.1|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.proj_ctm.1|f_format:"0.2%"}}</td>
+          </tr>
+          <tr>
+            <td>Rec. Hrs</td>
+            <td class="text-right">{{ totals_time.week_rec_time|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.month_rec_time|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.proj_rec_time|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Standby Hrs</td>
+            <td class="text-right">{{ totals_time.week_standby|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.month_standby|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.proj_standby|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Avg VPs/day</td>
+            <td class="text-right">{{ totals_prod.week_avg|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.month_avg|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_avg|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>Down Hrs</td>
+            <td class="text-right">{{ totals_time.week_downtime|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.month_downtime|floatformat:2 }}</td>
+            <td class="text-right">{{ totals_time.proj_downtime|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Skip VPs</td>
+            <td class="text-right">{{ totals_prod.week_skips|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.month_skips|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_skips|intcomma }}</td>
+          </tr>
+          <tr>
+            <td>% Skips</td>
+            <td class="text-right">{{ totals_prod.week_perc_skips|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.month_perc_skips|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.proj_perc_skips|f_format:"0.2%" }}</td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row align-items-top mb-2">
+    <strong>Daily production statistics</strong>
+    <table class="table table-striped mb-2 table-sm" cellspacing="0">
+      <thead class="custom-thead-grey">
+        <tr>
+          <th>Date</th>
+          <th>VPs</th>
+          <th>Rec.</th>
+          <th>VP/hr</th>
+          <th>Skip</th>
+          <th>Layout</th>
+          <th>Pickup</th>
+          <th>QC fld</th>
+          <th>QC cmp</th>
+          <th>Upload</th>
+       </tr>
+      </thead>
+      <tbody>
+        {% for key, d in days.items reversed %}
+          <tr class="text-right">
+            <td class="text-left">{{ d.date|date:"d-b-Y" }}</td>
+            <td>{{ d.prod.total_sp|intcomma }}</td>
+            <td>{{ d.times.rec_time|floatformat:2 }}</td>
+            <td>{{ d.prod.vp_hour }}</td>
+            <td>{{ d.prod.skips|intcomma }}</td>
+            <td>{{ d.rcvr.layout }}</td>
+            <td>{{ d.rcvr.pickup }}</td>
+            <td>{{ d.rcvr.qc_field|f_format:".2f" }}</td>
+            <td>{{ d.rcvr.qc_camp|f_format:".2f" }}</td>
+            <td>{{ d.rcvr.upload|intcomma }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="row align-items-top mb-2">
+    <strong>Weekly production statistics</strong>
+    <table class="table table-striped mb-2 table-sm" cellspacing="0">
+      <thead class="custom-thead-grey">
+        <tr>
+          <th>Week</th>
+          <th>VPs</th>
+          <th>Rec.</th>
+          <th>VP/hr</th>
+          <th>Skip</th>
+          <th>Layout</th>
+          <th>Pickup</th>
+          <th>QC fld</th>
+          <th>QC cmp</th>
+          <th>Upload</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, wk in weeks.items %}
+        <tr class="text-right">
+          <td class="text-left">{{ wk.dates.0|date:"d-b-Y" }} / {{ wk.dates.1|date:"d-b-Y" }}</td>
+          <td>{{ wk.prod.week_total|intcomma }}</td>
+          <td>{{ wk.times.week_rec_time|floatformat:2 }}</td>
+          <td>{{ wk.prod.week_vp_hour }}</td>
+          <td>{{ wk.prod.week_skips|intcomma }}</td>
+          <td>{{ wk.rcvr.week_layout|intcomma }}</td>
+          <td>{{ wk.rcvr.week_pickup|intcomma }}</td>
+          <td>{{ wk.rcvr.week_qc_field|f_format:".2f" }}</td>
+          <td>{{ wk.rcvr.week_qc_camp|f_format:".2f" }}</td>
+          <td>{{ wk.rcvr.week_upload|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="row align-items-top mb-2">
+    <strong>Daily times</strong>
+    <table class="table table-striped mb-2 table-sm" cellspacing="0">
+      <thead class="custom-thead-grey">
+        <tr>
+          <th>Date</th>
+          <th>Rec.</th>
+          <th>Rtmov</th>
+          <th>Log.</th>
+          <th>Wos</th>
+          <th>Wol</th>
+          <th>Shft</th>
+          <th>Susp.</th>
+          <th>Cltst</th>
+          <th>BCntr</th>
+          <th>Move</th>
+          <th>Lnflt</th>
+          <th>Insflt</th>
+          <th>Vibflt</th>
+          <th>Inc.</th>
+          <th>Hol.</th>
+          <th>Rcov.</th>
+          <th>Oth.dt</th>
+          <th>Ops</th>
+          <th>Stby</th>
+          <th>Down</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, d in days.items reversed %}
+        <tr class="text-right">
+          <td class="text-left">{{ d.date|date:"d-b-Y" }}</td>
+          <td>{{ d.times.rec_time|f_format:".2f" }}</td>
+          <td>{{ d.times.rec_moveup|f_format:".2f" }}</dh>
+          <td>{{ d.times.logistics|f_format:".2f" }}</td>
+          <td>{{ d.times.wait_source|f_format:".2f" }}</td>
+          <td>{{ d.times.wait_layout|f_format:".2f" }}</td>
+          <td>{{ d.times.wait_shift_change|f_format:".2f" }}</td>
+          <td>{{ d.times.company_suspension|f_format:".2f" }}</td>
+          <td>{{ d.times.company_tests|f_format:".2f" }}</td>
+          <td>{{ d.times.beyond_control|f_format:".2f" }}</td>
+          <td>{{ d.times.camp_move|f_format:".2f" }}</td>
+          <td>{{ d.times.line_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.instrument_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.vibrator_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.incident|f_format:".2f" }}</td>
+          <td>{{ d.times.holiday|f_format:".2f" }}</td>
+          <td>{{ d.times.recovering|f_format:".2f" }}</td>
+          <td>{{ d.times.other_downtime|f_format:".2f" }}</td>
+          <td>{{ d.times.ops_time|f_format:".2f" }}</td>
+          <td>{{ d.times.standby|f_format:".2f" }}</td>
+          <td>{{ d.times.downtime|f_format:".2f" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="row align-items-top mb-5">
+    <strong>Weekly times</strong>
+    <table class="table table-striped mb-2 table-sm" cellspacing="0">
+      <thead class="custom-thead-grey">
+        <tr>
+          <th>Week</th>
+          <th>Rec.</th>
+          <th>Rtmov</th>
+          <th>Log.</th>
+          <th>Wos</th>
+          <th>Wol</th>
+          <th>Shft</th>
+          <th>Susp.</th>
+          <th>Cltst</th>
+          <th>BCntr</th>
+          <th>Move</th>
+          <th>Lnflt</th>
+          <th>Insflt</th>
+          <th>Vibflt</th>
+          <th>Inc.</th>
+          <th>Hol.</th>
+          <th>Rcov.</th>
+          <th>Oth.dt</th>
+          <th>Ops</th>
+          <th>Stby</th>
+          <th>Down</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, wk in weeks.items %}
+        <tr class="text-right">
+          <td class="text-left" width="20%>">{{ wk.dates.0|date:"d-b-Y" }} / {{ wk.dates.1|date:"d-b-Y" }}</td>
+          <td>{{ wk.times.week_rec_time|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_rec_moveup|f_format:".2f" }}</dh>
+          <td>{{ wk.times.week_logistics|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_wait_source|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_wait_layout|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_wait_shift_change|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_company_suspension|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_company_tests|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_beyond_control|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_camp_move|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_line_fault|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_instrument_fault|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_vibrator_fault|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_incident|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_holiday|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_recovering|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_other_downtime|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_ops_time|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_standby|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_downtime|f_format:".2f" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
 
 </form>

@@ -1,7 +1,7 @@
 ''' module to manage weekly report backend tasks
 '''
 from datetime import timedelta
-# import numpy as np
+import numpy as np
 from django.core.exceptions import ObjectDoesNotExist
 from daily_report.models.daily_models import Person, Daily
 from daily_report.models.weekly_models import Weekly
@@ -94,37 +94,53 @@ class WeeklyInterface:
         #TODO handle situation where report are missing in the week
         # get the production figures for the days in the week
         days = {}
+        project = report_day.project
         start_date = report_day.production_date - timedelta(days=WEEKDAYS-1)
         for wd in reversed(range(0, WEEKDAYS)):
             report_date = start_date + timedelta(days=wd)
-            try:
-                day = Daily.objects.get(production_date=report_date)
-            except Daily.DoesNotExist:
-                day = None
-
             days[wd] = {}
             days[wd]['date'] = report_date
+            try:
+                day = Daily.objects.get(project=project, production_date=report_date)
+            except Daily.DoesNotExist:
+                #skip this day
+                day = None
+                continue
+
             days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, SOURCETYPE_NAME)
             days[wd]['times'] = self.rprt_iface.calc_day_time_totals(day)
-            days[wd]['recvr'] = self.rprt_iface.day_receiver_total(day, RECEIVERTYPE_NAME)
+            days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, RECEIVERTYPE_NAME)
+            days[wd]['prod']['vp_hour'] = (
+                round(days[wd]['prod']['total_sp'] / days[wd]['times']['rec_time'])
+                if days[wd]['times']['rec_time'] else np.nan
+            )
 
         # get the weekly production figures for the 6 weeks before
         weeks = {}
         start_date = report_day.production_date - timedelta(days=(WEEKS-1)*WEEKDAYS)
         for wk in range(0, WEEKS):
             report_date = start_date + timedelta(days=WEEKDAYS*wk)
-            try:
-                day = Daily.objects.get(production_date=report_date)
-            except Daily.DoesNotExist:
-                day = None
-
             weeks[wk] = {}
             weeks[wk]['dates'] = (report_date - timedelta(days=(WEEKDAYS-1)), report_date)
+            try:
+                day = Daily.objects.get(project=project, production_date=report_date)
+            except Daily.DoesNotExist:
+                # skip this week
+                day = None
+                continue
+
             weeks[wk]['prod'] = self.rprt_iface.calc_week_prod_totals(
                 day, SOURCETYPE_NAME)
             weeks[wk]['times'] = self.rprt_iface.calc_week_time_totals(
                 day)
-            weeks[wk]['rcvr'] = self.rprt_iface.day_receiver_total(
+            weeks[wk]['rcvr'] = self.rprt_iface.week_receiver_total(
                 day, RECEIVERTYPE_NAME)
+            weeks[wk]['prod']['week_vp_hour'] = (
+                round(weeks[wk]['prod']['week_total'] /
+                    weeks[wk]['times']['week_rec_time'])
+                if weeks[wk]['times']['week_rec_time'] else np.nan
+            )
+
+
 
         return days, weeks

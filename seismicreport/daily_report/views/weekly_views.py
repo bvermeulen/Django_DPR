@@ -50,16 +50,16 @@ class WeeklyView(View):
             day, AVG_PERIOD, day.project.planned_vp, proj_complete)
 
         totals_prod['proj_area'] = day.project.planned_area * proj_complete
-        totals_prod['proj_complete'] = proj_complete * 100
+        totals_prod['proj_complete'] = proj_complete
         totals_prod['est_complete'] = est_complete
 
         context = {
             'daily_id': daily_id,
             'SS_2': SS_2,
-            'totals_production': totals_prod,
+            'totals_prod': totals_prod,
             'totals_time': totals_time,
             'totals_hse': totals_hse,
-            'totals_receiver': totals_rcvr,
+            'totals_rcvr': totals_rcvr,
             'days': days,
             'weeks': weeks,
             'form_week': self.form_week(initial=week_initial),
