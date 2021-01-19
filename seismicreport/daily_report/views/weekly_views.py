@@ -6,11 +6,10 @@ from django.views.generic import View
 from daily_report.models.daily_models import Daily
 from daily_report.forms.weekly_forms import WeeklyForm
 from daily_report.report_backend import ReportInterface
-from daily_report.week_backend import WeeklyInterface
+from daily_report.week_backend import WeekInterface
 from seismicreport.vars import AVG_PERIOD, SS_2
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
-from seismicreport.utils.utils_funcs import string_to_date, date_to_string
 
 logger = Logger.getlogger()
 #TODO first button to be a dropdown list of last 10 weekly reports
@@ -22,7 +21,7 @@ class WeeklyView(View):
     form_week = WeeklyForm
     template_weekly_page = 'daily_report/weekly_page.html'
     r_iface = ReportInterface(settings.MEDIA_ROOT)
-    w_iface = WeeklyInterface(settings.MEDIA_ROOT)
+    w_iface = WeekInterface(settings.MEDIA_ROOT)
 
     def get(self, request, daily_id):
         try:

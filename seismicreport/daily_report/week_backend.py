@@ -13,7 +13,7 @@ from seismicreport.utils.plogger import timed, Logger
 logger = Logger.getlogger()
 
 
-class WeeklyInterface:
+class WeekInterface:
 
     rprt_iface = ReportInterface('')
 

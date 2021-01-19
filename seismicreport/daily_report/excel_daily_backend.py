@@ -1,17 +1,18 @@
 ''' writing excel with python
 '''
-import re
-import io
 from pathlib import Path
 from openpyxl import Workbook, drawing
 from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
 from openpyxl.formatting.rule import CellIsRule
 from daily_report.report_backend import ReportInterface
+from seismicreport.utils.utils_excel import (
+    set_vertical_cells, set_outer_border, save_excel
+)
 from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2
 
 
-class ExcelReport:
-    ''' class to create excel reports in CSR format
+class ExcelDayReport:
+    ''' class to create excel day report in CSR format
     '''
     def __init__(self, report_data, media_root, static_root):
         self.media_root = Path(media_root)
@@ -72,25 +73,26 @@ class ExcelReport:
         # set date
         self.ws.merge_cells('H3:I3')
         self.ws.merge_cells('K3:L3')
-        self.set_vertical_cells(
-            'H3', ['DATE'], font_large_bold, Alignment(horizontal='right'))
-        self.set_vertical_cells('K3', [self.report_date], font_large_bold, Alignment())
+        set_vertical_cells(
+            self.ws, 'H3', ['DATE'], font_large_bold, Alignment(horizontal='right'))
+        set_vertical_cells(
+            self.ws, 'K3', [self.report_date], font_large_bold, Alignment())
         self.ws['K3'].font = Font(name=fontname, bold=True, size=11, color=red)
 
         # general project info
-        self.set_vertical_cells(
-            'D4', [key for key in self.project_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'E4', [val for _, val in self.project_table.items()], font_normal,
+        set_vertical_cells(
+            self.ws, 'D4', [key for key in self.project_table], font_bold, Alignment())
+        set_vertical_cells(
+            self.ws, 'E4', [val for _, val in self.project_table.items()], font_normal,
             Alignment(horizontal='right'))
         self.ws['E4'].font = font_bold
         self.ws['E5'].number_format = '#,##0'
 
         # daily stats
-        self.set_vertical_cells(
-            'H4', [key for key in self.daily_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'I4', [val for _, val in self.daily_table.items()], font_normal,
+        set_vertical_cells(
+            self.ws, 'H4', [key for key in self.daily_table], font_bold, Alignment())
+        set_vertical_cells(
+            self.ws, 'I4', [val for _, val in self.daily_table.items()], font_normal,
             Alignment(horizontal='right'))
         self.ws['I5'].number_format = '#,##0'
         self.ws['I6'].number_format = '#,##0'
@@ -106,11 +108,11 @@ class ExcelReport:
             'I8', CellIsRule(operator='lessThan', formula=[22], fill=fill))
 
         # receiver stats
-        self.set_vertical_cells(
-            'H12', [key for key in self.recvr_table
+        set_vertical_cells(
+            self.ws, 'H12', [key for key in self.recvr_table
             if key != 'QC camp'], font_bold, Alignment())
-        self.set_vertical_cells(
-            'I12', [val for key, val in self.recvr_table.items()
+        set_vertical_cells(
+            self.ws, 'I12', [val for key, val in self.recvr_table.items()
             if key != 'QC camp'], font_normal, Alignment(horizontal='right'))
         self.ws['I12'].number_format = '#,##0'
         self.ws['I13'].number_format = '#,##0'
@@ -118,22 +120,23 @@ class ExcelReport:
         self.ws['I15'].number_format = '#,##0'
 
         # XG01 and CSR
-        self.set_vertical_cells(
-            'D10', [key[:-3] for key in self.csr_table], font_bold,
+        set_vertical_cells(
+            self.ws, 'D10', [key[:-3] for key in self.csr_table], font_bold,
             Alignment(horizontal='right'))
-        self.set_vertical_cells(
-            'E10', [val for _, val in self.csr_table.items()], font_normal,
+        set_vertical_cells(
+            self.ws, 'E10', [val for _, val in self.csr_table.items()], font_normal,
             Alignment())
 
         # project stats
         self.ws.merge_cells('K4:L4')
-        self.set_vertical_cells(
-            'K4', ['Project Statistics'], font_large_bold,
+        set_vertical_cells(
+            self.ws, 'K4', ['Project Statistics'], font_large_bold,
             Alignment(horizontal='center'))
-        self.set_vertical_cells(
-            'K5', [key for key in self.proj_stats_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'L5', [val for _, val in self.proj_stats_table.items()], font_normal,
+        set_vertical_cells(
+            self.ws, 'K5', [key for key in self.proj_stats_table], font_bold,
+            Alignment())
+        set_vertical_cells(
+            self.ws, 'L5', [val for _, val in self.proj_stats_table.items()], font_normal,
             Alignment(horizontal='right'))
         self.ws['L5'].number_format = '#,##0'
         self.ws['L6'].number_format = '0.00'
@@ -142,26 +145,27 @@ class ExcelReport:
 
         # block stats
         self.ws.merge_cells('K11:L11')
-        self.set_vertical_cells(
-            'K11', ['Block Statistics'], font_large_bold,
+        set_vertical_cells(
+            self.ws, 'K11', ['Block Statistics'], font_large_bold,
             Alignment(horizontal='center'))
-        self.set_vertical_cells(
-            'K12', [key for key in self.block_stats_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'L12', [val for _, val in self.block_stats_table.items()], font_normal,
-            Alignment(horizontal='right'))
+        set_vertical_cells(
+            self.ws, 'K12', [key for key in self.block_stats_table], font_bold,
+            Alignment())
+        set_vertical_cells(
+            self.ws, 'L12', [val for _, val in self.block_stats_table.items()],
+            font_normal, Alignment(horizontal='right'))
         self.ws['L13'].number_format = '0.00'
         self.ws['L14'].number_format = '0.00%'
 
         # hse stats
         self.ws.merge_cells('K17:L17')
-        self.set_vertical_cells(
-            'K17', ['HSE Statistics'], font_large_bold,
+        set_vertical_cells(
+            self.ws, 'K17', ['HSE Statistics'], font_large_bold,
             Alignment(horizontal='center'))
-        self.set_vertical_cells(
-            'K18', [key for key in self.hse_stats_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'L18', [val for _, val in self.hse_stats_table.items()], font_normal,
+        set_vertical_cells(
+            self.ws, 'K18', [key for key in self.hse_stats_table], font_bold, Alignment())
+        set_vertical_cells(
+            self.ws, 'L18', [val for _, val in self.hse_stats_table.items()], font_normal,
             Alignment(horizontal='right'))
 
         for i in range(18, 25):
@@ -173,11 +177,12 @@ class ExcelReport:
 
         # csr comment
         self.ws.merge_cells('B16:I26')
-        self.set_vertical_cells(
-            'B15', [key for key in self.csr_comment_table], font_bold, Alignment())
-        self.set_vertical_cells(
-            'B16', [val for _, val in self.csr_comment_table.items()], font_normal,
-            Alignment(vertical='top', wrap_text=True))
+        set_vertical_cells(
+            self.ws, 'B15', [key for key in self.csr_comment_table], font_bold,
+            Alignment())
+        set_vertical_cells(
+            self.ws, 'B16', [val for _, val in self.csr_comment_table.items()],
+            font_normal, Alignment(vertical='top', wrap_text=True))
 
         # add graphs
         img_daily_prod = drawing.image.Image(self.media_root / 'images/daily_prod.png')
@@ -201,59 +206,27 @@ class ExcelReport:
         self.ws.add_image(img_rec_hours, 'H37')
 
         # set borders
-        self.set_outer_border('B2:L46')
-        self.set_outer_border('B2:L2')
-        self.set_outer_border('B3:I15')
-        self.set_outer_border('H4:I11')
-        self.set_outer_border('H12:I15')
-        self.set_outer_border('K4:L9')
-        self.set_outer_border('K4:L4')
-        self.set_outer_border('K10:L15')
-        self.set_outer_border('K11:L11')
-        self.set_outer_border('K17:L26')
-        self.set_outer_border('K17:L17')
-        self.set_outer_border('B16:I26')
+        set_outer_border(self.ws, 'B2:L46')
+        set_outer_border(self.ws, 'B2:L2')
+        set_outer_border(self.ws, 'B3:I15')
+        set_outer_border(self.ws, 'H4:I11')
+        set_outer_border(self.ws, 'H12:I15')
+        set_outer_border(self.ws, 'K4:L9')
+        set_outer_border(self.ws, 'K4:L4')
+        set_outer_border(self.ws, 'K10:L15')
+        set_outer_border(self.ws, 'K11:L11')
+        set_outer_border(self.ws, 'K17:L26')
+        set_outer_border(self.ws, 'K17:L17')
+        set_outer_border(self.ws, 'B16:I26')
         self.ws['I3'].border = Border(top=Side(style='thin'), bottom=Side(style='thin'))
 
-    def save_excel(self):
-        ''' method to save excel data to a BytesIO buffer
-        '''
-        f_excel = io.BytesIO()
-        self.wb.save(f_excel)
-        f_excel.seek(0)
-        return f_excel
-
-    def set_vertical_cells(self, loc_init: str, values: list, font, alignment):
-        # loc_init: format "A0" multiple capital letters followd by multiple numbers
-        loc = re.match(r'^([A-Z]+)([0-9]+)$', loc_init)
-        row_init = int(loc.group(2))
-        col_init = loc.group(1)
-        for i, value in enumerate(values):
-            loc = col_init + str(row_init + i)
-            cell = self.ws[loc]
-            cell.value = value
-            cell.font = font
-            cell.alignment = alignment
-
-    def set_outer_border(self, cell_range, style='thin'):
-        cells =self.ws[cell_range]
-        row = None
-        for i, row in enumerate(cells):
-            if i == 0:
-                for col in row:
-                    col.border = col.border + Border(top=Side(style=style))
-
-            row[0].border = row[0].border + Border(left=Side(style=style))
-            row[-1].border = row[-1].border + Border(right=Side(style=style))
-
-        for col in row:
-            col.border = col.border + Border(bottom=Side(style=style))
+        return save_excel(self.wb)
 
 
 def collate_excel_dailyreport_data(day):
-    rprt_iface = ReportInterface('')
-    totals_production, totals_time, totals_hse = rprt_iface.calc_totals(day)
-    totals_receiver = rprt_iface.calc_receiver_totals(day)
+    r_iface = ReportInterface('')
+    totals_production, totals_time, totals_hse = r_iface.calc_totals(day)
+    totals_receiver = r_iface.calc_receiver_totals(day)
     # no need to call create_daily_graphs as this has been done in DailyView
 
     project = day.project

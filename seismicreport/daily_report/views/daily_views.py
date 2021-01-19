@@ -10,7 +10,9 @@ from daily_report.models.daily_models import Daily
 from daily_report.forms.project_forms import ProjectControlForm
 from daily_report.forms.daily_forms import DailyForm
 from daily_report.report_backend import ReportInterface
-from daily_report.excel_backend import ExcelReport, collate_excel_dailyreport_data
+from daily_report.excel_daily_backend import (
+    ExcelDayReport, collate_excel_dailyreport_data
+)
 from seismicreport.vars import RIGHT_ARROW, LEFT_ARROW
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
@@ -175,10 +177,10 @@ def csr_excel_report(request, daily_id):
         return redirect('daily_page', 0)
 
     report_data = collate_excel_dailyreport_data(day)
-    csr_report = ExcelReport(report_data, settings.MEDIA_ROOT, settings.STATIC_ROOT)
-    csr_report.create_dailyreport()
+    csr_report = ExcelDayReport(report_data, settings.MEDIA_ROOT, settings.STATIC_ROOT)
 
     #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
     # note FileResponse will close the file/ buffer - do not use with block
-    f_excel = csr_report.save_excel()
+    f_excel = csr_report.create_dailyreport()
+
     return FileResponse(f_excel, as_attachment=True, filename='csr_report.xlsx')
