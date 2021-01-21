@@ -165,13 +165,13 @@ class DailyView(View):
 
 def csr_excel_report(request, daily_id):
 
-    rprt_iface = ReportInterface('')
+    r_iface = ReportInterface('')
 
     try:
         # get daily report from id
         day = Daily.objects.get(id=daily_id)
         project = day.project
-        day, _ = rprt_iface.load_report_db(project, day.production_date)
+        day, _ = r_iface.load_report_db(project, day.production_date)
 
     except Daily.DoesNotExist:
         return redirect('daily_page', 0)

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import FileResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -7,9 +8,13 @@ from daily_report.models.daily_models import Daily
 from daily_report.forms.weekly_forms import WeeklyForm
 from daily_report.report_backend import ReportInterface
 from daily_report.week_backend import WeekInterface
+from daily_report.excel_weekly_backend import (
+    ExcelWeekReport, collate_excel_weekreport_data,
+)
 from seismicreport.vars import AVG_PERIOD, SS_2
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
+from pprint import pprint
 
 logger = Logger.getlogger()
 #TODO first button to be a dropdown list of last 10 weekly reports
@@ -33,7 +38,6 @@ class WeeklyView(View):
 
         week_initial = self.w_iface.get_week_values(day)
         totals_prod, totals_time, totals_hse = self.r_iface.calc_totals(day)
-        totals_rcvr = self.r_iface.calc_receiver_totals(day)
         days, weeks = self.w_iface.collate_weekdata(day)
 
         if day.project.planned_vp > 0:
@@ -58,7 +62,6 @@ class WeeklyView(View):
             'totals_prod': totals_prod,
             'totals_time': totals_time,
             'totals_hse': totals_hse,
-            'totals_rcvr': totals_rcvr,
             'days': days,
             'weeks': weeks,
             'form_week': self.form_week(initial=week_initial),
@@ -97,24 +100,25 @@ class WeeklyView(View):
         return redirect('weekly_page', daily_id)
 
 
-# def csr_weekly_excel_report(request, daily_id):
+def csr_week_excel_report(request, daily_id):
 
-#     rprt_iface = ReportInterface('')
+    rprt_iface = ReportInterface('')
 
-#     try:
-#         # get daily report from id
-#         day = Daily.objects.get(id=daily_id)
-#         project = day.project
-#         day, _ = rprt_iface.load_report_db(project, day.production_date)
+    try:
+        # get daily report from id
+        day = Daily.objects.get(id=daily_id)
+        project = day.project
+        day, _ = rprt_iface.load_report_db(project, day.production_date)
 
-#     except Daily.DoesNotExist:
-#         return redirect('daily_page', 0)
+    except Daily.DoesNotExist:
+        return redirect('daily_page', 0)
 
-#     report_data = collate_excel_weeklyreport_data(day)
-#     csr_report = ExcelReport(report_data, settings.MEDIA_ROOT, settings.STATIC_ROOT)
-#     csr_report.create_dailyreport()
+    report_data = collate_excel_weekreport_data(day)
+    csr_week_report = ExcelWeekReport(
+        report_data, settings.MEDIA_ROOT, settings.STATIC_ROOT)
 
-#     #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
-#     # note FileResponse will close the file/ buffer - do not use with block
-#     f_excel = csr_report.save_excel()
-#     return FileResponse(f_excel, as_attachment=True, filename='csr_report.xlsx')
+    #TODO save excel: improve file handling, name sheet, set to A4, fit to page print
+    # note FileResponse will close the file/ buffer - do not use with block
+    f_excel = csr_week_report.create_weekreport()
+
+    return FileResponse(f_excel, as_attachment=True, filename='csr_week_report.xlsx')

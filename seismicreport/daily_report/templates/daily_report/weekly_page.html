@@ -37,7 +37,7 @@
       {% endfor %}
     </div>
   </div>
-  <a class="btn btn-primary btn-sm my-1" href="#">Print</a>
+  <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_week_excel_report' daily_id %}">Print</a>
   <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
     onclick="return confirmDeleteWeekly('{{ form_week.week_report_date.value }}')">Delete
   </button>

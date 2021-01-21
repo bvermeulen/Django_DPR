@@ -234,13 +234,17 @@ def collate_excel_dailyreport_data(day):
     report_data = {}
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
 
+    if project.start_report:
+        ops_days = (day.production_date - project.start_report).days
+
+    else:
+        ops_days = NO_DATE_STR
+
     if project.planned_start_date:
         proj_start_str = project.planned_start_date.strftime('%#d %b %Y')
-        ops_days = (day.production_date - project.planned_start_date).days
 
     else:
         proj_start_str = NO_DATE_STR
-        ops_days = NO_DATE_STR
 
     report_data['project_table'] = {
         'Project': project.project_name,
@@ -294,19 +298,19 @@ def collate_excel_dailyreport_data(day):
         f'Area (km{SS_2})': project.planned_area * proj_complete,
         'Skip VPs': proj_skips,
         '% Complete': proj_complete,
-        'Est. Complete': rprt_iface.calc_est_completion_date(
+        'Est. Complete': r_iface.calc_est_completion_date(
             day, AVG_PERIOD, project.planned_vp, proj_complete),
     }
 
     # block_stats
     block = day.block
-    totals_block = rprt_iface.calc_block_totals(day)
+    totals_block = r_iface.calc_block_totals(day)
     if block and totals_block:
         block_name = block.block_name
         block_total = totals_block['block_total'] + totals_block['block_skips']
         block_complete = block_total / block.block_planned_vp
         block_area = block.block_planned_area * block_complete
-        block_completion_date = rprt_iface.calc_est_completion_date(
+        block_completion_date = r_iface.calc_est_completion_date(
             day, AVG_PERIOD, block.block_planned_vp, block_complete)
 
     else:
@@ -334,7 +338,7 @@ def collate_excel_dailyreport_data(day):
     }
 
     report_data['csr_comment_table'] = {
-        'Comments': day.csr_comment,
+        'Comment': day.csr_comment
     }
 
     return report_data

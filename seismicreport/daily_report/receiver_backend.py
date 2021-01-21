@@ -42,7 +42,8 @@ class Mixin:
         )
 
         if not rcvr_query:
-            return {}
+            w_rcvr = {f'week_{key}': 0 for key in receiver_prod_schema}
+            return w_rcvr
 
         w_rcvr = {
             f'week_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
@@ -63,7 +64,8 @@ class Mixin:
         )
 
         if not rcvr_query:
-            return {}
+            m_rcvr = {f'month_{key}': 0 for key in receiver_prod_schema}
+            return m_rcvr
 
         m_rcvr = {
             f'month_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
@@ -82,7 +84,8 @@ class Mixin:
         )
 
         if not rcvr_query:
-            return {}
+            p_rcvr = {f'proj_{key}': 0 for key in receiver_prod_schema}
+            return p_rcvr
 
         p_rcvr = {
             f'proj_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))

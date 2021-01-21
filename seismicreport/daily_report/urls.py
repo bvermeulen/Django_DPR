@@ -15,6 +15,8 @@ urlpatterns = [
          daily_views.csr_excel_report, name='csr_excel_report'),
     path('daily_report/weekly_page/<int:daily_id>/',
          weekly_views.WeeklyView.as_view(), name='weekly_page'),
+    path('daily_report/csr_week_excel_report/<int:daily_id>/',
+         weekly_views.csr_week_excel_report, name='csr_week_excel_report'),
     path('daily_report/service_page/<str:project_name>/',
          service_views.ServiceView.as_view(), name='service_page'),
     path('daily_report/monthly_services/<int:daily_id>/<int:year>/<int:month>/',

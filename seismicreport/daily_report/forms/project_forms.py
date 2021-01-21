@@ -92,6 +92,7 @@ class ProjectForm(forms.ModelForm):
             max_length=NAME_LENGTH, required=False)
         self.fields['crew_name'] = forms.CharField(
             max_length=NAME_LENGTH, required=False)
+        self.fields['start_report'] = forms.DateField(required=False)
         self.fields['planned_area'] = forms.FloatField(required=False)
         self.fields['planned_vp'] = forms.IntegerField(required=False)
         self.fields['planned_receivers'] = forms.IntegerField(required=False)
@@ -108,8 +109,8 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = (
-            'project_name', 'crew_name', 'planned_area',
-            'planned_vp', 'planned_receivers',
+            'project_name', 'crew_name', 'start_report',
+            'planned_area', 'planned_vp', 'planned_receivers',
             'planned_start_date', 'planned_end_date',
             'standby_rate', 'cap_rate', 'cap_app_ctm'
         )

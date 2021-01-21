@@ -27,6 +27,7 @@ class ProjectInterface:
                 initial_project_form = {
                     'projects': project.project_name,
                     'project_name': project.project_name,
+                    'start_report': project.start_report,
                     'crew_name': project.crew_name,
                     'planned_area': project.planned_area,
                     'planned_vp': project.planned_vp,

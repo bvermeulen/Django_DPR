@@ -473,7 +473,13 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 pp[f'proj_{key[:5]}'] / pp['proj_total'] * TCF_table[key[6:]]
                 for key in source_prod_schema[:-1]
             )
-            pp['proj_avg'] = round(pp['proj_total'] / len(sp_query))
+            if daily.project.planned_start_date:
+                p_days = (daily.production_date - daily.project.planned_start_date).days + 1
+                pp['proj_avg'] = round(pp['proj_total'] / p_days)
+
+            else:
+                pp['proj_avg'] = np.nan
+
             pp['proj_perc_skips'] = (
                 pp['proj_skips'] / (pp['proj_total'] + pp['proj_skips'])
             )
