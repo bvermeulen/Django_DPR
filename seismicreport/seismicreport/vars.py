@@ -96,7 +96,8 @@ time_breakdown_schema = [
 ]
 
 ops_time_keys = [
-    'rec_hours', 'rec_moveup', 'logistics', 'wait_source', 'wait_layout', 'wait_shift_change',
+    'rec_hours', 'rec_moveup', 'logistics', 'wait_source', 'wait_layout',
+    'wait_shift_change',
 ]
 
 standby_keys = ['company_suspension', 'company_tests', 'beyond_control', 'camp_move']
@@ -115,6 +116,9 @@ hse_weather_schema = [
 WEEKDAYS = 7
 WEEKS = 6
 AVG_PERIOD = 14
+STOP_TARGET = (9, 9)
+PROD_TARGET = (0.9, 1)
+REC_TARGET = (21, 22)
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'

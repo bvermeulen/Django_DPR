@@ -1,15 +1,28 @@
 ''' writing excel with python
 '''
 from pathlib import Path
+import numpy as np
 from openpyxl import Workbook, drawing
-from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
-from openpyxl.formatting.rule import CellIsRule
+from openpyxl.styles import Alignment, Font, PatternFill
 from daily_report.report_backend import ReportInterface
 from daily_report.week_backend import WeekInterface
 from seismicreport.utils.utils_excel import (
-    set_vertical_cells, set_outer_border, save_excel
+    set_vertical_cells, set_horizontal_cells, format_horizontal, conditional_format,
+    set_column_widths, set_border, set_outer_border, set_color, save_excel, get_row_column,
 )
-from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2
+from seismicreport.vars import (
+    STOP_TARGET, PROD_TARGET, REC_TARGET, AVG_PERIOD, NO_DATE_STR, SS_2,
+)
+
+fontname = 'Tahoma'
+font_large_bold = Font(name=fontname, bold=True, size=11)
+font_normal = Font(name=fontname, size=9)
+font_bold = Font(name=fontname, bold=True, size=9)
+red = '00FF0000'
+green ='0000FF00'
+orange = 'FFA500'
+lightblue = 'D8EFF8'
+float_hide_zero = '0.00;-0;;@'
 
 
 class ExcelWeekReport:
@@ -19,6 +32,7 @@ class ExcelWeekReport:
         self.media_root = Path(media_root)
         self.static_root = Path(static_root)
         self.wb = Workbook()
+        self.wb.remove_sheet(self.wb.get_sheet_by_name('Sheet'))
         self.wsw = self.wb.create_sheet('CSR_WEEKLY')
         self.wst = self.wb.create_sheet('Times')
         self.wsp = self.wb.create_sheet('Production')
@@ -30,49 +44,36 @@ class ExcelWeekReport:
 
     def parse_data(self, report_data):
         self.report_date = report_data['report_date']
+        self.proj_days = report_data['proj_days']
+        self.month_days = report_data['month_days']
         self.author = report_data['author_table']
-        self.comment_table = report_data['comment_table']
-        self.proj_table = report_data['project_table']
+        self.comment = report_data['comment_table']
+        self.project = report_data['project_table']
         self.proj_stats = report_data['proj_stats_table']
-        self.hse_stats_week = report_data['hse_stats_week_table']
-        self.hse_stats_month = report_data['hse_stats_month_table']
-        self.hse_stats_proj = report_data['hse_stats_proj_table']
-        self.prod_stats_week = report_data['prod_stats_week_table']
-        self.prod_stats_month = report_data['prod_stats_month_table']
-        self.prod_stats_proj = report_data['prod_stats_proj_table']
-        self.days_prod = report_data['days_prod']
-        self.weeks_prod = report_data['weeks_prod']
+        self.hse_stats = list(zip(
+            report_data['hse_stats_week_table'].keys(),
+            report_data['hse_stats_week_table'].values(),
+            report_data['hse_stats_month_table'].values(),
+            report_data['hse_stats_proj_table'].values()
+        ))
+        self.prod_stats = list(zip(
+            report_data['prod_stats_week_table'].keys(),
+            report_data['prod_stats_week_table'].values(),
+            report_data['prod_stats_month_table'].values(),
+            report_data['prod_stats_proj_table'].values()
+        ))
         self.days_times = report_data['days_times']
         self.weeks_times = report_data['weeks_times']
+        self.days_prod =  report_data['days_prod']
+        self.weeks_prod = report_data['weeks_prod']
 
-    def create_weekreport(self):
-        ''' method to create excel daily report
+    def create_tab_weekly(self):
+        ''' method to create excel weekly report main tab
         '''
-        fontname = 'Tahoma'
-        red = '00FF0000'
-        green = '0000FF00'
-        font_large_bold = Font(name=fontname, bold=True, size=11)
-        font_normal = Font(name=fontname, size=9)
-        font_bold = Font(name=fontname, bold=True, size=9)
-
-        self.wsw.column_dimensions['A'].width = 0.94
-        self.wsw.column_dimensions['B'].width = 0.75
-        self.wsw.column_dimensions['C'].width = 12.56
-        self.wsw.column_dimensions['D'].width = 10.22
-        self.wsw.column_dimensions['E'].width = 19.89
-        self.wsw.column_dimensions['F'].width = 4.11
-        self.wsw.column_dimensions['G'].width = 0.81
-        self.wsw.column_dimensions['H'].width = 11.67
-        self.wsw.column_dimensions['I'].width = 11.22
-        self.wsw.column_dimensions['J'].hidden = True
-        self.wsw.column_dimensions['K'].width = 12.56
-        self.wsw.column_dimensions['L'].width = 9.78
-
-        # set logo
-        img_logo = drawing.image.Image(self.static_root / 'img/client_icon.png')
-        img_logo.width = 75
-        img_logo.height = 75
-        self.wsw.add_image(img_logo, 'C4')
+        set_column_widths(self.wsw, 'A',
+            [0.94, 0.75, 12.56, 10.22, 19.89, 4.11, 0.81,
+            11.67, 11.22, 12.56, 11.22, 0.94]
+        )
 
         # set title
         self.wsw.merge_cells('B2:L2')
@@ -80,37 +81,224 @@ class ExcelWeekReport:
         self.wsw['B2'].alignment = Alignment(horizontal='center')
         self.wsw['B2'].font = font_large_bold
 
-        # set date
-        self.wsw.merge_cells('H3:I3')
-        self.wsw.merge_cells('K3:L3')
-        set_vertical_cells(
-            self.wsw, 'H3', ['DATE'], font_large_bold, Alignment(horizontal='right'))
-        set_vertical_cells(
-            self.wsw, 'K3', [self.report_date], font_large_bold, Alignment())
-        self.wsw['K3'].font = Font(name=fontname, bold=True, size=11, color=red)
+        # set logo
+        img_logo = drawing.image.Image(self.static_root / 'img/client_icon.png')
+        img_logo.width = 75
+        img_logo.height = 75
+        self.wsw.add_image(img_logo, 'C4')
+
+        # set project general
+        set_vertical_cells(self.wsw, 'D4', [k for k in self.project], font_bold,
+            Alignment())
+        set_vertical_cells(self.wsw, 'E4', [v for v in self.project.values()],
+            font_normal, Alignment(horizontal='right'))
+        self.wsw['E5'].number_format = '#,##0'
+        self.wsw['E6'].number_format = '0.00'
 
         # set author
         self.wsw.merge_cells('H4:I4')
         self.wsw.merge_cells('H5:I5')
         set_vertical_cells(self.wsw, 'H4', [k for k in self.author], font_bold,
             Alignment(horizontal='center'))
-        set_vertical_cells(self.wsw, 'H5', [v for v in self.author.values()], font_normal,
+        set_vertical_cells(self.wsw, 'H5', [v for v in self.author.values()],
+            font_normal, Alignment(horizontal='center'))
+
+        # set date
+        self.wsw.merge_cells('H3:I3')
+        self.wsw.merge_cells('J3:K3')
+        set_vertical_cells(
+            self.wsw, 'H3', ['DATE'], font_large_bold, Alignment(horizontal='right'))
+        set_vertical_cells(
+            self.wsw, 'J3', [self.report_date], font_large_bold, Alignment())
+        self.wsw['J3'].font = Font(name=fontname, bold=True, size=11, color=red)
+
+        # set comments
+        self.wsw.merge_cells('B11:F11')
+        self.wsw.merge_cells('B12:F35')
+        set_vertical_cells(self.wsw, 'B11', [k for k in self.comment], font_bold,
+            Alignment())
+        set_vertical_cells(self.wsw, 'B12', [v for v in self.comment.values()],
+            font_normal, Alignment(vertical='top', wrap_text=True))
+
+        # set project statistics
+        self.wsw.merge_cells('J4:K4')
+        set_vertical_cells(self.wsw, 'J4', ['Project Statistics'], font_bold,
             Alignment(horizontal='center'))
+        set_vertical_cells(self.wsw, 'J5', [k for k in self.proj_stats], font_bold,
+            Alignment())
+        set_vertical_cells(self.wsw, 'K5', [v for v in self.proj_stats.values()],
+            font_normal, Alignment(horizontal='right'))
+        self.wsw['K5'].number_format = '#,##0'
+        self.wsw['K6'].number_format = '0.00'
+        self.wsw['K7'].number_format = '#,##0'
+        self.wsw['K8'].number_format = '0.00%'
+
+        # set hse statistic
+        self.wsw.merge_cells('H11:K11')
+        set_vertical_cells(self.wsw, 'H11', ['HSE Statistics'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsw, 'I12', ['WEEK', 'Month', 'Project'], font_bold,
+            Alignment(horizontal='center'))
+        set_vertical_cells(self.wsw, 'H13', [v[0] for v in self.hse_stats], font_normal,
+            Alignment())
+        for row, item in enumerate(self.hse_stats):
+            set_horizontal_cells(self.wsw, f'I{row+13}', [item[1], item[2], item[3]],
+                font_normal, Alignment(horizontal='right'))
+
+        f_vals = np.array(STOP_TARGET) * 7
+        conditional_format(self.wsw, 'I19', f_vals, (red, orange, green))
+        f_vals = np.array(STOP_TARGET) * self.month_days
+        conditional_format(self.wsw, 'J19', f_vals, (red, orange, green))
+        f_vals = np.array(STOP_TARGET) * self.proj_days
+        conditional_format(self.wsw, 'K19', f_vals, (red, orange, green))
+
+        # set production statistic
+        self.wsw.merge_cells('H24:K24')
+        set_vertical_cells(self.wsw, 'H24', ['Production Statistics'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsw, 'I25', ['WEEK', 'Month', 'Project'], font_bold,
+            Alignment(horizontal='center'))
+        set_vertical_cells(self.wsw, 'H26', [v[0] for v in self.prod_stats], font_normal,
+            Alignment())
+        for row, item in enumerate(self.prod_stats):
+            set_horizontal_cells(self.wsw, f'I{row+26}', [item[1], item[2], item[3]],
+                font_normal, Alignment(horizontal='right'))
+
+        format_horizontal(self.wsw, 'I26:K26', '#,##0')
+        format_horizontal(self.wsw, 'I27:K27', '#,##0')
+        format_horizontal(self.wsw, 'I28:K28', '0.00%')
+        format_horizontal(self.wsw, 'I29:K29', '0,00')
+        format_horizontal(self.wsw, 'I30:K30', '0.00')
+        format_horizontal(self.wsw, 'I31:K31', '#,##0')
+        format_horizontal(self.wsw, 'I32:K32', '0.00')
+        format_horizontal(self.wsw, 'I33:K33', '#,##0')
+        format_horizontal(self.wsw, 'I34:K34', '0.00%')
+
+        f_vals = np.array(PROD_TARGET) * 1
+        conditional_format(self.wsw, 'I28', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'J28', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'K28', f_vals, (red, orange, green))
+
+        f_vals = np.array(REC_TARGET) * 7
+        conditional_format(self.wsw, 'I29', f_vals, (red, orange, green))
+        f_vals = np.array(REC_TARGET) * self.month_days
+        conditional_format(self.wsw, 'J29', f_vals, (red, orange, green))
+        f_vals = np.array(REC_TARGET) * self.proj_days
+        conditional_format(self.wsw, 'K29', f_vals, (red, orange, green))
 
         # set borders
-        # set_outer_border(self.ws, 'B2:L46')
-        # set_outer_border(self.ws, 'B2:L2')
-        # set_outer_border(self.ws, 'B3:I15')
-        # set_outer_border(self.ws, 'H4:I11')
-        # set_outer_border(self.ws, 'H12:I15')
-        # set_outer_border(self.ws, 'K4:L9')
-        # set_outer_border(self.ws, 'K4:L4')
-        # set_outer_border(self.ws, 'K10:L15')
-        # set_outer_border(self.ws, 'K11:L11')
-        # set_outer_border(self.ws, 'K17:L26')
-        # set_outer_border(self.ws, 'K17:L17')
-        # set_outer_border(self.ws, 'B16:I26')
-        # self.ws['I3'].border = Border(top=Side(style='thin'), bottom=Side(style='thin'))
+        set_outer_border(self.wsw, 'B2:L71')
+        set_outer_border(self.wsw, 'B2:L2')
+        set_outer_border(self.wsw, 'J4:L4')
+        set_outer_border(self.wsw, 'J5:L9')
+        set_outer_border(self.wsw, 'B11:F11')
+        set_outer_border(self.wsw, 'B12:F35')
+        set_outer_border(self.wsw, 'H11:L11')
+        set_outer_border(self.wsw, 'H12:L22')
+        set_outer_border(self.wsw, 'H24:L24')
+        set_outer_border(self.wsw, 'H25:L35')
+
+
+
+    def create_tab_times(self):
+        ''' method to create excel weekly tab for times
+        '''
+        set_column_widths(self.wst, 'A',
+            [0.94, 21.56, 9.22, 8.33, 8.33, 8.33, 8.33, 8.33,
+            10.11, 12.33, 9.89, 8.33,
+            8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33,
+            8.33, 8.33, 9.56,
+            ]
+        )
+        # set day times
+        self.wst.merge_cells('B1:V1')
+        set_vertical_cells(self.wst, 'B1', ['Daily Times'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('C2:H2')
+        set_vertical_cells(self.wst, 'C2', ['Operational Time'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('I2:L2')
+        set_vertical_cells(self.wst, 'I2', ['Standby Time'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('M2:S2')
+        set_vertical_cells(self.wst, 'M2', ['Downtime'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('T2:V2')
+        set_vertical_cells(self.wst, 'T2', ['Totals'], font_bold,
+            Alignment(horizontal='center'))
+
+        set_horizontal_cells(self.wst, 'B3', self.days_times['header'], font_bold,
+            Alignment(horizontal='center', vertical='top', wrap_text=True,))
+
+        row, col = get_row_column('B4')
+        weeks_total = np.zeros(20)
+        for key in range(0, 7):
+            vals = self.days_times[key]
+            loc = col + str(row + key)
+            set_horizontal_cells(self.wst, loc, vals, font_normal,
+                Alignment(horizontal='right'))
+
+            self.wst[f'B{row + key}'].alignment = Alignment(horizontal='center')
+            format_range = f'C{row + key}:V{row + key}'
+            format_horizontal(self.wst, format_range, float_hide_zero)
+
+            weeks_total += np.array(vals[1:]).astype(np.float)
+
+        set_vertical_cells(self.wst, 'B11', ['Weeks total'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wst, 'C11', weeks_total, font_bold,
+            Alignment(horizontal='right'))
+        format_horizontal(self.wst, 'C11:V11', float_hide_zero)
+
+        # set borders day times
+        set_outer_border(self.wst, 'C2:H2')
+        set_outer_border(self.wst, 'I2:L2')
+        set_outer_border(self.wst, 'M2:S2')
+        set_outer_border(self.wst, 'T2:V2')
+        set_border(self.wst, 'B3:v11')
+
+        # set week times
+        self.wst.merge_cells('B13:V13')
+        set_vertical_cells(self.wst, 'B13', ['Weekly Times'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('C14:H14')
+        set_vertical_cells(self.wst, 'C14', ['Operational Time'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('I14:L14')
+        set_vertical_cells(self.wst, 'I14', ['Standby Time'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('M14:S14')
+        set_vertical_cells(self.wst, 'M14', ['Downtime'], font_bold,
+            Alignment(horizontal='center'))
+        self.wst.merge_cells('T14:V14')
+        set_vertical_cells(self.wst, 'T14', ['Totals'], font_bold,
+            Alignment(horizontal='center'))
+
+        set_horizontal_cells(self.wst, 'B15', self.weeks_times['header'], font_bold,
+            Alignment(horizontal='center', vertical='top', wrap_text=True,))
+
+        row, col = get_row_column('B16')
+        for key in range(0, 6):
+            vals = self.weeks_times[key]
+            loc = col + str(row + key)
+            set_horizontal_cells(self.wst, loc, vals, font_normal,
+                Alignment(horizontal='right'))
+
+            self.wst[f'B{row + key}'].alignment = Alignment(horizontal='center')
+            format_range = f'C{row + key}:V{row + key}'
+            format_horizontal(self.wst, format_range, float_hide_zero)
+
+        # set borders week times
+        set_outer_border(self.wst, 'C14:H14')
+        set_outer_border(self.wst, 'I14:L14')
+        set_outer_border(self.wst, 'M14:S14')
+        set_outer_border(self.wst, 'T14:V14')
+        set_border(self.wst, 'B15:v21')
+        set_color(self.wst, 'B21:V21', color=lightblue)
+
+    def create_weekreport(self):
+        self.create_tab_weekly()
+        self.create_tab_times()
 
         return save_excel(self.wb)
 
@@ -125,6 +313,13 @@ def collate_excel_weekreport_data(day):
     days, weeks = w_iface.collate_weekdata(day)
 
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
+    report_data['month_days'] = day.production_date.day
+    if project.start_report:
+        report_data['proj_days'] = (day.production_date - project.start_report).days + 1
+
+    else:
+        report_data['proj_days'] = 1
+
 
     # CSR author and comment
     if _week:=day.project.weeklies.filter(week_report_date=day.production_date):
@@ -158,7 +353,6 @@ def collate_excel_weekreport_data(day):
     proj_skips = totals_prod['proj_skips']
     if project.planned_vp > 0:
         proj_complete = (proj_total + proj_skips) / project.planned_vp
-
     else:
         proj_complete = 0
 
@@ -251,7 +445,7 @@ def collate_excel_weekreport_data(day):
         'Ops time', 'Standby', 'Downtime',]
     }
 
-    for key, wk in reversed(days.items()):
+    for key, day in reversed(days.items()):
         report_data['days_times'][key] = [
             day['date'].strftime('%d-%b-%Y'),
             day['times']['rec_time'],
