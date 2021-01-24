@@ -15,7 +15,7 @@ import daily_report.graph_backend as _graph_backend
 from seismicreport.vars import (
     TCF_table, BGP_DR_table, SOURCETYPE_NAME, RECEIVERTYPE_NAME, source_prod_schema,
     time_breakdown_schema, ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH,
-    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR, WEEKDAYS,
+    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR, WEEKDAYS, CTM_METHOD
 )
 from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import calc_ratio, nan_array
@@ -87,30 +87,31 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return np.array(ctm_series)
 
     @staticmethod
-    def calc_rate(daily, app_ctm, total_time, standby_time):
+    def calc_rate(daily, ctm_method, app_ctm, total_time, standby_time):
         ''' IMH opinion correct calculation of the rate
         '''
-        standby_rate = daily.project.standby_rate
-        cap_rate = daily.project.cap_rate
-        cap_app_ctm = daily.project.cap_app_ctm
-        if app_ctm > 1 and cap_app_ctm > 1 and cap_rate > 1:
-            app_ctm = 1 + (cap_rate - 1) * min((app_ctm - 1) / (cap_app_ctm - 1), 1)
 
-        return ((app_ctm * (total_time - standby_time) + standby_rate * standby_time) /
-                total_time)
+        if ctm_method == 'Legacy':
+            standby_rate = daily.project.standby_rate
+            cap_rate = daily.project.cap_rate
+            cap_app_ctm = daily.project.cap_app_ctm
+            if app_ctm > 1 and cap_app_ctm > 1 and cap_rate > 1:
+                app_ctm = 1 + (cap_rate - 1) * min((app_ctm - 1) / (cap_app_ctm - 1), 1)
 
-    @staticmethod
-    def calc_rate_current(daily, app_ctm, total_time, standby_time):
-        ''' IMH opinion correct calculation of the rate
-        '''
-        standby_rate = daily.project.standby_rate
-        cap_rate = daily.project.cap_rate
-        cap_app_ctm = daily.project.cap_app_ctm
-        app_ctm *= (total_time - standby_time) / total_time
-        if app_ctm > 1 and cap_app_ctm > 1 and cap_rate > 1:
-            app_ctm = 1 + (cap_rate - 1) * min((app_ctm - 1) / (cap_app_ctm - 1), 1)
+            return (app_ctm * total_time + standby_rate * standby_time) / total_time
 
-        return (app_ctm * total_time + standby_rate * standby_time) / total_time
+        else:
+
+            standby_rate = daily.project.standby_rate
+            cap_rate = daily.project.cap_rate
+            cap_app_ctm = daily.project.cap_app_ctm
+            if app_ctm > 1 and cap_app_ctm > 1 and cap_rate > 1:
+                app_ctm = 1 + (cap_rate - 1) * min((app_ctm - 1) / (cap_app_ctm - 1), 1)
+
+            return (
+                (app_ctm * (total_time - standby_time) + standby_rate * standby_time) /
+                total_time
+            )
 
     def save_report_file(self, project, report_file) -> datetime:
         report_date = self.populate_report(project, report_file.temporary_file_path())
@@ -312,16 +313,24 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @staticmethod
     def calc_day_prod_totals(daily, sourcetype_name):
-        try:
-            prod = SourceProduction.objects.get(
-                daily=daily,
-                sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name)
-            )
+        if daily:
+            try:
+                prod = SourceProduction.objects.get(
+                    daily=daily,
+                    sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name)
+                )
 
-        except SourceProduction.DoesNotExist:
+            except SourceProduction.DoesNotExist:
+                dp = {f'{key[:5]}': np.nan for key in source_prod_schema}
+                dp['total_sp'] = np.nan
+                dp['tcf'] = np.nan
+                return dp
+
+        else:
             dp = {f'{key[:5]}': np.nan for key in source_prod_schema}
             dp['total_sp'] = np.nan
             dp['tcf'] = np.nan
+            dp['vp_hour'] = np.nan
             return dp
 
         dp = {f'{key[:5]}': np.nan_to_num(getattr(prod, key))
@@ -343,21 +352,27 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @staticmethod
     def calc_week_prod_totals(daily, sourcetype_name):
-        end_date = daily.production_date
-        start_date = end_date - timedelta(days=WEEKDAYS-1)
+        if daily:
+            end_date = daily.production_date
+            start_date = end_date - timedelta(days=WEEKDAYS-1)
 
-        sp_query = SourceProduction.objects.filter(
-            Q(daily__production_date__gte=start_date),
-            Q(daily__production_date__lte=end_date),
-            sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
-        )
+            sp_query = SourceProduction.objects.filter(
+                Q(daily__production_date__gte=start_date),
+                Q(daily__production_date__lte=end_date),
+                sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
+            )
+
+        else:
+            sp_query = None
 
         if not sp_query:
             wp = {f'week_{key[:5]}': np.nan for key in source_prod_schema}
-            wp['week_sp'] = np.nan
+            wp['week_total'] = np.nan
             wp['week_tcf'] = np.nan
+            wp['week_vp_hour'] = np.nan
+            wp['week_avg'] = np.nan
+            wp['week_perc_skips'] = np.nan
             return wp
-
 
         wp = {f'week_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
               for key in source_prod_schema}
@@ -396,8 +411,11 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         if not sp_query:
             mp = {f'month_{key[:5]}': np.nan for key in source_prod_schema}
-            mp['month_sp'] = np.nan
+            mp['month_total'] = np.nan
             mp['month_tcf'] = np.nan
+            mp['month_vp_hour'] = np.nan
+            mp['month_avg'] = np.nan
+            mp['month_perc_skips'] = np.nan
             return mp
 
 
@@ -434,8 +452,11 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         if not sp_query:
             pp = {f'proj_{key[:5]}': np.nan for key in source_prod_schema}
-            pp['proj_sp'] = np.nan
+            pp['proj_total'] = np.nan
             pp['proj_tcf'] = np.nan
+            pp['proj_vp_hour'] = np.nan
+            pp['proj_avg'] = np.nan
+            pp['proj_perc_skips'] = np.nan
             return pp, {}
 
         p_series = {f'{key[:5]}_series': nan_array(
@@ -446,8 +467,10 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         p_series['date_series'] = np.array(
             [val.daily.production_date for val in sp_query])
         p_series['tcf_series'] = []
+        p_series['total_sp'] = []
         for terrain_sp in p_series['terrain_series']:
             sp_total = np.nansum(terrain_sp)
+            p_series['total_sp'].append(sp_total)
             if sp_total > 0:
                 p_series['tcf_series'].append(
                     terrain_sp[0] / sp_total * TCF_table['flat'] +
@@ -459,6 +482,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
             else:
                 p_series['tcf_series'].append(np.nan)
+
+
 
         pp = {f'proj_{key[:5]}': np.nansum(
             p_series[f'{key[:5]}_series']) for key in source_prod_schema}
@@ -473,8 +498,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 pp[f'proj_{key[:5]}'] / pp['proj_total'] * TCF_table[key[6:]]
                 for key in source_prod_schema[:-1]
             )
-            if daily.project.planned_start_date:
-                p_days = (daily.production_date - daily.project.planned_start_date).days + 1
+            if (daily.project.planned_start_date and pp['proj_total'] and
+                (p_days := (daily.production_date - daily.project.planned_start_date).days + 1) > 0):
                 pp['proj_avg'] = round(pp['proj_total'] / p_days)
 
             else:
@@ -519,14 +544,18 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @staticmethod
     def calc_week_time_totals(daily):
-        end_date = daily.production_date
-        start_date = end_date - timedelta(days=WEEKDAYS-1)
+        if daily:
+            end_date = daily.production_date
+            start_date = end_date - timedelta(days=WEEKDAYS-1)
 
-        tb_query = TimeBreakdown.objects.filter(
-            Q(daily__production_date__gte=start_date),
-            Q(daily__production_date__lte=end_date),
-            daily__project=daily.project,
-        )
+            tb_query = TimeBreakdown.objects.filter(
+                Q(daily__production_date__gte=start_date),
+                Q(daily__production_date__lte=end_date),
+                daily__project=daily.project,
+            )
+
+        else:
+            tb_query = None
 
         if not tb_query:
             wt = {f'week_{key}': np.nan for key in time_breakdown_schema}
@@ -646,10 +675,15 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         proj_prod, self.prod_series = self.calc_proj_prod_totals(daily, SOURCETYPE_NAME)
         proj_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, proj_prod['proj_tcf'])
 
-        day_ctm *= (day_times['total_time'] - day_times['standby']) / 24
+        if CTM_METHOD == 'Legacy':
+            day_ctm *= day_times['total_time'] / 24
+
+        else:
+            day_ctm *= (day_times['total_time'] - day_times['standby']) / 24
+
         day_app_ctm = calc_ratio(day_prod['total_sp'], day_ctm)
-        day_rate = self.calc_rate_current(
-            daily, day_app_ctm, day_times['total_time'], day_times['standby']
+        day_rate = self.calc_rate(
+            daily, CTM_METHOD, day_app_ctm, day_times['total_time'], day_times['standby']
         )
         day_ctm = round(day_ctm) if not np.isnan(day_ctm) else 0
         day_prod['ctm'] = (day_ctm, day_app_ctm, day_rate)
@@ -658,10 +692,15 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             if day_times['rec_time'] else np.nan
         )
 
-        week_ctm *= (week_times['week_total_time'] - week_times['week_standby']) / 24
+        if CTM_METHOD == 'Legacy':
+            week_ctm *= week_times['week_total_time'] / 24
+
+        else:
+            week_ctm *= (week_times['week_total_time'] - week_times['week_standby']) / 24
+
         week_app_ctm = calc_ratio(week_prod['week_total'], week_ctm)
-        week_rate = self.calc_rate_current(
-            daily, week_app_ctm,
+        week_rate = self.calc_rate(
+            daily, CTM_METHOD, week_app_ctm,
             week_times['week_total_time'], week_times['week_standby']
         )
         week_ctm = round(week_ctm) if not np.isnan(week_ctm) else 0
@@ -671,10 +710,17 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             if week_times['week_rec_time'] else np.nan
         )
 
-        month_ctm *= (month_times['month_total_time'] - month_times['month_standby']) / 24
+        if CTM_METHOD == 'Legacy':
+            month_ctm *= month_times['month_total_time'] / 24
+
+        else:
+            month_ctm *= (
+                (month_times['month_total_time'] - month_times['month_standby']) / 24
+            )
+
         month_app_ctm = calc_ratio(month_prod['month_total'], month_ctm)
-        month_rate = self.calc_rate_current(
-            daily, month_app_ctm,
+        month_rate = self.calc_rate(
+            daily, CTM_METHOD, month_app_ctm,
             month_times['month_total_time'], month_times['month_standby']
         )
         month_ctm = round(month_ctm) if not np.isnan(month_ctm) else 0
@@ -684,10 +730,15 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             if month_times['month_rec_time'] else np.nan
         )
 
-        proj_ctm *= (proj_times['proj_total_time'] - proj_times['proj_standby']) / 24
+        if CTM_METHOD == 'Legacy':
+            proj_ctm *= proj_times['proj_total_time'] / 24
+
+        else:
+            proj_ctm *= (proj_times['proj_total_time'] - proj_times['proj_standby']) / 24
+
         proj_app_ctm = calc_ratio(proj_prod['proj_total'], proj_ctm)
-        proj_rate = self.calc_rate_current(
-            daily, proj_app_ctm,
+        proj_rate = self.calc_rate(
+            daily, CTM_METHOD, proj_app_ctm,
             proj_times['proj_total_time'], proj_times['proj_standby']
         )
         proj_ctm = round(proj_ctm) if not np.isnan(proj_ctm) else 0
@@ -699,8 +750,14 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         ctm_series = self.calc_ctm_series(
             daily, SOURCETYPE_NAME, self.prod_series['tcf_series'])
-        ops_time_series = (
-            self.time_series['total_time_series'] - self.time_series['standby_series'])
+
+        if CTM_METHOD == 'Legacy':
+            ops_time_series = self.time_series['total_time_series']
+
+        else:
+            ops_time_series = (
+                self.time_series['total_time_series'] - self.time_series['standby_series']
+            )
         ctm_series = ctm_series * ops_time_series / 24
         total_sp_series = np.array(
             [sum(terrain) for terrain in self.prod_series['terrain_series']])
@@ -722,7 +779,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return prod_total, times_total, hse_total
 
     @property
-    def get_series(self) -> typing.Optional[tuple]:
+    def series(self) -> typing.Optional[tuple]:
         return self.prod_series, self.time_series
 
     @timed(logger, print_log=True)

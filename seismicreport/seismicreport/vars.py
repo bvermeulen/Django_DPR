@@ -113,6 +113,7 @@ hse_weather_schema = [
     'temp_min', 'temp_max',
 ]
 
+CTM_METHOD = 'Legacy'
 WEEKDAYS = 7
 WEEKS = 6
 AVG_PERIOD = 14

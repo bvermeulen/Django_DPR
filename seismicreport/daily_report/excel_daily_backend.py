@@ -190,7 +190,7 @@ class ExcelDayReport:
         img_daily_prod.height = img_height
         self.ws.add_image(img_daily_prod, 'C28')
 
-        img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm.png')
+        img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm_ratio.png')
         img_app_ctm.width = img_width
         img_app_ctm.height = img_height
         self.ws.add_image(img_app_ctm, 'H28')

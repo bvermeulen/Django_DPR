@@ -103,17 +103,18 @@ class WeekInterface:
             try:
                 day = Daily.objects.get(project=project, production_date=report_date)
             except Daily.DoesNotExist:
-                #skip this day
                 day = None
-                continue
 
             days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, SOURCETYPE_NAME)
             days[wd]['times'] = self.rprt_iface.calc_day_time_totals(day)
             days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, RECEIVERTYPE_NAME)
-            days[wd]['prod']['vp_hour'] = (
-                round(days[wd]['prod']['total_sp'] / days[wd]['times']['rec_time'])
-                if days[wd]['times']['rec_time'] else np.nan
-            )
+
+            try:
+                days[wd]['prod']['vp_hour'] = (round(
+                    days[wd]['prod']['total_sp'] / days[wd]['times']['rec_time']))
+
+            except ValueError:
+                days[wd]['prod']['total_sp'] = np.nan
 
         # get the weekly production figures for the 6 weeks before
         weeks = {}
@@ -127,7 +128,6 @@ class WeekInterface:
             except Daily.DoesNotExist:
                 # skip this week
                 day = None
-                continue
 
             weeks[wk]['prod'] = self.rprt_iface.calc_week_prod_totals(
                 day, SOURCETYPE_NAME)
@@ -135,12 +135,11 @@ class WeekInterface:
                 day)
             weeks[wk]['rcvr'] = self.rprt_iface.week_receiver_total(
                 day, RECEIVERTYPE_NAME)
-            weeks[wk]['prod']['week_vp_hour'] = (
-                round(weeks[wk]['prod']['week_total'] /
-                    weeks[wk]['times']['week_rec_time'])
-                if weeks[wk]['times']['week_rec_time'] else np.nan
-            )
+            try:
+                weeks[wk]['prod']['week_vp_hour'] = (round(
+                    weeks[wk]['prod']['week_total'] / weeks[wk]['times']['week_rec_time']))
 
-
+            except ValueError:
+                weeks[wk]['prod']['week_vp_hour'] = np.nan
 
         return days, weeks

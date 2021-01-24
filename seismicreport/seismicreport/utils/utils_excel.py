@@ -34,6 +34,17 @@ def set_horizontal_cells(ws, loc_init: str, values: list, font, alignment):
         cell.alignment = alignment
 
 
+def format_vertical(ws, loc_range: str, num_format: str):
+    # loc_range: format "A10:D10" multiple capital letters followd by multiple numbers
+    loc = re.match(r'^([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)$', loc_range)
+    row_start_num = int(loc.group(2))
+    row_end_num = int(loc.group(4))
+    col_init = loc.group(1)
+    for row in range(row_start_num, row_end_num + 1):
+        loc = col_init + str(row)
+        ws[loc].number_format = num_format
+
+
 def format_horizontal(ws, loc_range: str, num_format: str):
     # loc_range: format "A10:D10" multiple capital letters followd by multiple numbers
     loc = re.match(r'^([A-Z]+)([0-9]+):([A-Z]+)([0-9]+)$', loc_range)
@@ -107,6 +118,7 @@ def set_column_widths(ws, start_column: str, widths: list):
         loc = get_column_letter(col_num)
         ws.column_dimensions[loc].width = width
         col_num += 1
+
 
 def save_excel(wb):
     ''' method to save excel data to a BytesIO buffer

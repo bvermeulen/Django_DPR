@@ -14,7 +14,6 @@ from daily_report.excel_weekly_backend import (
 from seismicreport.vars import AVG_PERIOD, SS_2
 from seismicreport.utils.plogger import Logger
 from seismicreport.utils.get_ip import get_client_ip
-from pprint import pprint
 
 logger = Logger.getlogger()
 #TODO first button to be a dropdown list of last 10 weekly reports

@@ -12,15 +12,19 @@ class Mixin:
 
     @staticmethod
     def day_receiver_total(daily, receivertype_name):
+        if daily:
+            try:
+                rcvr = ReceiverProduction.objects.get(
+                    daily=daily,
+                    receivertype=daily.project.receivertypes.get(
+                        receivertype_name=receivertype_name),
+                    )
 
-        try:
-            rcvr = ReceiverProduction.objects.get(
-                daily=daily,
-                receivertype=daily.project.receivertypes.get(
-                    receivertype_name=receivertype_name),
-                )
+            except ReceiverProduction.DoesNotExist:
+                d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
+                return d_rcvr
 
-        except ReceiverProduction.DoesNotExist:
+        else:
             d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
             return d_rcvr
 
@@ -31,15 +35,19 @@ class Mixin:
 
     @staticmethod
     def week_receiver_total(daily, receivertype_name):
-        end_date = daily.production_date
-        start_date = end_date - timedelta(days=WEEKDAYS-1)
-        rcvr_query = ReceiverProduction.objects.filter(
-            Q(daily__production_date__gte=start_date),
-            Q(daily__production_date__lte=end_date),
-            receivertype = daily.project.receivertypes.get(
-                receivertype_name=receivertype_name
-            ),
-        )
+        if daily:
+            end_date = daily.production_date
+            start_date = end_date - timedelta(days=WEEKDAYS-1)
+            rcvr_query = ReceiverProduction.objects.filter(
+                Q(daily__production_date__gte=start_date),
+                Q(daily__production_date__lte=end_date),
+                receivertype = daily.project.receivertypes.get(
+                    receivertype_name=receivertype_name
+                ),
+            )
+
+        else:
+            rcvr_query = None
 
         if not rcvr_query:
             w_rcvr = {f'week_{key}': 0 for key in receiver_prod_schema}

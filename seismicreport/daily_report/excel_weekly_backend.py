@@ -2,16 +2,21 @@
 '''
 from pathlib import Path
 import numpy as np
+import pandas as pd
 from openpyxl import Workbook, drawing
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Font
+from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
 from daily_report.week_backend import WeekInterface
+import daily_report.graph_backend as _graph_backend
 from seismicreport.utils.utils_excel import (
-    set_vertical_cells, set_horizontal_cells, format_horizontal, conditional_format,
-    set_column_widths, set_border, set_outer_border, set_color, save_excel, get_row_column,
+    set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
+    conditional_format, set_column_widths, set_border, set_outer_border,
+    set_color, save_excel, get_row_column, set_chart_fontsize,
 )
 from seismicreport.vars import (
     STOP_TARGET, PROD_TARGET, REC_TARGET, AVG_PERIOD, NO_DATE_STR, SS_2,
+    source_prod_schema,
 )
 
 fontname = 'Tahoma'
@@ -23,22 +28,27 @@ green ='0000FF00'
 orange = 'FFA500'
 lightblue = 'D8EFF8'
 float_hide_zero = '0.00;-0;;@'
+int_hide_zero = '#,##0;0;;@'
 
 
-class ExcelWeekReport:
+class ExcelWeekReport(_graph_backend.Mixin):
     ''' class to create excel week report in CSR format
     '''
-    def __init__(self, report_data, media_root, static_root):
-        self.media_root = Path(media_root)
-        self.static_root = Path(static_root)
+    def __init__(self, report_data, media_dir, static_dir):
+        self.media_dir = Path(media_dir)
+        self.static_dir = Path(static_dir)
         self.wb = Workbook()
         self.wb.remove_sheet(self.wb.get_sheet_by_name('Sheet'))
-        self.wsw = self.wb.create_sheet('CSR_WEEKLY')
+        self.wsw = self.wb.create_sheet('CSR_weekly')
         self.wst = self.wb.create_sheet('Times')
         self.wsp = self.wb.create_sheet('Production')
+        self.wsg = self.wb.create_sheet('Graphs')
+        self.ws_prod = self.wb.create_sheet('prod_table')
         self.wsw.sheet_view.showGridLines = False
         self.wst.sheet_view.showGridLines = False
         self.wsp.sheet_view.showGridLines = False
+        self.wsg.sheet_view.showGridLines = False
+        self.ws_prod.sheet_view.showGridLines = False
 
         self.parse_data(report_data)
 
@@ -67,6 +77,13 @@ class ExcelWeekReport:
         self.days_prod =  report_data['days_prod']
         self.weeks_prod = report_data['weeks_prod']
 
+        self.week_terrain = report_data['week_terrain']
+        self.proj_terrain = report_data['proj_terrain']
+
+        self.prod_series = report_data['prod_series']
+        self.time_series = report_data['time_series']
+
+
     def create_tab_weekly(self):
         ''' method to create excel weekly report main tab
         '''
@@ -82,7 +99,7 @@ class ExcelWeekReport:
         self.wsw['B2'].font = font_large_bold
 
         # set logo
-        img_logo = drawing.image.Image(self.static_root / 'img/client_icon.png')
+        img_logo = drawing.image.Image(self.static_dir / 'img/client_icon.png')
         img_logo.width = 75
         img_logo.height = 75
         self.wsw.add_image(img_logo, 'C4')
@@ -198,8 +215,6 @@ class ExcelWeekReport:
         set_outer_border(self.wsw, 'H24:L24')
         set_outer_border(self.wsw, 'H25:L35')
 
-
-
     def create_tab_times(self):
         ''' method to create excel weekly tab for times
         '''
@@ -212,13 +227,13 @@ class ExcelWeekReport:
         )
         # set day times
         self.wst.merge_cells('B1:V1')
-        set_vertical_cells(self.wst, 'B1', ['Daily Times'], font_bold,
+        set_vertical_cells(self.wst, 'B1', ['Daily times'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('C2:H2')
-        set_vertical_cells(self.wst, 'C2', ['Operational Time'], font_bold,
+        set_vertical_cells(self.wst, 'C2', ['Operational time'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('I2:L2')
-        set_vertical_cells(self.wst, 'I2', ['Standby Time'], font_bold,
+        set_vertical_cells(self.wst, 'I2', ['Standby time'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('M2:S2')
         set_vertical_cells(self.wst, 'M2', ['Downtime'], font_bold,
@@ -231,7 +246,7 @@ class ExcelWeekReport:
             Alignment(horizontal='center', vertical='top', wrap_text=True,))
 
         row, col = get_row_column('B4')
-        weeks_total = np.zeros(20)
+        weeks_total = np.zeros(len(self.days_times[0]) - 1)
         for key in range(0, 7):
             vals = self.days_times[key]
             loc = col + str(row + key)
@@ -248,7 +263,7 @@ class ExcelWeekReport:
             Alignment(horizontal='center'))
         set_horizontal_cells(self.wst, 'C11', weeks_total, font_bold,
             Alignment(horizontal='right'))
-        format_horizontal(self.wst, 'C11:V11', float_hide_zero)
+        format_horizontal(self.wst, 'C11:V11', '0.00')
 
         # set borders day times
         set_outer_border(self.wst, 'C2:H2')
@@ -259,13 +274,13 @@ class ExcelWeekReport:
 
         # set week times
         self.wst.merge_cells('B13:V13')
-        set_vertical_cells(self.wst, 'B13', ['Weekly Times'], font_bold,
+        set_vertical_cells(self.wst, 'B13', ['Weekly times'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('C14:H14')
-        set_vertical_cells(self.wst, 'C14', ['Operational Time'], font_bold,
+        set_vertical_cells(self.wst, 'C14', ['Operational time'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('I14:L14')
-        set_vertical_cells(self.wst, 'I14', ['Standby Time'], font_bold,
+        set_vertical_cells(self.wst, 'I14', ['Standby time'], font_bold,
             Alignment(horizontal='center'))
         self.wst.merge_cells('M14:S14')
         set_vertical_cells(self.wst, 'M14', ['Downtime'], font_bold,
@@ -296,10 +311,167 @@ class ExcelWeekReport:
         set_border(self.wst, 'B15:v21')
         set_color(self.wst, 'B21:V21', color=lightblue)
 
+    def create_tab_production(self):
+        ''' method to create excel weekly tab for production
+        '''
+        set_column_widths(self.wsp, 'A',
+            [0.94, 23.50, 12.33, 12.33, 12.33, 12.33, 12.33, 12.33, 12.33, 12.33, 12.33,
+            ]
+        )
+        # set day production
+        self.wsp.merge_cells('B1:K1')
+        set_vertical_cells(self.wsp, 'B1', ['Daily production'], font_bold,
+            Alignment(horizontal='center'))
+
+        set_horizontal_cells(self.wsp, 'B2', self.days_prod['header'], font_bold,
+            Alignment(horizontal='center', vertical='top', wrap_text=True,))
+
+        row, col = get_row_column('B3')
+        weeks_total = np.zeros(len(self.days_prod[0])-1)
+        for key in range(0, 7):
+            vals = self.days_prod[key]
+            loc = col + str(row + key)
+            set_horizontal_cells(self.wsp, loc, vals, font_normal,
+                Alignment(horizontal='right'))
+
+            self.wsp[f'B{row + key}'].alignment = Alignment(horizontal='center')
+            format_range = f'C{row + key}:C{row + key}'
+            format_horizontal(self.wsp, format_range, int_hide_zero)
+            format_range = f'D{row + key}:D{row + key}'
+            format_horizontal(self.wsp, format_range, float_hide_zero)
+            format_range = f'E{row + key}:K{row + key}'
+            format_horizontal(self.wsp, format_range, int_hide_zero)
+
+            weeks_total += np.array(vals[1:]).astype(np.float)
+
+        # skip the 3rd and 6 and 7th elements
+        weeks_total = [*weeks_total[0:2], '', *weeks_total[3:6], '', '', weeks_total[8]]
+        set_vertical_cells(self.wsp, 'B10', ['Weeks total'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsp, 'C10', weeks_total, font_bold,
+            Alignment(horizontal='right'))
+        format_horizontal(self.wsp, 'C10:C10', '#,##0')
+        format_horizontal(self.wsp, 'D10:D10', '0.00')
+        format_horizontal(self.wsp, 'E10:K10', '#,##0')
+
+        # set borders
+        set_border(self.wsp, 'B2:K10')
+
+        # set week production
+        self.wsp.merge_cells('B13:K13')
+        set_vertical_cells(self.wsp, 'B13', ['Weekly production'], font_bold,
+            Alignment(horizontal='center'))
+
+        set_horizontal_cells(self.wsp, 'B14', self.weeks_prod['header'], font_bold,
+            Alignment(horizontal='center', vertical='top', wrap_text=True,))
+
+        row, col = get_row_column('B15')
+        for key in range(0, 6):
+            vals = self.weeks_prod[key]
+            loc = col + str(row + key)
+            set_horizontal_cells(self.wsp, loc, vals, font_normal,
+                Alignment(horizontal='right'))
+
+            self.wsp[f'B{row + key}'].alignment = Alignment(horizontal='center')
+            format_range = f'C{row + key}:C{row + key}'
+            format_horizontal(self.wsp, format_range, int_hide_zero)
+            format_range = f'D{row + key}:D{row + key}'
+            format_horizontal(self.wsp, format_range, float_hide_zero)
+            format_range = f'E{row + key}:K{row + key}'
+            format_horizontal(self.wsp, format_range, int_hide_zero)
+
+        # set borders
+        set_border(self.wsp, 'B14:K20')
+        set_color(self.wsp, 'B20:K20', color=lightblue)
+
+
+        # set terrain types for week
+        self.wsp.merge_cells('C22:E22')
+        set_vertical_cells(self.wsp, 'C22', ['Week terrain'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsp, 'D23', ['VPs', 'Percentage'], font_bold,
+            Alignment(horizontal='center'))
+        set_vertical_cells(self.wsp, 'C24', [key for key in self.week_terrain],
+            font_normal, Alignment(horizontal='left'))
+
+        vals = []
+        percs = []
+        for val in self.week_terrain.values():
+            vals.append(val)
+            if self.week_terrain['total'] > 0:
+                perc = val / self.week_terrain['total']
+
+            else:
+                perc = np.nan
+
+            percs.append(perc)
+
+        set_vertical_cells(self.wsp, 'D24', vals, font_normal,
+            Alignment(horizontal='right'))
+        set_vertical_cells(self.wsp, 'E24', percs, font_normal,
+            Alignment(horizontal='right'))
+        format_vertical(self.wsp, 'D24:D30', '#,##0')
+        format_vertical(self.wsp, 'E24:E30', '0.00%')
+        set_border(self.wsp, 'D23:E23')
+        set_border(self.wsp, 'C24:E30')
+
+        # set terrain types for project
+        self.wsp.merge_cells('G22:I22')
+        set_vertical_cells(self.wsp, 'G22', ['Project terrain'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsp, 'H23', ['VPs', 'Percentage'], font_bold,
+            Alignment(horizontal='center'))
+        set_vertical_cells(self.wsp, 'G24', [key for key in self.proj_terrain],
+            font_normal, Alignment(horizontal='left'))
+
+        vals = []
+        percs = []
+        for val in self.proj_terrain.values():
+            vals.append(val)
+            if self.proj_terrain['total'] > 0:
+                perc = val / self.proj_terrain['total']
+
+            else:
+                perc = np.nan
+
+            percs.append(perc)
+
+        set_vertical_cells(self.wsp, 'H24', vals, font_normal,
+            Alignment(horizontal='right'))
+        set_vertical_cells(self.wsp, 'I24', percs, font_normal,
+            Alignment(horizontal='right'))
+        format_vertical(self.wsp, 'H24:H30', '#,##0')
+        format_vertical(self.wsp, 'I24:I30', '0.00%')
+        set_border(self.wsp, 'H23:I23')
+        set_border(self.wsp, 'G24:I30')
+
+    def create_tab_prod_table(self):
+        prod_table = {}
+        prod_table['date'] = self.prod_series['date_series']
+        prod_table['sp_t1'] = self.prod_series['sp_t1_series']
+        prod_table['sp_t2'] = self.prod_series['sp_t2_series']
+        prod_table['sp_t3'] = self.prod_series['sp_t3_series']
+        prod_table['sp_t4'] = self.prod_series['sp_t4_series']
+        prod_table['sp_t5'] = self.prod_series['sp_t5_series']
+        prod_table['skips'] = self.prod_series['skips_series']
+        prod_table['total'] = [sum(t) for t in self.prod_series['terrain_series']]
+        prod_table['tcf'] =  self.prod_series['tcf_series']
+        prod_table['target'] = [c[0] for c in self.prod_series['ctm_series']]
+        prod_table['achieved'] = [c[1] for c in self.prod_series['ctm_series']]
+
+        prod_df = pd.DataFrame(prod_table)
+        rows = dataframe_to_rows(prod_df, index=False, header=True)
+
+        for r_id, row in enumerate(rows, 1):
+            for c_id, value in enumerate(row, 1):
+                self.ws_prod.cell(row=r_id, column=c_id, value=value)
+
     def create_weekreport(self):
         self.create_tab_weekly()
         self.create_tab_times()
-
+        self.create_tab_production()
+        self.create_weekly_graphs()
+        self.create_tab_prod_table()
         return save_excel(self.wb)
 
 
@@ -311,6 +483,8 @@ def collate_excel_weekreport_data(day):
     report_data = {}
     totals_prod, totals_time, totals_hse = r_iface.calc_totals(day)
     days, weeks = w_iface.collate_weekdata(day)
+    report_data['prod_series'], report_data['time_series'] = r_iface.series
+
 
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
     report_data['month_days'] = day.production_date.day
@@ -421,7 +595,6 @@ def collate_excel_weekreport_data(day):
 
     # weeks prod stats
     for key, wk in weeks.items():
-        print(wk['rcvr'])
         report_data['weeks_prod'][key] = [
             (wk['dates'][0].strftime('%d-%b-%Y') + ' ' +
              wk['dates'][1].strftime('%d-%b-%Y')),
@@ -436,7 +609,7 @@ def collate_excel_weekreport_data(day):
             wk['rcvr']['week_upload'],
         ]
 
- # days times stats
+    # days times stats
     report_data['days_times'] = {
         'header':['Day', 'Recording','Rec move', 'Logistics', 'WOS', 'WOL',
         'Shift change', 'Company suspension', 'Company requested tests',
@@ -505,5 +678,27 @@ def collate_excel_weekreport_data(day):
             wk['times']['week_standby'],
             wk['times']['week_downtime'],
         ]
+
+    # terrain distribution week and project
+    report_data['week_terrain'] = {
+        'flat': totals_prod[f'week_{source_prod_schema[0][:5]}'],
+        'rough': totals_prod[f'week_{source_prod_schema[1][:5]}'],
+        'facility': totals_prod[f'week_{source_prod_schema[2][:5]}'],
+        'dune': totals_prod[f'week_{source_prod_schema[3][:5]}'],
+        'sabkha': totals_prod[f'week_{source_prod_schema[4][:5]}'],
+        'skip': totals_prod[f'week_{source_prod_schema[5][:5]}'],
+        'total': totals_prod[f'week_total'],
+    }
+    report_data['proj_terrain'] = {
+        'flat': totals_prod[f'proj_{source_prod_schema[0][:5]}'],
+        'rough': totals_prod[f'proj_{source_prod_schema[1][:5]}'],
+        'facility': totals_prod[f'proj_{source_prod_schema[2][:5]}'],
+        'dune': totals_prod[f'proj_{source_prod_schema[3][:5]}'],
+        'sabkha': totals_prod[f'proj_{source_prod_schema[4][:5]}'],
+        'skip': totals_prod[f'proj_{source_prod_schema[5][:5]}'],
+        'total': totals_prod[f'proj_total'],
+    }
+
+
 
     return report_data

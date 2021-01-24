@@ -43,14 +43,18 @@ class Mixin:
 
     @staticmethod
     def week_hse_totals(daily):
-        end_date = daily.production_date
-        start_date = end_date - timedelta(days=WEEKDAYS)
+        if not daily:
+            end_date = daily.production_date
+            start_date = end_date - timedelta(days=WEEKDAYS)
 
-        hse_query = HseWeather.objects.filter(
-            Q(daily__production_date__gte=start_date),
-            Q(daily__production_date__lte=end_date),
-            daily__project=daily.project,
-        )
+            hse_query = HseWeather.objects.filter(
+                Q(daily__production_date__gte=start_date),
+                Q(daily__production_date__lte=end_date),
+                daily__project=daily.project,
+            )
+
+        else:
+            hse_query = None
 
         if not hse_query:
             return {f'week_{key}': '' for key in hse_weather_schema}
