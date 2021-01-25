@@ -74,3 +74,14 @@ def check_expiry_date(expiry_date: datetime):
         exit()
     else:
         logger.info('License is valid')
+
+def get_sourcereceivertype_names(daily):
+    ''' hardwired patch function until proper loop over sourcetypes, receivertypes
+        is implemented
+    '''
+    #TODO delete after proper loop is implemented
+    if daily and daily.project.project_name[:6] == 'Haniya':
+        return 'vibe_25_25', 'node_75_75'
+
+    else:
+        return 'vibe_25m', 'receiver_25m'

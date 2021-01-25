@@ -13,12 +13,14 @@ import daily_report.receiver_backend as _receiver_backend
 import daily_report.hseweather_backend as  _hse_backend
 import daily_report.graph_backend as _graph_backend
 from seismicreport.vars import (
-    TCF_table, BGP_DR_table, SOURCETYPE_NAME, RECEIVERTYPE_NAME, source_prod_schema,
-    time_breakdown_schema, ops_time_keys, standby_keys, downtime_keys, NAME_LENGTH,
-    DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR, WEEKDAYS, CTM_METHOD
+    TCF_table, BGP_DR_table, source_prod_schema, time_breakdown_schema, ops_time_keys,
+    standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR,
+    WEEKDAYS, CTM_METHOD
 )
 from seismicreport.utils.plogger import Logger, timed
-from seismicreport.utils.utils_funcs import calc_ratio, nan_array
+from seismicreport.utils.utils_funcs import (
+    calc_ratio, nan_array, get_sourcereceivertype_names
+)
 
 logger = Logger.getlogger()
 
@@ -160,14 +162,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if project.project_name != self.get_value(day_df, 'project'):
             return None
 
-        if not project.sourcetypes.filter(
-                sourcetype_name=SOURCETYPE_NAME[:NAME_LENGTH]):
-            return None
-
-        if not project.receivertypes.filter(
-                receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH]):
-            return None
-
         # create/ update day values
         try:
             day = Daily.objects.create(
@@ -179,8 +173,18 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 production_date=self.get_value(day_df, 'date'),
                 project=project)
 
+        sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+
+        if not project.sourcetypes.filter(
+                sourcetype_name=sourcetype_name[:NAME_LENGTH]):
+            return None
+
+        if not project.receivertypes.filter(
+                receivertype_name=receivertype_name[:NAME_LENGTH]):
+            return None
+
         day.pm_comment = (
-            '\n'.join([str(self.get_value(day_df, f'comment {i}')) for i in range(1, 7)
+            '\n'.join([str(self.get_value(day_df, f'comment {i}')) for i in range(1, 8)
                        if not pd.isnull(self.get_value(
                            day_df, f'comment {i}'))])[:COMMENT_LENGTH]
         )
@@ -197,14 +201,14 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             prod = SourceProduction.objects.create(
                 daily=day,
                 sourcetype=day.project.sourcetypes.get(
-                    sourcetype_name=SOURCETYPE_NAME[:NAME_LENGTH])
+                    sourcetype_name=sourcetype_name[:NAME_LENGTH])
             )
 
         except IntegrityError:
             prod = SourceProduction.objects.get(
                 daily=day,
                 sourcetype=day.project.sourcetypes.get(
-                    sourcetype_name=SOURCETYPE_NAME[:NAME_LENGTH])
+                    sourcetype_name=sourcetype_name[:NAME_LENGTH])
             )
 
         prod.sp_t1_flat = int(np.nan_to_num(self.get_value(day_df, 'sp_t1')))
@@ -220,14 +224,14 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             rcvr = ReceiverProduction.objects.create(
                 daily=day,
                 receivertype=day.project.receivertypes.get(
-                    receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH])
+                    receivertype_name=receivertype_name[:NAME_LENGTH])
             )
 
         except IntegrityError:
             rcvr = ReceiverProduction.objects.get(
                 daily=day,
                 receivertype=day.project.receivertypes.get(
-                    receivertype_name=RECEIVERTYPE_NAME[:NAME_LENGTH])
+                    receivertype_name=receivertype_name[:NAME_LENGTH])
             )
 
         rcvr.layout = int(np.nan_to_num(self.get_value(day_df, 'layout')))
@@ -254,7 +258,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         time_breakdown.company_suspension = self.get_value(day_df, 'company suspension')
         time_breakdown.company_tests = self.get_value(day_df, 'company tests')
         time_breakdown.beyond_control = self.get_value(day_df, 'beyond contractor control')  #pylint: disable=line-too-long
-        time_breakdown.line_fault = self.get_value(day_df, 'line fault')
+        time_breakdown.line_fault = self.get_value(day_df, 'line fault') # No longer used
         time_breakdown.instrument_fault = self.get_value(day_df, 'instrument fault')
         time_breakdown.vibrator_fault = self.get_value(day_df, 'vibrator fault')
         time_breakdown.incident = self.get_value(day_df, 'incident')
@@ -317,7 +321,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             try:
                 prod = SourceProduction.objects.get(
                     daily=daily,
-                    sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name)
+                    sourcetype=daily.project.sourcetypes.get(
+                        sourcetype_name=sourcetype_name)
                 )
 
             except SourceProduction.DoesNotExist:
@@ -499,7 +504,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 for key in source_prod_schema[:-1]
             )
             if (daily.project.planned_start_date and pp['proj_total'] and
-                (p_days := (daily.production_date - daily.project.planned_start_date).days + 1) > 0):
+                (p_days := (daily.production_date - daily.project.planned_start_date).days + 1) > 0):  #pylint: disable=line-too-long
                 pp['proj_avg'] = round(pp['proj_total'] / p_days)
 
             else:
@@ -662,18 +667,20 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         proj_times, self.time_series = self.calc_proj_time_totals(daily)
 
         # TODO make loop over source types
+        sourcetype_name, _ = get_sourcereceivertype_names(daily)
+
         # get the production stats
-        day_prod = self.calc_day_prod_totals(daily, SOURCETYPE_NAME)
-        day_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, day_prod['tcf'])
+        day_prod = self.calc_day_prod_totals(daily, sourcetype_name)
+        day_ctm = self.calc_ctm(daily, sourcetype_name, day_prod['tcf'])
 
-        week_prod = self.calc_week_prod_totals(daily, SOURCETYPE_NAME)
-        week_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, week_prod['week_tcf'])
+        week_prod = self.calc_week_prod_totals(daily, sourcetype_name)
+        week_ctm = self.calc_ctm(daily, sourcetype_name, week_prod['week_tcf'])
 
-        month_prod = self.calc_month_prod_totals(daily, SOURCETYPE_NAME)
-        month_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, month_prod['month_tcf'])
+        month_prod = self.calc_month_prod_totals(daily, sourcetype_name)
+        month_ctm = self.calc_ctm(daily, sourcetype_name, month_prod['month_tcf'])
 
-        proj_prod, self.prod_series = self.calc_proj_prod_totals(daily, SOURCETYPE_NAME)
-        proj_ctm = self.calc_ctm(daily, SOURCETYPE_NAME, proj_prod['proj_tcf'])
+        proj_prod, self.prod_series = self.calc_proj_prod_totals(daily, sourcetype_name)
+        proj_ctm = self.calc_ctm(daily, sourcetype_name, proj_prod['proj_tcf'])
 
         if CTM_METHOD == 'Legacy':
             day_ctm *= day_times['total_time'] / 24
@@ -749,7 +756,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         )
 
         ctm_series = self.calc_ctm_series(
-            daily, SOURCETYPE_NAME, self.prod_series['tcf_series'])
+            daily, sourcetype_name, self.prod_series['tcf_series'])
 
         if CTM_METHOD == 'Legacy':
             ops_time_series = self.time_series['total_time_series']

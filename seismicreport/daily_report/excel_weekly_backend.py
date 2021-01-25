@@ -12,10 +12,10 @@ import daily_report.graph_backend as _graph_backend
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
     conditional_format, set_column_widths, set_border, set_outer_border,
-    set_color, save_excel, get_row_column, set_chart_fontsize,
+    set_color, save_excel, get_row_column,
 )
 from seismicreport.vars import (
-    STOP_TARGET, PROD_TARGET, REC_TARGET, AVG_PERIOD, NO_DATE_STR, SS_2,
+    STOP_TARGET, PROD_TARGET, REC_TARGET, AVG_PERIOD, NO_DATE_STR, SS_2, IMG_SIZE,
     source_prod_schema,
 )
 
@@ -203,8 +203,35 @@ class ExcelWeekReport(_graph_backend.Mixin):
         f_vals = np.array(REC_TARGET) * self.proj_days
         conditional_format(self.wsw, 'K29', f_vals, (red, orange, green))
 
+        # add graphs
+        width, height = IMG_SIZE
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/cumul_app_ctm.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsw.add_image(img_daily_prod, 'C37')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/pie_proj_terrain.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsw.add_image(img_daily_prod, 'H37')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/rec_hours.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsw.add_image(img_daily_prod, 'C51')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/app_ctm_ratio.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsw.add_image(img_daily_prod, 'H51')
+
         # set borders
-        set_outer_border(self.wsw, 'B2:L71')
+        set_outer_border(self.wsw, 'B2:L64')
         set_outer_border(self.wsw, 'B2:L2')
         set_outer_border(self.wsw, 'J4:L4')
         set_outer_border(self.wsw, 'J5:L9')
@@ -445,6 +472,45 @@ class ExcelWeekReport(_graph_backend.Mixin):
         set_border(self.wsp, 'H23:I23')
         set_border(self.wsp, 'G24:I30')
 
+    def create_tab_graphs(self):
+        width, height = IMG_SIZE
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/bar_week_production.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'B2')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/pie_week_terrain.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'H2')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/pie_week_times.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'B16')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/bar_day_production.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'H16')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/bar_day_rechours.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'B30')
+
+        img_daily_prod = drawing.image.Image(
+            self.media_dir / 'images/bar_day_vphr.png')
+        img_daily_prod.width = width
+        img_daily_prod.height = height
+        self.wsg.add_image(img_daily_prod, 'H30')
+
     def create_tab_prod_table(self):
         prod_table = {}
         prod_table['date'] = self.prod_series['date_series']
@@ -471,6 +537,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
         self.create_tab_times()
         self.create_tab_production()
         self.create_weekly_graphs()
+        self.create_tab_graphs()
         self.create_tab_prod_table()
         return save_excel(self.wb)
 
@@ -641,7 +708,6 @@ def collate_excel_weekreport_data(day):
             day['times']['ops_time'],
             day['times']['standby'],
             day['times']['downtime'],
-
         ]
 
     #weeks times stat

@@ -10,7 +10,7 @@ from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import check_expiry_date
 
 SEISMICREPORT_VERSION = 'https://github.com/bvermeulen/seismicreport'
-SEISMICREPORT_DATE = 'November 2020'
+SEISMICREPORT_DATE = 'January 2021'
 SEISMICREPORT_AUTHOR = 'bruno.vermeulen@hotmail.com'
 EXPIRY_DATE = datetime.strptime(config('EXPIRY_DATE'), '%Y-%b-%d')
 

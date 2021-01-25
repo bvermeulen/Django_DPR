@@ -6,8 +6,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from daily_report.models.daily_models import Person, Daily
 from daily_report.models.weekly_models import Weekly
 from daily_report.report_backend import ReportInterface
-from seismicreport.vars import SOURCETYPE_NAME, RECEIVERTYPE_NAME, WEEKDAYS, WEEKS
+from seismicreport.vars import WEEKDAYS, WEEKS
 from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 
 
 logger = Logger.getlogger()
@@ -91,7 +92,6 @@ class WeekInterface:
     @timed(logger, print_log=True)
     def collate_weekdata(self, report_day):
 
-        #TODO handle situation where report are missing in the week
         # get the production figures for the days in the week
         days = {}
         project = report_day.project
@@ -105,9 +105,11 @@ class WeekInterface:
             except Daily.DoesNotExist:
                 day = None
 
-            days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, SOURCETYPE_NAME)
+            sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+
+            days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, sourcetype_name)
             days[wd]['times'] = self.rprt_iface.calc_day_time_totals(day)
-            days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, RECEIVERTYPE_NAME)
+            days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, receivertype_name)
 
             try:
                 days[wd]['prod']['vp_hour'] = (round(
@@ -129,15 +131,18 @@ class WeekInterface:
                 # skip this week
                 day = None
 
+            sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+
             weeks[wk]['prod'] = self.rprt_iface.calc_week_prod_totals(
-                day, SOURCETYPE_NAME)
+                day, sourcetype_name)
             weeks[wk]['times'] = self.rprt_iface.calc_week_time_totals(
                 day)
             weeks[wk]['rcvr'] = self.rprt_iface.week_receiver_total(
-                day, RECEIVERTYPE_NAME)
+                day, receivertype_name)
             try:
                 weeks[wk]['prod']['week_vp_hour'] = (round(
-                    weeks[wk]['prod']['week_total'] / weeks[wk]['times']['week_rec_time']))
+                    weeks[wk]['prod']['week_total'] /
+                    weeks[wk]['times']['week_rec_time']))
 
             except ValueError:
                 weeks[wk]['prod']['week_vp_hour'] = np.nan

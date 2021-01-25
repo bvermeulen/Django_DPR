@@ -8,7 +8,7 @@ from daily_report.report_backend import ReportInterface
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_outer_border, save_excel
 )
-from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2
+from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2, IMG_SIZE
 
 
 class ExcelDayReport:
@@ -36,8 +36,6 @@ class ExcelDayReport:
     def create_dailyreport(self):
         ''' method to create excel daily report
         '''
-        img_width =310
-        img_height = 150
         fontname = 'Tahoma'
         red = '00FF0000'
         green = '0000FF00'
@@ -185,28 +183,29 @@ class ExcelDayReport:
             font_normal, Alignment(vertical='top', wrap_text=True))
 
         # add graphs
+        width, height = IMG_SIZE
         img_daily_prod = drawing.image.Image(self.media_root / 'images/daily_prod.png')
-        img_daily_prod.width = img_width
-        img_daily_prod.height = img_height
+        img_daily_prod.width = width
+        img_daily_prod.height = height
         self.ws.add_image(img_daily_prod, 'C28')
 
-        img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm_ratio.png')
-        img_app_ctm.width = img_width
-        img_app_ctm.height = img_height
-        self.ws.add_image(img_app_ctm, 'H28')
-
         img_cumul_prod = drawing.image.Image(self.media_root / 'images/cumul_prod.png')
-        img_cumul_prod.width = img_width
-        img_cumul_prod.height = img_height
-        self.ws.add_image(img_cumul_prod, 'C37')
+        img_cumul_prod.width = width
+        img_cumul_prod.height = height
+        self.ws.add_image(img_cumul_prod, 'H28')
 
         img_rec_hours = drawing.image.Image(self.media_root / 'images/rec_hours.png')
-        img_rec_hours.width = img_width
-        img_rec_hours.height = img_height
-        self.ws.add_image(img_rec_hours, 'H37')
+        img_rec_hours.width = width
+        img_rec_hours.height = height
+        self.ws.add_image(img_rec_hours, 'C41')
+
+        img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm_ratio.png')
+        img_app_ctm.width = width
+        img_app_ctm.height = height
+        self.ws.add_image(img_app_ctm, 'H41')
 
         # set borders
-        set_outer_border(self.ws, 'B2:L46')
+        set_outer_border(self.ws, 'B2:L54')
         set_outer_border(self.ws, 'B2:L2')
         set_outer_border(self.ws, 'B3:I15')
         set_outer_border(self.ws, 'H4:I11')
