@@ -234,7 +234,7 @@ def collate_excel_dailyreport_data(day):
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
 
     if project.start_report:
-        ops_days = (day.production_date - project.start_report).days
+        ops_days = (day.production_date - project.start_report).days + 1
 
     else:
         ops_days = NO_DATE_STR
