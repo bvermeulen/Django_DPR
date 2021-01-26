@@ -115,7 +115,7 @@ class WeekInterface:
                     days[wd]['prod']['total_sp'] / days[wd]['times']['rec_time']))
 
             except ValueError:
-                days[wd]['prod']['total_sp'] = np.nan
+                days[wd]['prod']['vp_hour'] = np.nan
 
         # get the weekly production figures for the 6 weeks before
         weeks = {}
