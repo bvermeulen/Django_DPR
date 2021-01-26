@@ -7,7 +7,7 @@ from daily_report.models.daily_models import Person, Daily
 from daily_report.models.weekly_models import Weekly
 from daily_report.report_backend import ReportInterface
 from seismicreport.vars import WEEKDAYS, WEEKS
-from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 
 
@@ -89,7 +89,6 @@ class WeekInterface:
         week.delete()
 
 
-    @timed(logger, print_log=True)
     def collate_weekdata(self, report_day):
 
         # get the production figures for the days in the week

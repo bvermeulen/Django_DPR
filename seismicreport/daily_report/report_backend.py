@@ -17,7 +17,7 @@ from seismicreport.vars import (
     standby_keys, downtime_keys, NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH, NO_DATE_STR,
     WEEKDAYS, CTM_METHOD
 )
-from seismicreport.utils.plogger import Logger, timed
+from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import (
     calc_ratio, nan_array, get_sourcereceivertype_names
 )
@@ -285,7 +285,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         hse_weather.lsr_violations = int(
             np.nan_to_num(self.get_value(day_df, 'hse lsr violation')))
         hse_weather.headcount = np.nan_to_num(self.get_value(day_df, 'headcount'))
-        hse_weather.exposure_hours = np.nan_to_num(self.get_value(day_df, 'exposure hours'))
+        hse_weather.exposure_hours = np.nan_to_num(
+            self.get_value(day_df, 'exposure hours'))
         hse_weather.weather_condition = self.get_value(
             day_df, 'weather condition')[:NAME_LENGTH]
         hse_weather.rain = self.get_value(day_df, 'rain')[:NAME_LENGTH]
@@ -653,7 +654,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         return pt, ts
 
-    @timed(logger, print_log=True)
     def calc_totals(self, daily):
         if not daily:
             return {}, {}, {}
@@ -787,7 +787,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
     def series(self) -> typing.Optional[tuple]:
         return self.prod_series, self.time_series
 
-    @timed(logger, print_log=True)
     def calc_block_totals(self, daily):
         ''' A naive method to calculate block production totals
             Block totals are calculated for the block reported for the day

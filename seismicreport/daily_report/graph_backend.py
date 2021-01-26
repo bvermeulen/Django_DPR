@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import matplotlib.dates as mdates
 from seismicreport.utils.utils_funcs import nan_array
-from seismicreport.utils.plogger import Logger, timed
+from seismicreport.utils.plogger import Logger
 
 matplotlib.use('Agg')
 
@@ -19,7 +19,6 @@ logger = Logger.getlogger()
 
 class Mixin:
 
-    @timed(logger, print_log=True)
     def create_daily_graphs(self):
         ''' Method to make plots. This method works correctly once self.prod_series and
             self.time_series have been calculated in method calc_totals. Reason to split
@@ -151,7 +150,6 @@ class Mixin:
         plt.savefig(plot_filename, format='png')
         plt.close()
 
-    @timed(logger, print_log=True)
     def create_weekly_graphs(self):
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
