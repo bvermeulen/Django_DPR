@@ -73,8 +73,8 @@ BGP_DR_table = {
     'hse drills': (36, 14),
     'hse audits': (37, 14),
     'hse lsr violation': (38, 14),
-    'ops time': (47, 9),
-    'day time': (48, 9),
+    'headcount': (47, 9),
+    'exposure hours': (48, 9),
 }
 
 source_prod_schema = [
@@ -107,7 +107,7 @@ downtime_keys = [
 
 hse_weather_schema = [
     'stop', 'lti', 'fac', 'mtc', 'rwc', 'incident_nm', 'medevac', 'drills', 'audits',
-    'lsr_violations', 'ops_time', 'day_time', 'weather_condition', 'rain',
+    'lsr_violations', 'headcount', 'exposure_hours', 'weather_condition', 'rain',
     'temp_min', 'temp_max',
 ]
 

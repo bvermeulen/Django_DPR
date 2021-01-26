@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load humanize %}
+{% load mytags %}
 
 {% block title %}Daily{% endblock %}
 
@@ -491,16 +492,16 @@
               <td class="text-right">{{ totals_hse.proj_lsr_violations|intcomma }}</td>
             </tr>
             <tr>
-              <td>Ops time</td>
-              <td class="text-right">{{ totals_hse.ops_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.month_ops_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.proj_ops_time|floatformat:1 }}</td>
+              <td>Headcount</td>
+              <td class="text-right">{{ totals_hse.headcount|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_headcount|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_headcount|intcomma }}</td>
             </tr>
             <tr>
-              <td>Exposure</td>
-              <td class="text-right">{{ totals_hse.day_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.month_day_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.proj_day_time|floatformat:1 }}</td>
+              <td>Exposure hours</td>
+              <td class="text-right">{{ totals_hse.exposure_hours|f_format:",.0f" }}</td>
+              <td class="text-right">{{ totals_hse.month_exposure_hours|f_format:",.0f" }}</td>
+              <td class="text-right">{{ totals_hse.proj_exposure_hours|f_format:",.0f" }}</td>
             </tr>
             </tbody>
         </table>
