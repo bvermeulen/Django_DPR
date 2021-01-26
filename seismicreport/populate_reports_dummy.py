@@ -17,7 +17,7 @@ from daily_report.models.project_models import Project
 from seismicreport.vars import SOURCETYPE_NAME, RECEIVERTYPE_NAME
 
 report_filename = r'CSR-MS-NatihWAZ.xlsx'
-project_name = 'NatihWAZ'
+project_name = 'Dummy'
 months = ['Mar-2019', 'Apr-2019', 'May-2019', 'Jun-2019', 'Jul-2019', 'Aug-2019',
           'Sep-2019', 'Oct-2019', 'Nov-2019', 'Dec-2019', 'Jan-2020',]
 
@@ -149,6 +149,8 @@ def populate_report(project, row_df):
     time_breakdown.holiday = np.nan
     time_breakdown.recovering = np.nan
     time_breakdown.save()
+
+
 
     return day.production_date
 

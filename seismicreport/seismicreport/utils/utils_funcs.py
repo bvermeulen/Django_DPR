@@ -1,8 +1,9 @@
 ''' utility function that can be used throughout the app
 '''
+import os
 from datetime import datetime
 import numpy as np
-
+from seismicreport.utils.plogger import Logger
 
 def nan_array(a_list: list):
     ''' convert list to np.array, converting nan values to zero
@@ -60,3 +61,27 @@ def string_to_date(date_str: str) -> datetime:
 
     except ValueError:
         return  datetime(1900, 1, 1)
+
+def check_expiry_date(expiry_date: datetime):
+    logger = Logger.getlogger()
+    if datetime.now() > expiry_date:
+        warning_str = (
+            'License expired: please contact admin@howdiweb.nl to renew the license'
+        )
+        print(warning_str)
+        logger.warning(warning_str)
+        os.remove('.env')
+        exit()
+    else:
+        logger.info('License is valid')
+
+def get_sourcereceivertype_names(daily):
+    ''' hardwired patch function until proper loop over sourcetypes, receivertypes
+        is implemented
+    '''
+    #TODO delete after proper loop is implemented
+    if daily and daily.project.project_name[:6] == 'Haniya':
+        return 'vibe_25_25', 'node_75_75'
+
+    else:
+        return 'vibe_25m', 'receiver_25m'

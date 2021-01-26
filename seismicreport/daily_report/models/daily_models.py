@@ -1,5 +1,5 @@
 from django.db import models
-from daily_report.models.project_models import Project, Block, SourceType
+from daily_report.models.project_models import Project, Block, SourceType, ReceiverType
 from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH, COMMENT_LENGTH
 
 
@@ -14,8 +14,9 @@ class Person(models.Model):
 class Daily(models.Model):
     production_date = models.DateField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='dailies')
+    # disable deleting a block if already exists in a daily report
     block = models.ForeignKey(
-        Block, on_delete=models.CASCADE, related_name='dailies', blank=True, null=True)
+        Block, on_delete=models.PROTECT, related_name='dailies', blank=True, null=True)
     staff = models.ManyToManyField(Person, related_name='dailies')
     csr_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
     pm_comment = models.TextField(max_length=COMMENT_LENGTH, default='')
@@ -30,7 +31,8 @@ class Daily(models.Model):
 
 class SourceProduction(models.Model):
     daily = models.ForeignKey(Daily, on_delete=models.CASCADE)
-    sourcetype = models.ForeignKey(SourceType, on_delete=models.CASCADE)
+    # disable delete SourceType if already used in a daily report
+    sourcetype = models.ForeignKey(SourceType, on_delete=models.PROTECT)
     sp_t1_flat = models.IntegerField(default=0)
     sp_t2_rough = models.IntegerField(default=0)
     sp_t3_facilities = models.IntegerField(default=0)
@@ -43,6 +45,23 @@ class SourceProduction(models.Model):
 
     class Meta:
         unique_together = ['daily', 'sourcetype']
+
+
+class ReceiverProduction(models.Model):
+    daily = models.ForeignKey(Daily, on_delete=models.CASCADE)
+    # disable delete ReceiverType if already used in a daily report
+    receivertype = models.ForeignKey(ReceiverType, on_delete=models.PROTECT)
+    layout = models.IntegerField(default=0)
+    pickup = models.IntegerField(default=0)
+    qc_field = models.FloatField(default=0.0)
+    qc_camp = models.FloatField(default=0.0)
+    upload = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.daily.production_date} - {self.receivertype.receivertype_name}'
+
+    class Meta:
+        unique_together = ['daily', 'receivertype']
 
 
 class TimeBreakdown(models.Model):
@@ -81,8 +100,8 @@ class HseWeather(models.Model):
     drills = models.IntegerField(default=0)
     audits = models.IntegerField(default=0)
     lsr_violations = models.IntegerField(default=0)
-    ops_time = models.FloatField(default=0)
-    day_time = models.FloatField(default=0)
+    headcount = models.IntegerField(default=0)
+    exposure_hours = models.FloatField(default=0)
     weather_condition = models.CharField(max_length=NAME_LENGTH, default='')
     rain = models.CharField(max_length=NAME_LENGTH, default='')
     temp_min = models.FloatField(default=0)

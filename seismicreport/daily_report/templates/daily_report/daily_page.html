@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load humanize %}
+{% load mytags %}
 
 {% block title %}Daily{% endblock %}
 
@@ -62,13 +63,16 @@
     {% endwith %}
 
     <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
     <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
       onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
     </button>
   {% endif %}
 
-  <strong class="ml-4">Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
-    Daily report: {{ form_project_control.report_date.value }}</a></strong>
+  <strong class="ml-4">
+    Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
+    Daily report: {{ form_project_control.report_date.value }}
+  </strong>
   <div class="d-md-flex h-md-100 mb-3">
     <div class="form-group col-md-6">
       <label>CSR comment</label>
@@ -87,7 +91,7 @@
     </div>
     <div class="d-md-flex h-md-100 mb-3">
       <img width="50%" src="/media/images/rec_hours.png">
-      <img width="50%" src="/media/images/app_ctm.png">
+      <img width="50%" src="/media/images/app_ctm_ratio.png">
     </div>
 
     <div class="row align-items-top mb-5">
@@ -368,6 +372,51 @@
               <td class="text-right">{{ totals_time.proj_total_time|floatformat:3 }}</td>
             </tr>
         </table>
+
+        <strong>Receivers</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Layout</td>
+              <td class="text-right">{{ totals_receiver.layout|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_layout|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_layout|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Pickup</td>
+              <td class="text-right">{{ totals_receiver.pickup|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_pickup|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_pickup|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>QC field</td>
+              <td class="text-right">{{ totals_receiver.qc_field|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_qc_field|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_qc_field|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>QC camp</td>
+              <td class="text-right">{{ totals_receiver.qc_camp|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_qc_camp|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_qc_camp|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>Upload</td>
+              <td class="text-right">{{ totals_receiver.upload|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.month_upload|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_upload|floatformat:4 }}</td>
+            </tr>
+          </tbody>
+        </table>
+
       </div>
 
       <div style="max-width: 80vw" class="col-lg-4 mb-3">
@@ -443,16 +492,16 @@
               <td class="text-right">{{ totals_hse.proj_lsr_violations|intcomma }}</td>
             </tr>
             <tr>
-              <td>Ops time</td>
-              <td class="text-right">{{ totals_hse.ops_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.month_ops_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.proj_ops_time|floatformat:1 }}</td>
+              <td>Headcount</td>
+              <td class="text-right">{{ totals_hse.headcount|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.month_headcount|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.proj_headcount|intcomma }}</td>
             </tr>
             <tr>
-              <td>Exposure</td>
-              <td class="text-right">{{ totals_hse.day_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.month_day_time|floatformat:1 }}</td>
-              <td class="text-right">{{ totals_hse.proj_day_time|floatformat:1 }}</td>
+              <td>Exposure hours</td>
+              <td class="text-right">{{ totals_hse.exposure_hours|f_format:",.0f" }}</td>
+              <td class="text-right">{{ totals_hse.month_exposure_hours|f_format:",.0f" }}</td>
+              <td class="text-right">{{ totals_hse.proj_exposure_hours|f_format:",.0f" }}</td>
             </tr>
             </tbody>
         </table>

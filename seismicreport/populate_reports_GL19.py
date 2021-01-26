@@ -10,9 +10,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seismicreport.settings')
 django.setup()
 from django.db.utils import IntegrityError
 
-from daily_report.models.daily_models import Daily, SourceProduction, TimeBreakdown
+from daily_report.models.daily_models import (
+    Daily, SourceProduction, ReceiverProduction, TimeBreakdown
+)
 from daily_report.models.project_models import Project
-from seismicreport.vars import SOURCETYPE_NAME
+from seismicreport.vars import SOURCETYPE_NAME, RECEIVERTYPE_NAME
 
 report_filename = r'BGP-MS-GL19.xlsx'
 project_name = '19GL'
@@ -95,6 +97,28 @@ def populate_report(project, row_df):
         np.nan_to_num(get_value(row_df, 'sp_t5')))
     prod.skips = int(np.nan_to_num(get_value(row_df, 'skips')))
     prod.save()
+
+    # create/ update receiver production values
+    try:
+        rcvr = ReceiverProduction.objects.create(
+            daily=day,
+            receivertype=day.project.receivertypes.get(
+                receivertype_name=RECEIVERTYPE_NAME)
+        )
+
+    except IntegrityError:
+        rcvr = ReceiverProduction.objects.get(
+            daily=day,
+            receivertype=day.project.receivertypes.get(
+                receivertype_name=RECEIVERTYPE_NAME)
+        )
+
+    rcvr.layout = 0
+    rcvr.pickup = 0
+    rcvr.qc_field = 0
+    rcvr.qc_camp = 0
+    rcvr.upload = 0
+    rcvr.save()
 
     # create/ update time breakdown values
     try:

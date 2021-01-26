@@ -28,10 +28,11 @@
   <div style="display: none">{{ form_project_control.new_project_name }}{{ form_project_control.projects }}</div>
   <div style="display: none">{{ form_block_control.new_block_name }}{{ form_block_control.blocks }}</div>
   <div style="display: none">{{ form_sourcetype_control.new_sourcetype_name }}{{ form_sourcetype_control.sourcetypes }}</div>
-  <div style="display: none">{{ form_block}}{{ form_project }}{{ form_sourcetype}}</div>
+  <div style="display: none">{{ form_receivertype_control.new_receivertype_name }}{{ form_receivertype_control.receivertypes }}</div>
+  <div style="display: none">{{ form_block }}{{ form_project }}{{ form_sourcetype }}{{ form_receivertype }}</div>
 
   <div class="row align-items-top mb-4">
-    <div class="col-lg-4 mb-4">
+    <div class="col-lg-3 mb-4">
       <div class="dropdown mb-2">
         <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Project</button>
         <div class="dropdown-content">
@@ -62,7 +63,7 @@
           {{ form_project.as_table }}
           <tr>
             <td>
-              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'download' form_project_control.projects.value %}">PDF work order</a></strong>
+              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'download' form_project_control.projects.value %}">PDF work order:</a></strong>
             </td>
             <td>
               <div class="fileUpload btn btn-outline-dark btn-sm my-0 mx-0 w-100">
@@ -81,7 +82,7 @@
     </div>
 
     {% if form_project_control.projects.value != '' %}
-      <div class="col-lg-4 mb-4">
+      <div class="col-lg-3 mb-4">
         <div class="dropdown mb-2">
           <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Block</button>
           <div class="dropdown-content">
@@ -113,7 +114,7 @@
         {% endif %}
       </div>
 
-      <div class="col-lg-4 mb-4">
+      <div class="col-lg-3 mb-4">
         <div class="dropdown mb-2">
           <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Sourcetype</button>
           <div class="dropdown-content">
@@ -145,6 +146,40 @@
           </table>
         {% endif %}
       </div>
+
+      <div class="col-lg-3 mb-4">
+        <div class="dropdown mb-2">
+          <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Receivertype</button>
+          <div class="dropdown-content">
+            {% for receivertype in form_receivertype_control.receivertypes %}
+            <button class="btn btn-link my-0" value="{{ receivertype.data.value }}" name="{{ receivertype.data.name }}">
+              <a>{{ receivertype.choice_label }}</a>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% if form_receivertype_control.receivertypes.value != '' %}
+          <button class="btn btn-outline-primary btn-sm my-1" type="submit" value="submit_receivertype" name="button_pressed">
+            Submit
+          </button>
+        {% endif %}
+        <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="new_receivertype"
+          onclick="return promptNewReceiverTypeName()">New
+        </button>
+
+        {% if form_receivertype_control.receivertypes.value != '' %}
+          <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete_receivertype"
+            onclick="return confirmDeleteReceiverType('{{ form_receivertype_control.receivertypes.value }}')">Delete
+          </button>
+        {% endif %}
+
+        {% if form_receivertype_control.receivertypes.value != '' %}
+          <table>
+            {{ form_receivertype.as_table }}
+          </table>
+        {% endif %}
+      </div>
+
     {% endif %}
   </div>
 
@@ -154,71 +189,93 @@
 {% block javascript %}
 <script>
 
-function promptNewProjectName() {
-  var newProjectName = prompt('What is the name of the new project', '');
+  function promptNewProjectName() {
+    var newProjectName = prompt('What is the name of the new project', '');
 
-  if (newProjectName != null && newProjectName != '' && newProjectName != "''") {
-    id_new_project_name.value = newProjectName;
-    return true;
+    if (newProjectName != null && newProjectName != '' && newProjectName != "''") {
+      id_new_project_name.value = newProjectName;
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 
-function confirmDeleteProject(project) {
-  confirmed = confirm('Do you really want to delete project: ' + project + '?');
-  if (confirmed) {
-    return true;
+  function confirmDeleteProject(project) {
+    confirmed = confirm('Do you really want to delete project: ' + project + '?');
+    if (confirmed) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 
-function promptNewBlockName() {
-  var newBlockName = prompt('What is the name of the new block', '');
+  function promptNewBlockName() {
+    var newBlockName = prompt('What is the name of the new block', '');
 
-  if (newBlockName != null && newBlockName != '' && newBlockName != "''") {
-    id_new_block_name.value = newBlockName;
-    return true;
+    if (newBlockName != null && newBlockName != '' && newBlockName != "''") {
+      id_new_block_name.value = newBlockName;
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 
-function confirmDeleteBlock(block) {
-  confirmed = confirm('Do you really want to delete block: ' + block + '?');
-  if (confirmed) {
-    return true;
+  function confirmDeleteBlock(block) {
+    confirmed = confirm('Do you really want to delete block: ' + block + '?');
+    if (confirmed) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 
-function promptNewSourceTypeName() {
-  var newSourceTypeName = prompt('What is the name of the new source type', '');
+  function promptNewSourceTypeName() {
+    var newSourceTypeName = prompt('What is the name of the new source type', '');
 
-  if (newSourceTypeName != null && newSourceTypeName != '' && newSourceTypeName != "''") {
-    id_new_sourcetype_name.value = newSourceTypeName;
-    return true;
+    if (newSourceTypeName != null && newSourceTypeName != '' && newSourceTypeName != "''") {
+      id_new_sourcetype_name.value = newSourceTypeName;
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
-  }
-}
 
-function confirmDeleteSourceType(sourcetype) {
-  confirmed = confirm('Do you really want to delete block: ' + sourcetype + '?');
-  if (confirmed) {
-    return true;
+  function confirmDeleteSourceType(sourcetype) {
+    confirmed = confirm('Do you really want to delete source type: ' + sourcetype + '?');
+    if (confirmed) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else {
-    return false;
+
+  function promptNewReceiverTypeName() {
+    var newReceiverTypeName = prompt('What is the name of the new receiver type', '');
+
+    if (newReceiverTypeName != null && newReceiverTypeName != '' && newReceiverTypeName != "''") {
+      id_new_receivertype_name.value = newReceiverTypeName;
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-}
+
+  function confirmDeleteReceiverType(receivertype) {
+    confirmed = confirm('Do you really want to delete receiver type: ' + receivertype + '?');
+    if (confirmed) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
 </script>
 {% endblock %}
