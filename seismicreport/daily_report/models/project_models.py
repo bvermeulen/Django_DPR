@@ -5,6 +5,7 @@ from seismicreport.vars import NAME_LENGTH, TYPE_LENGTH
 class Project(models.Model):
     project_name = models.CharField(max_length=NAME_LENGTH, unique=True, )
     crew_name = models.CharField(max_length=NAME_LENGTH, default='')
+    start_report = models.DateField(null=True)
     pdf_work_order = models.BinaryField()
     planned_area = models.FloatField(default=0.0)
     planned_vp = models.IntegerField(default=0)

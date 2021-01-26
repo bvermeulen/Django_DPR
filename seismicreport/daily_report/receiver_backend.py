@@ -1,22 +1,30 @@
+from datetime import timedelta
 import numpy as np
 from django.db.models import Q
-from daily_report.models.project_models import ReceiverType
 from daily_report.models.daily_models import ReceiverProduction
-from seismicreport.vars import RECEIVERTYPE_NAME, receiver_prod_schema
+from seismicreport.vars import WEEKDAYS, receiver_prod_schema
 from seismicreport.utils.plogger import Logger, timed
-from seismicreport.utils.utils_funcs import nan_array
+from seismicreport.utils.utils_funcs import nan_array, get_sourcereceivertype_names
 
 logger = Logger.getlogger()
 
-class ReceiverInterface:
+class Mixin:
 
     @staticmethod
-    def day_receiver_total(daily, receivertype):
+    def day_receiver_total(daily, receivertype_name):
+        if daily:
+            try:
+                rcvr = ReceiverProduction.objects.get(
+                    daily=daily,
+                    receivertype=daily.project.receivertypes.get(
+                        receivertype_name=receivertype_name),
+                    )
 
-        try:
-            rcvr = ReceiverProduction.objects.get(daily=daily, receivertype=receivertype)
+            except ReceiverProduction.DoesNotExist:
+                d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
+                return d_rcvr
 
-        except ReceiverProduction.DoesNotExist:
+        else:
             d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
             return d_rcvr
 
@@ -26,16 +34,46 @@ class ReceiverInterface:
         return d_rcvr
 
     @staticmethod
-    def month_receiver_total(daily, receivertype):
+    def week_receiver_total(daily, receivertype_name):
+        if daily:
+            end_date = daily.production_date
+            start_date = end_date - timedelta(days=WEEKDAYS-1)
+            rcvr_query = ReceiverProduction.objects.filter(
+                Q(daily__production_date__gte=start_date),
+                Q(daily__production_date__lte=end_date),
+                receivertype = daily.project.receivertypes.get(
+                    receivertype_name=receivertype_name
+                ),
+            )
+
+        else:
+            rcvr_query = None
+
+        if not rcvr_query:
+            w_rcvr = {f'week_{key}': 0 for key in receiver_prod_schema}
+            return w_rcvr
+
+        w_rcvr = {
+            f'week_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
+            for key in receiver_prod_schema
+        }
+
+        return w_rcvr
+
+    @staticmethod
+    def month_receiver_total(daily, receivertype_name):
         rcvr_query = ReceiverProduction.objects.filter(
             Q(daily__production_date__year=daily.production_date.year) &
             Q(daily__production_date__month=daily.production_date.month) &
             Q(daily__production_date__day__lte=daily.production_date.day),
-            receivertype=receivertype,
+            receivertype = daily.project.receivertypes.get(
+                receivertype_name=receivertype_name
+            ),
         )
 
         if not rcvr_query:
-            return {}
+            m_rcvr = {f'month_{key}': 0 for key in receiver_prod_schema}
+            return m_rcvr
 
         m_rcvr = {
             f'month_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
@@ -45,14 +83,17 @@ class ReceiverInterface:
         return m_rcvr
 
     @staticmethod
-    def project_receiver_total(daily, receivertype):
+    def project_receiver_total(daily, receivertype_name):
         rcvr_query = ReceiverProduction.objects.filter(
             daily__production_date__lte=daily.production_date,
-            receivertype=receivertype,
+            receivertype = daily.project.receivertypes.get(
+                receivertype_name=receivertype_name
+            ),
         )
 
         if not rcvr_query:
-            return {}
+            p_rcvr = {f'proj_{key}': 0 for key in receiver_prod_schema}
+            return p_rcvr
 
         p_rcvr = {
             f'proj_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
@@ -66,15 +107,11 @@ class ReceiverInterface:
         ''' method to calc the receiver totals. Outstanding:
             loop over receivertypes and handling of qc_field, qc_camp, upload
         '''
-        try:
-            rt = ReceiverType.objects.get(
-                project=daily.project, receivertype_name=RECEIVERTYPE_NAME)
+        _, receivertype_name = get_sourcereceivertype_names(daily)
 
-        except ReceiverType.DoesNotExist:
-            return {}
+        d_rcvr = self.day_receiver_total(daily, receivertype_name)
+        w_rcvr = self.week_receiver_total(daily, receivertype_name)
+        m_rcvr = self.month_receiver_total(daily, receivertype_name)
+        p_rcvr = self.project_receiver_total(daily, receivertype_name)
 
-        d_rcvr = self.day_receiver_total(daily, rt)
-        m_rcvr = self.month_receiver_total(daily, rt)
-        p_rcvr = self.project_receiver_total(daily, rt)
-
-        return {**d_rcvr, **m_rcvr, **p_rcvr}
+        return {**d_rcvr, **w_rcvr, **m_rcvr, **p_rcvr}
