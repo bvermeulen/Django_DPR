@@ -192,7 +192,7 @@ class Mixin:
         # pie chart of terrain distribution week
         plot_filename = self.media_dir / 'images/pie_week_terrain.png'
         terrain_labels = [val for val in self.week_terrain.keys()][:-1]
-        terrain_vals = [val for val in self.week_terrain.values()][:-1]
+        terrain_vals = nan_array([val for val in self.week_terrain.values()][:-1])
         plt.title('Terrain - week')
         plt.pie(terrain_vals, labels=terrain_labels, autopct='%1.2f%%')
         plt.tight_layout()
@@ -214,7 +214,7 @@ class Mixin:
 
         # get 18, 19, 20 element for the 6th (which is the current) week
         time_labels = [val for val in self.weeks_times['header'][18:]]
-        time_vals = [val for val in self.weeks_times[5][18:]]
+        time_vals = nan_array([val for val in self.weeks_times[5][18:]])
         plt.title('Weekly time breakdown')
         plt.pie(time_vals, labels=time_labels, autopct='%1.2f%%')
         plt.tight_layout()
@@ -225,8 +225,8 @@ class Mixin:
         plot_filename = self.media_dir / 'images/bar_week_production.png'
         date_series = [val[0].replace(' ', '\n') for val in self.weeks_prod.values()
             if val[0] != 'Week']
-        prod_series = [val[1] / 1000 for val in self.weeks_prod.values()
-            if not isinstance(val[1], str)]
+        prod_series = nan_array([val[1] / 1000 for val in self.weeks_prod.values()
+            if not isinstance(val[1], str)])
         plt.bar(date_series, prod_series, zorder=2)
         for i, val in enumerate(prod_series):
             plt.annotate(
@@ -244,8 +244,8 @@ class Mixin:
         plot_filename = self.media_dir / 'images/bar_day_production.png'
         date_series = [val[0] for val in self.days_prod.values()
             if val[0] != 'Day']
-        prod_series = [val[1] for val in self.days_prod.values()
-            if not isinstance(val[1], str)]
+        prod_series = nan_array([val[1] for val in self.days_prod.values()
+            if not isinstance(val[1], str)])
         plt.bar(date_series, prod_series, zorder=2)
         for i, val in enumerate(prod_series):
             plt.annotate(
@@ -261,8 +261,8 @@ class Mixin:
 
         # bar chart daily recording hours
         plot_filename = self.media_dir / 'images/bar_day_rechours.png'
-        rec_series = [val[2] for val in self.days_prod.values()
-            if not isinstance(val[2], str)]
+        rec_series = nan_array([val[2] for val in self.days_prod.values()
+            if not isinstance(val[2], str)])
         plt.bar(date_series, rec_series, zorder=2)
         for i, val in enumerate(rec_series):
             plt.annotate(
@@ -280,8 +280,8 @@ class Mixin:
 
         # bar chart daily VPs per hour
         plot_filename = self.media_dir / 'images/bar_day_vphr.png'
-        vphr_series = [val[3] for val in self.days_prod.values()
-            if not isinstance(val[3], str)]
+        vphr_series = nan_array([val[3] for val in self.days_prod.values()
+            if not isinstance(val[3], str)])
         plt.bar(date_series, vphr_series, zorder=2)
         for i, val in enumerate(vphr_series):
             plt.annotate(
