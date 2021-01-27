@@ -287,10 +287,11 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         hse_weather.lsr_violations = int(
             np.nan_to_num(self.get_value(day_df, 'hse lsr violation')))
         hse_weather.headcount = np.nan_to_num(self.get_value(day_df, 'headcount'))
-        hse_weather.exposure_hours = np.nan_to_num(self.get_value(day_df, 'exposure hours'))
-        hse_weather.weather_condition = self.get_value(
-            day_df, 'weather condition')[:NAME_LENGTH]
-        hse_weather.rain = self.get_value(day_df, 'rain')[:NAME_LENGTH]
+        hse_weather.exposure_hours = np.nan_to_num(self.get_value(
+            day_df, 'exposure hours'))
+        hse_weather.weather_condition = str(self.get_value(
+            day_df, 'weather condition'))[:NAME_LENGTH]
+        hse_weather.rain = str(self.get_value(day_df, 'rain'))[:NAME_LENGTH]
         hse_weather.temp_min = np.nan_to_num(self.get_value(day_df, 'temp min'))
         hse_weather.temp_max = np.nan_to_num(self.get_value(day_df, 'temp max'))
         hse_weather.save()
