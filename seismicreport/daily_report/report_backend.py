@@ -30,6 +30,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         self.media_dir = Path(media_dir)
         self.prod_series = None
         self.time_series = None
+        self.mpr_rec_hours = 24.0
 
     @staticmethod
     def get_value(day_df, kw):
@@ -63,8 +64,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         else:
             return 0, None
 
-    @staticmethod
-    def calc_ctm(daily, sourcetype_name, tcf):
+    def calc_ctm(self, daily, sourcetype_name, tcf):
         if not daily or np.isnan(tcf):
             return np.nan
 
@@ -72,12 +72,16 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         mpr_vibes = sourcetype_obj.mpr_vibes
         mpr_sweep = sourcetype_obj.mpr_sweep_length
         mpr_moveup = sourcetype_obj.mpr_moveup
-        mpr_rec_hours = sourcetype_obj.mpr_rec_hours
+        # need mpr_rec_hours for graph_backend
+        #TODO self.mpr_rec_hours - fix this ugly patch!
+        self.mpr_rec_hours = sourcetype_obj.mpr_rec_hours
+        if not isinstance(self.mpr_rec_hours, float):
+            self.mpr_rec_hours = 24.0
 
         if mpr_vibes == 0 or mpr_sweep == 0 or mpr_moveup == 0:
             return np.nan
 
-        ctm = int(3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * mpr_rec_hours)
+        ctm = int(3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours)
 
         return ctm
 
