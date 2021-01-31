@@ -263,10 +263,12 @@
           <th class="text-right">Skip</th>
           <th class="text-right">Layout</th>
           <th class="text-right">Pickup</th>
-          <th class="text-right">QC fld</th>
-          <th class="text-right">QC cmp</th>
-          <th class="text-right">Upload</th>
-       </tr>
+          <th class="text-right">Download</th>
+          <th class="text-right">Charged</th>
+          <th class="text-right">Failure</th>
+          <th class="text-right">Repair</th>
+          <th class="text-right">QC field</th>
+        </tr>
       </thead>
       <tbody>
         {% for key, d in days.items reversed %}
@@ -276,11 +278,13 @@
             <td>{{ d.times.rec_time|floatformat:2 }}</td>
             <td>{{ d.prod.vp_hour }}</td>
             <td>{{ d.prod.skips|intcomma }}</td>
-            <td>{{ d.rcvr.layout }}</td>
-            <td>{{ d.rcvr.pickup }}</td>
+            <td>{{ d.rcvr.layout|intcomma }}</td>
+            <td>{{ d.rcvr.pickup|intcomma }}</td>
+            <td>{{ d.rcvr.node_download|intcomma }}</td>
+            <td>{{ d.rcvr.node_charged|intcomma }}</td>
+            <td>{{ d.rcvr.node_failure|intcomma }}</td>
+            <td>{{ d.rcvr.node_repair|intcomma }}</td>
             <td>{{ d.rcvr.qc_field|f_format:".2f" }}</td>
-            <td>{{ d.rcvr.qc_camp|f_format:".2f" }}</td>
-            <td>{{ d.rcvr.upload|intcomma }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -298,9 +302,11 @@
           <th class="text-right">Skip</th>
           <th class="text-right">Layout</th>
           <th class="text-right">Pickup</th>
-          <th class="text-right">QC fld</th>
-          <th class="text-right">QC cmp</th>
-          <th class="text-right">Upload</th>
+          <th class="text-right">Download</th>
+          <th class="text-right">Charged</th>
+          <th class="text-right">Failure</th>
+          <th class="text-right">Repair</th>
+          <th class="text-right">QC field</th>
         </tr>
       </thead>
       <tbody>
@@ -313,9 +319,11 @@
           <td>{{ wk.prod.week_skips|intcomma }}</td>
           <td>{{ wk.rcvr.week_layout|intcomma }}</td>
           <td>{{ wk.rcvr.week_pickup|intcomma }}</td>
+          <td>{{ wk.rcvr.week_node_download|intcomma }}</td>
+          <td>{{ wk.rcvr.week_node_charged|intcomma }}</td>
+          <td>{{ wk.rcvr.week_node_failure|intcomma }}</td>
+          <td>{{ wk.rcvr.week_node_repair|intcomma }}</td>
           <td>{{ wk.rcvr.week_qc_field|f_format:".2f" }}</td>
-          <td>{{ wk.rcvr.week_qc_camp|f_format:".2f" }}</td>
-          <td>{{ wk.rcvr.week_upload|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -338,13 +346,13 @@
           <th>Cltst</th>
           <th>BCntr</th>
           <th>Move</th>
-          <th>Lnflt</th>
-          <th>Insflt</th>
+          <th>Eqflt</th>
           <th>Vibflt</th>
-          <th>Inc.</th>
-          <th>Hol.</th>
-          <th>Rcov.</th>
-          <th>Oth.dt</th>
+          <th>Inc</th>
+          <th>Dsp</th>
+          <th>Comp</th>
+          <th>Noise</th>
+          <th>Oth</th>
           <th>Ops</th>
           <th>Stby</th>
           <th>Down</th>
@@ -364,12 +372,12 @@
           <td>{{ d.times.company_tests|f_format:".2f" }}</td>
           <td>{{ d.times.beyond_control|f_format:".2f" }}</td>
           <td>{{ d.times.camp_move|f_format:".2f" }}</td>
-          <td>{{ d.times.line_fault|f_format:".2f" }}</td>
-          <td>{{ d.times.instrument_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.rec_eqpmt_fault|f_format:".2f" }}</td>
           <td>{{ d.times.vibrator_fault|f_format:".2f" }}</td>
           <td>{{ d.times.incident|f_format:".2f" }}</td>
-          <td>{{ d.times.holiday|f_format:".2f" }}</td>
-          <td>{{ d.times.recovering|f_format:".2f" }}</td>
+          <td>{{ d.times.legal_dispute|f_format:".2f" }}</td>
+          <td>{{ d.times.comp_instruction|f_format:".2f" }}</td>
+          <td>{{ d.times.contractor_noise|f_format:".2f" }}</td>
           <td>{{ d.times.other_downtime|f_format:".2f" }}</td>
           <td>{{ d.times.ops_time|f_format:".2f" }}</td>
           <td>{{ d.times.standby|f_format:".2f" }}</td>
@@ -396,13 +404,13 @@
           <th>Cltst</th>
           <th>BCntr</th>
           <th>Move</th>
-          <th>Lnflt</th>
-          <th>Insflt</th>
+          <th>Eqflt</th>
           <th>Vibflt</th>
-          <th>Inc.</th>
-          <th>Hol.</th>
-          <th>Rcov.</th>
-          <th>Oth.dt</th>
+          <th>Inc</th>
+          <th>Dsp</th>
+          <th>Comp</th>
+          <th>Noise</th>
+          <th>Oth</th>
           <th>Ops</th>
           <th>Stby</th>
           <th>Down</th>
@@ -422,12 +430,12 @@
           <td>{{ wk.times.week_company_tests|f_format:".2f" }}</td>
           <td>{{ wk.times.week_beyond_control|f_format:".2f" }}</td>
           <td>{{ wk.times.week_camp_move|f_format:".2f" }}</td>
-          <td>{{ wk.times.week_line_fault|f_format:".2f" }}</td>
-          <td>{{ wk.times.week_instrument_fault|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_rec_eqpmt_fault|f_format:".2f" }}</td>
           <td>{{ wk.times.week_vibrator_fault|f_format:".2f" }}</td>
           <td>{{ wk.times.week_incident|f_format:".2f" }}</td>
-          <td>{{ wk.times.week_holiday|f_format:".2f" }}</td>
-          <td>{{ wk.times.week_recovering|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_legal_dispute|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_comp_instruction|f_format:".2f" }}</td>
+          <td>{{ wk.times.week_contractor_noise|f_format:".2f" }}</td>
           <td>{{ wk.times.week_other_downtime|f_format:".2f" }}</td>
           <td>{{ wk.times.week_ops_time|f_format:".2f" }}</td>
           <td>{{ wk.times.week_standby|f_format:".2f" }}</td>

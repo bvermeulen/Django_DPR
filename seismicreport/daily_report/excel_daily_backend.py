@@ -106,12 +106,13 @@ class ExcelDayReport:
             'I8', CellIsRule(operator='lessThan', formula=[22], fill=fill))
 
         # receiver stats
+        not_shown = ['Node charged', 'Node repair']
         set_vertical_cells(
             self.ws, 'H12', [key for key in self.recvr_table
-            if key != 'QC camp'], font_bold, Alignment())
+            if key not in not_shown], font_bold, Alignment())
         set_vertical_cells(
             self.ws, 'I12', [val for key, val in self.recvr_table.items()
-            if key != 'QC camp'], font_normal, Alignment(horizontal='right'))
+            if key not in not_shown], font_normal, Alignment(horizontal='right'))
         self.ws['I12'].number_format = '#,##0'
         self.ws['I13'].number_format = '#,##0'
         self.ws['I14'].number_format = '0.00'
@@ -171,7 +172,7 @@ class ExcelDayReport:
 
         fill = PatternFill(bgColor=green)
         self.ws.conditional_formatting.add(
-            'L24', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
+            'L25', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
 
         # csr comment
         self.ws.merge_cells('B16:I26')
@@ -267,9 +268,10 @@ def collate_excel_dailyreport_data(day):
     report_data['receiver_table'] = {
         'Layout': totals_receiver['layout'],
         'Pickup': totals_receiver['pickup'],
-        'QC field': totals_receiver['qc_field'],
-        'QC camp': totals_receiver['qc_camp'],
-        'Data upload': totals_receiver['upload'],
+        'Node download': totals_receiver['node_download'],
+        'Node charged': totals_receiver['node_charged'],
+        'Node failure': totals_receiver['node_failure'],
+        'Node repair': totals_receiver['node_repair'],
     }
 
     # cst table XG0 first then CSR
@@ -333,6 +335,7 @@ def collate_excel_dailyreport_data(day):
         'FAC': totals_hse['fac'],
         'NM/ Incidents': totals_hse['incident_nm'],
         'LSR': totals_hse['lsr_violations'],
+        'Inspections': totals_hse['audits'],
         'STOP': totals_hse['stop'],
     }
 

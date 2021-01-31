@@ -14,6 +14,7 @@ from seismicreport.utils.utils_excel import (
     conditional_format, set_column_widths, set_border, set_outer_border,
     set_color, save_excel, get_row_column,
 )
+from seismicreport.utils.utils_funcs import nan_array
 from seismicreport.vars import (
     STOP_TARGET, PROD_TARGET, REC_TARGET, AVG_PERIOD, NO_DATE_STR, SS_2, IMG_SIZE,
     source_prod_schema,
@@ -284,7 +285,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_range = f'C{row + key}:V{row + key}'
             format_horizontal(self.wst, format_range, float_hide_zero)
 
-            weeks_total += np.array(vals[1:]).astype(np.float)
+            weeks_total += nan_array(vals[1:]).astype(np.float)
 
         set_vertical_cells(self.wst, 'B11', ['Weeks total'], font_bold,
             Alignment(horizontal='center'))
@@ -369,10 +370,10 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_range = f'E{row + key}:K{row + key}'
             format_horizontal(self.wsp, format_range, int_hide_zero)
 
-            weeks_total += np.array(vals[1:]).astype(np.float)
+            weeks_total += nan_array(vals[1:]).astype(np.float)
 
-        # skip the 3rd and 6 and 7th elements
-        weeks_total = [*weeks_total[0:2], '', *weeks_total[3:6], '', '', weeks_total[8]]
+        # skip the 3rd and 6 and 11th elements
+        weeks_total = [*weeks_total[0:2], '', *weeks_total[3:10]]
         set_vertical_cells(self.wsp, 'B10', ['Weeks total'], font_bold,
             Alignment(horizontal='center'))
         set_horizontal_cells(self.wsp, 'C10', weeks_total, font_bold,
@@ -382,7 +383,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
         format_horizontal(self.wsp, 'E10:K10', '#,##0')
 
         # set borders
-        set_border(self.wsp, 'B2:K10')
+        set_border(self.wsp, 'B2:M10')
 
         # set week production
         self.wsp.merge_cells('B13:K13')
@@ -408,8 +409,8 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_horizontal(self.wsp, format_range, int_hide_zero)
 
         # set borders
-        set_border(self.wsp, 'B14:K20')
-        set_color(self.wsp, 'B20:K20', color=lightblue)
+        set_border(self.wsp, 'B14:M20')
+        set_color(self.wsp, 'B20:M20', color=lightblue)
 
 
         # set terrain types for week
@@ -638,7 +639,8 @@ def collate_excel_weekreport_data(day):
     # days prod stats
     report_data['days_prod'] = {
         'header':['Day', 'VPs', 'Rec time', 'VP/ hr', 'Skips',
-                  'Layout', 'Pickup', 'QC field', 'QC camp', 'Upload']
+                  'Layout', 'Pickup', 'Download', 'Charged',
+                  'Failure', 'Repair', 'QC field']
     }
 
     for key, day in reversed(days.items()):
@@ -650,15 +652,17 @@ def collate_excel_weekreport_data(day):
             day['prod']['skips'],
             day['rcvr']['layout'],
             day['rcvr']['pickup'],
+            day['rcvr']['node_download'],
+            day['rcvr']['node_charged'],
+            day['rcvr']['node_failure'],
+            day['rcvr']['node_repair'],
             day['rcvr']['qc_field'],
-            day['rcvr']['qc_camp'],
-            day['rcvr']['upload'],
+
         ]
 
-    report_data['weeks_prod'] = {
-        'header':['Week', 'VPs', 'Rec time', 'VP/ hr', 'Skips',
-                  'Layout', 'Pickup', 'QC field', 'QC camp', 'Upload']
-    }
+    report_data['weeks_prod'] = {}
+    report_data['weeks_prod']['header'] = report_data['days_prod']['header'].copy()
+    report_data['weeks_prod']['header'][0] = 'Week'
 
     # weeks prod stats
     for key, wk in weeks.items():
@@ -671,18 +675,20 @@ def collate_excel_weekreport_data(day):
             wk['prod']['week_skips'],
             wk['rcvr']['week_layout'],
             wk['rcvr']['week_pickup'],
+            wk['rcvr']['week_node_download'],
+            wk['rcvr']['week_node_charged'],
+            wk['rcvr']['week_node_failure'],
+            wk['rcvr']['week_node_repair'],
             wk['rcvr']['week_qc_field'],
-            wk['rcvr']['week_qc_camp'],
-            wk['rcvr']['week_upload'],
         ]
 
     # days times stats
     report_data['days_times'] = {
         'header':['Day', 'Recording','Rec move', 'Logistics', 'WOS', 'WOL',
         'Shift change', 'Company suspension', 'Company requested tests',
-        'Beyond contractor control', 'Camp move', 'Line faults', 'Inst. faults',
-        'Vib faults', 'Incidents', 'Holiday', 'Further recovery', 'Other DT',
-        'Ops time', 'Standby', 'Downtime',]
+        'Beyond contractor control', 'Camp move', 'Rec. eqpmt fault',
+        'Vib faults', 'Incidents', 'Legal/ dispute', 'Comp. instruction',
+        'Contractor noise', 'Other DT','Ops time', 'Standby', 'Downtime',]
     }
 
     for key, day in reversed(days.items()):
@@ -698,12 +704,12 @@ def collate_excel_weekreport_data(day):
             day['times']['company_tests'],
             day['times']['beyond_control'],
             day['times']['camp_move'],
-            day['times']['line_fault'],
-            day['times']['instrument_fault'],
+            day['times']['rec_eqpmt_fault'],
             day['times']['vibrator_fault'],
             day['times']['incident'],
-            day['times']['holiday'],
-            day['times']['recovering'],
+            day['times']['legal_dispute'],
+            day['times']['comp_instruction'],
+            day['times']['contractor_noise'],
             day['times']['other_downtime'],
             day['times']['ops_time'],
             day['times']['standby'],
@@ -711,13 +717,9 @@ def collate_excel_weekreport_data(day):
         ]
 
     #weeks times stat
-    report_data['weeks_times'] = {
-        'header':['Day', 'Recording','Rec move', 'Logistics', 'WOS', 'WOL',
-        'Shift change', 'Company suspension', 'Company requested tests',
-        'Beyond contractor control', 'Camp move', 'Line faults', 'Inst. faults',
-        'Vib faults', 'Incidents', 'Holiday', 'Further recovery', 'Other DT',
-        'Ops time', 'Standby', 'Downtime',]
-    }
+    report_data['weeks_times'] = {}
+    report_data['weeks_times']['header'] = report_data['days_times']['header'].copy()
+    report_data['weeks_times']['header'][0] = 'Week'
 
     for key, wk in weeks.items():
         report_data['weeks_times'][key] = [
@@ -733,12 +735,12 @@ def collate_excel_weekreport_data(day):
             wk['times']['week_company_tests'],
             wk['times']['week_beyond_control'],
             wk['times']['week_camp_move'],
-            wk['times']['week_line_fault'],
-            wk['times']['week_instrument_fault'],
+            wk['times']['week_rec_eqpmt_fault'],
             wk['times']['week_vibrator_fault'],
             wk['times']['week_incident'],
-            wk['times']['week_holiday'],
-            wk['times']['week_recovering'],
+            wk['times']['week_legal_dispute'],
+            wk['times']['week_comp_instruction'],
+            wk['times']['week_contractor_noise'],
             wk['times']['week_other_downtime'],
             wk['times']['week_ops_time'],
             wk['times']['week_standby'],

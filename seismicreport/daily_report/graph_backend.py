@@ -121,7 +121,7 @@ class Mixin:
         # line plot recording hours
         plot_filename = self.media_dir / 'images/rec_hours.png'
         rec_hours_series = self.time_series['rec_hours_series']
-        target_rec_hours_series = np.ones(len(rec_hours_series)) * 22
+        target_rec_hours_series = np.ones(len(rec_hours_series)) * self.mpr_rec_hours
         plt.plot(date_series, target_rec_hours_series, label="Target", zorder=2)
         plt.plot(date_series, rec_hours_series, label="Recording hours", zorder=3)
         plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)

@@ -53,9 +53,11 @@ class ReceiverProduction(models.Model):
     receivertype = models.ForeignKey(ReceiverType, on_delete=models.PROTECT)
     layout = models.IntegerField(default=0)
     pickup = models.IntegerField(default=0)
-    qc_field = models.FloatField(default=0.0)
-    qc_camp = models.FloatField(default=0.0)
-    upload = models.IntegerField(default=0)
+    node_download = models.IntegerField(default=0.0)
+    node_charged = models.IntegerField(default=0.0)
+    node_failure = models.IntegerField(default=0)
+    node_repair = models.IntegerField(default=0)
+    qc_field =  models.FloatField(default=0)
 
     def __str__(self):
         return f'{self.daily.production_date} - {self.receivertype.receivertype_name}'
@@ -77,11 +79,12 @@ class TimeBreakdown(models.Model):
     company_tests = models.FloatField(default=0)
     beyond_control = models.FloatField(default=0)
     line_fault = models.FloatField(default=0)
-    instrument_fault = models.FloatField(default=0)
+    rec_eqpmt_fault = models.FloatField(default=0)
     vibrator_fault = models.FloatField(default=0)
     incident = models.FloatField(default=0)
-    holiday = models.FloatField(default=0)
-    recovering = models.FloatField(default=0)
+    legal_dispute = models.FloatField(default=0)
+    comp_instruction = models.FloatField(default=0)
+    contractor_noise =  models.FloatField(default=0)
     other_downtime = models.FloatField(default=0)
 
     def __str__(self):
