@@ -31,15 +31,21 @@ BGP_DR_table = {
     'company tests': (34, 1),
     'beyond contractor control': (35, 1),
     'camp move': (36, 1),
-    'line fault': (100, 1),    # not used
-    'instrument fault': (38, 1),
+    'line fault': (100, 1), # not used
+    'Rec. eqpmt fault': (38, 1),
     'vibrator fault': (39, 1),
     'incident': (40, 1),
-    'holiday': (41, 1),
-    'recovering': (42, 1),
-    'other dt': (43, 1),
+    'Legal/ dispute': (41, 1),
+    'DT comp. instruction': (42, 1),
+    'Contractor noise': (43, 1),
+    'other dt': (44, 1),
     'layout': (47, 11),
     'pickup': (48, 11),
+    'node download': (40, 11),
+    'node charged': (41, 11),
+    'node failure': (42, 11),
+    'node repair': (43, 11),
+    'node_qc': (100, 1), # not yet implemented
     'comment 1': (0, 10),
     'comment 2': (1, 10),
     'comment 3': (2, 10),
@@ -83,14 +89,15 @@ source_prod_schema = [
 ]
 
 receiver_prod_schema = [
-    'layout', 'pickup', 'qc_field', 'qc_camp', 'upload',
+    'layout', 'pickup', 'node_download', 'node_charged', 'node_failure', 'node_repair',
+    'qc_field',
 ]
 
 time_breakdown_schema = [
     'rec_hours', 'rec_moveup', 'logistics', 'camp_move', 'wait_source', 'wait_layout',
     'wait_shift_change', 'company_suspension', 'company_tests', 'beyond_control',
-    'line_fault', 'instrument_fault', 'vibrator_fault', 'incident', 'holiday',
-    'recovering', 'other_downtime',
+    'line_fault', 'rec_eqpmt_fault', 'vibrator_fault', 'incident', 'legal_dispute',
+    'comp_instruction', 'contractor_noise', 'other_downtime',
 ]
 
 ops_time_keys = [
@@ -101,8 +108,8 @@ ops_time_keys = [
 standby_keys = ['company_suspension', 'company_tests', 'beyond_control', 'camp_move']
 
 downtime_keys = [
-    'line_fault', 'instrument_fault', 'vibrator_fault', 'incident', 'holiday',
-    'recovering', 'other_downtime',
+    'line_fault', 'rec_eqpmt_fault', 'vibrator_fault', 'incident', 'legal_dispute',
+    'comp_instruction', 'contractor_noise', 'other_downtime',
 ]
 
 hse_weather_schema = [

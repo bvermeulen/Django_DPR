@@ -255,7 +255,7 @@
             {% endif %}
             {% if totals_time.proj_wait_shift_change > 0 %}
               <tr>
-                <td>delayes shift change</td>
+                <td>delays shift change</td>
                 <td class="text-right">{{ totals_time.wait_shift_change|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_wait_shift_change|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_wait_shift_change|floatformat:3 }}</td>
@@ -293,12 +293,12 @@
                 <td class="text-right">{{ totals_time.proj_line_fault|floatformat:3 }}</td>
               </tr>
             {% endif %}
-            {% if totals_time.proj_instrument_fault > 0 %}
+            {% if totals_time.proj_rec_eqpmt_fault > 0 %}
               <tr>
-                <td>instrument fault</td>
-                <td class="text-right">{{ totals_time.instrument_fault|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.month_instrument_fault|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.proj_instrument_fault|floatformat:3 }}</td>
+                <td>Rec. eqpmt fault</td>
+                <td class="text-right">{{ totals_time.rec_eqpmt_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_rec_eqpmt_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_rec_eqpmt_fault|floatformat:3 }}</td>
               </tr>
             {% endif %}
             {% if totals_time.proj_vibrator_fault > 0 %}
@@ -317,21 +317,29 @@
                 <td class="text-right">{{ totals_time.proj_incident|floatformat:3 }}</td>
               </tr>
             {% endif %}
-            {% if totals_time.proj_holiday > 0 %}
+            {% if totals_time.proj_legal_dispute > 0 %}
               <tr>
-                <td>holiday</td>
-                <td class="text-right">{{ totals_time.holiday|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.month_holiday|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.proj_holiday|floatformat:3 }}</td>
+                <td>Legal/ dispute</td>
+                <td class="text-right">{{ totals_time.legal_dispute|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_legal_dispute|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_legal_dispute|floatformat:3 }}</td>
               </tr>
             {% endif %}
-            {% if totals_time.proj_recovering > 0 %}
+            {% if totals_time.proj_comp_instruction > 0 %}
               <tr>
-                <td>recovering</td>
-                <td class="text-right">{{ totals_time.recovering|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.month_recovering|floatformat:3 }}</td>
-                <td class="text-right">{{ totals_time.proj_recovering|floatformat:3 }}</td>
+                <td>Company Instruction</td>
+                <td class="text-right">{{ totals_time.comp_instruction|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.month_comp_instruction|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.proj_comp_instruction|floatformat:3 }}</td>
               </tr>
+            {% endif %}
+            {% if totals_time.proj_contractor_noise > 0 %}
+            <tr>
+              <td>Contractor noise</td>
+              <td class="text-right">{{ totals_time.contractor_noise|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.month_contractor_noise|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.proj_contractor_noise|floatformat:3 }}</td>
+            </tr>
             {% endif %}
             {% if totals_time.proj_other_downtime > 0 %}
               <tr>
@@ -397,23 +405,35 @@
               <td class="text-right">{{ totals_receiver.proj_pickup|intcomma }}</td>
             </tr>
             <tr>
-              <td>QC field</td>
-              <td class="text-right">{{ totals_receiver.qc_field|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.month_qc_field|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.proj_qc_field|floatformat:4 }}</td>
+              <td>Node download</td>
+              <td class="text-right">{{ totals_receiver.node_download|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_node_download|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_node_download|intcomma }}</td>
+            </tr>
+              <td>Node charged</td>
+              <td class="text-right">{{ totals_receiver.node_charged|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_node_charged|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_node_charged|intcomma }}</td>
             </tr>
             <tr>
-              <td>QC camp</td>
-              <td class="text-right">{{ totals_receiver.qc_camp|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.month_qc_camp|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.proj_qc_camp|floatformat:4 }}</td>
+              <td>Node failure</td>
+              <td class="text-right">{{ totals_receiver.node_failure|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_node_failure|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_node_failure|intcomma }}</td>
             </tr>
             <tr>
-              <td>Upload</td>
-              <td class="text-right">{{ totals_receiver.upload|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.month_upload|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_receiver.proj_upload|floatformat:4 }}</td>
+              <td>Node repair</td>
+              <td class="text-right">{{ totals_receiver.node_repair|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.month_node_repair|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.proj_node_repair|intcomma }}</td>
             </tr>
+            <tr>
+              <td>Field QC</td>
+              <td class="text-right">{{ totals_receiver.qc_field|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_receiver.month_qc_field|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_receiver.proj_qc_field|floatformat:3 }}</td>
+            </tr>
+
           </tbody>
         </table>
 

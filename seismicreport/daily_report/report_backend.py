@@ -240,9 +240,10 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         rcvr.layout = int(np.nan_to_num(self.get_value(day_df, 'layout')))
         rcvr.pickup = int(np.nan_to_num(self.get_value(day_df, 'pickup')))
-        rcvr.qc_field = int(np.nan_to_num(self.get_value(day_df, 'qc_field')))
-        rcvr.qc_camp = int(np.nan_to_num(self.get_value(day_df, 'qc_camp')))
-        rcvr.upload = int(np.nan_to_num(self.get_value(day_df, 'upload')))
+        rcvr.node_download = int(np.nan_to_num(self.get_value(day_df, 'node download')))
+        rcvr.node_charged = int(np.nan_to_num(self.get_value(day_df, 'node charged')))
+        rcvr.node_failure = int(np.nan_to_num(self.get_value(day_df, 'node failure')))
+        rcvr.node_repair = int(np.nan_to_num(self.get_value(day_df, 'node repair')))
         rcvr.save()
 
         # create/ update time breakdown values
@@ -252,23 +253,34 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         except IntegrityError:
             time_breakdown = TimeBreakdown.objects.get(daily=day)
 
-        time_breakdown.rec_hours = self.get_value(day_df, 'rec hours')
-        time_breakdown.rec_moveup = self.get_value(day_df, 'rec moveup')
-        time_breakdown.logistics = self.get_value(day_df, 'logistics')
-        time_breakdown.camp_move = self.get_value(day_df, 'camp move')
-        time_breakdown.wait_source = self.get_value(day_df, 'wait source')
-        time_breakdown.wait_layout = self.get_value(day_df, 'wait layout')
-        time_breakdown.wait_shift_change = self.get_value(day_df, 'wait shift change')
-        time_breakdown.company_suspension = self.get_value(day_df, 'company suspension')
-        time_breakdown.company_tests = self.get_value(day_df, 'company tests')
-        time_breakdown.beyond_control = self.get_value(day_df, 'beyond contractor control')  #pylint: disable=line-too-long
-        time_breakdown.line_fault = self.get_value(day_df, 'line fault') # No longer used
-        time_breakdown.instrument_fault = self.get_value(day_df, 'instrument fault')
-        time_breakdown.vibrator_fault = self.get_value(day_df, 'vibrator fault')
-        time_breakdown.incident = self.get_value(day_df, 'incident')
-        time_breakdown.holiday = self.get_value(day_df, 'holiday')
-        time_breakdown.recovering = self.get_value(day_df, 'recovering')
-        time_breakdown.other_downtime = self.get_value(day_df, 'other dt')
+        time_breakdown.rec_hours = np.nan_to_num(self.get_value(day_df, 'rec hours'))
+        time_breakdown.rec_moveup = np.nan_to_num(self.get_value(day_df, 'rec moveup'))
+        time_breakdown.logistics = np.nan_to_num(self.get_value(day_df, 'logistics'))
+        time_breakdown.camp_move = np.nan_to_num(self.get_value(day_df, 'camp move'))
+        time_breakdown.wait_source = np.nan_to_num(self.get_value(day_df, 'wait source'))
+        time_breakdown.wait_layout = np.nan_to_num(self.get_value(day_df, 'wait layout'))
+        time_breakdown.wait_shift_change = np.nan_to_num(
+            self.get_value(day_df, 'wait shift change'))
+        time_breakdown.company_suspension = np.nan_to_num(
+            self.get_value(day_df, 'company suspension'))
+        time_breakdown.company_tests = np.nan_to_num(
+            self.get_value(day_df, 'company tests'))
+        time_breakdown.beyond_control = np.nan_to_num(
+            self.get_value(day_df, 'beyond contractor control'))
+        time_breakdown.line_fault = np.nan_to_num(
+            self.get_value(day_df, 'line fault')) # No longer used
+        time_breakdown.rec_eqpmt_fault = np.nan_to_num(
+            self.get_value(day_df, 'Rec. eqpmt fault'))
+        time_breakdown.vibrator_fault = np.nan_to_num(
+            self.get_value(day_df, 'vibrator fault'))
+        time_breakdown.incident = np.nan_to_num(self.get_value(day_df, 'incident'))
+        time_breakdown.legal_dispute = np.nan_to_num(
+            self.get_value(day_df, 'Legal/ dispute'))
+        time_breakdown.comp_instruction = np.nan_to_num(
+            self.get_value(day_df, 'DT comp. instruction'))
+        time_breakdown.contractor_noise = np.nan_to_num(
+            self.get_value(day_df, 'Contractor noise'))
+        time_breakdown.other_downtime = np.nan_to_num(self.get_value(day_df, 'other dt'))
         time_breakdown.save()
 
         # create/ update time hseweather values
