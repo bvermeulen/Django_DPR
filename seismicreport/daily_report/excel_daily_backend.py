@@ -98,7 +98,8 @@ class ExcelDayReport:
         self.ws['I8'].number_format = '0.00'
         self.ws['I9'].number_format = '0.00'
         self.ws['I10'].number_format = '0.00'
-        self.ws['I11'].number_format = '#,##0'
+        self.ws['I11'].number_format = '0.00'
+        self.ws['I12'].number_format = '#,##0'
         fill = PatternFill(bgColor=red)
         self.ws.conditional_formatting.add(
             'I7', CellIsRule(operator='lessThan', formula=[0.9], fill=fill))
@@ -108,15 +109,15 @@ class ExcelDayReport:
         # receiver stats
         not_shown = ['Node charged', 'Node repair']
         set_vertical_cells(
-            self.ws, 'H12', [key for key in self.recvr_table
+            self.ws, 'H13', [key for key in self.recvr_table
             if key not in not_shown], font_bold, Alignment())
         set_vertical_cells(
-            self.ws, 'I12', [val for key, val in self.recvr_table.items()
+            self.ws, 'I13', [val for key, val in self.recvr_table.items()
             if key not in not_shown], font_normal, Alignment(horizontal='right'))
-        self.ws['I12'].number_format = '#,##0'
         self.ws['I13'].number_format = '#,##0'
-        self.ws['I14'].number_format = '0.00'
+        self.ws['I14'].number_format = '#,##0'
         self.ws['I15'].number_format = '#,##0'
+        self.ws['I16'].number_format = '#,##0'
 
         # XG01 and CSR
         set_vertical_cells(
@@ -175,12 +176,12 @@ class ExcelDayReport:
             'L25', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
 
         # csr comment
-        self.ws.merge_cells('B16:I26')
+        self.ws.merge_cells('B17:I27')
         set_vertical_cells(
-            self.ws, 'B15', [key for key in self.csr_comment_table], font_bold,
+            self.ws, 'B16', [key for key in self.csr_comment_table], font_bold,
             Alignment())
         set_vertical_cells(
-            self.ws, 'B16', [val for _, val in self.csr_comment_table.items()],
+            self.ws, 'B17', [val for _, val in self.csr_comment_table.items()],
             font_normal, Alignment(vertical='top', wrap_text=True))
 
         # add graphs
@@ -188,36 +189,36 @@ class ExcelDayReport:
         img_daily_prod = drawing.image.Image(self.media_root / 'images/daily_prod.png')
         img_daily_prod.width = width
         img_daily_prod.height = height
-        self.ws.add_image(img_daily_prod, 'C28')
+        self.ws.add_image(img_daily_prod, 'C29')
 
         img_cumul_prod = drawing.image.Image(self.media_root / 'images/cumul_prod.png')
         img_cumul_prod.width = width
         img_cumul_prod.height = height
-        self.ws.add_image(img_cumul_prod, 'H28')
+        self.ws.add_image(img_cumul_prod, 'H29')
 
         img_rec_hours = drawing.image.Image(self.media_root / 'images/rec_hours.png')
         img_rec_hours.width = width
         img_rec_hours.height = height
-        self.ws.add_image(img_rec_hours, 'C41')
+        self.ws.add_image(img_rec_hours, 'C42')
 
         img_app_ctm = drawing.image.Image(self.media_root / 'images/app_ctm_ratio.png')
         img_app_ctm.width = width
         img_app_ctm.height = height
-        self.ws.add_image(img_app_ctm, 'H41')
+        self.ws.add_image(img_app_ctm, 'H42')
 
         # set borders
-        set_outer_border(self.ws, 'B2:L54')
+        set_outer_border(self.ws, 'B2:L55')
         set_outer_border(self.ws, 'B2:L2')
-        set_outer_border(self.ws, 'B3:I15')
-        set_outer_border(self.ws, 'H4:I11')
-        set_outer_border(self.ws, 'H12:I15')
+        set_outer_border(self.ws, 'B3:I16')
+        set_outer_border(self.ws, 'H4:I12')
+        set_outer_border(self.ws, 'H13:I16')
         set_outer_border(self.ws, 'K4:L9')
         set_outer_border(self.ws, 'K4:L4')
-        set_outer_border(self.ws, 'K10:L15')
+        set_outer_border(self.ws, 'K11:L15')
         set_outer_border(self.ws, 'K11:L11')
-        set_outer_border(self.ws, 'K17:L26')
+        set_outer_border(self.ws, 'K17:L27')
         set_outer_border(self.ws, 'K17:L17')
-        set_outer_border(self.ws, 'B16:I26')
+        set_outer_border(self.ws, 'B17:I27')
         self.ws['I3'].border = Border(top=Side(style='thin'), bottom=Side(style='thin'))
 
         return save_excel(self.wb)
@@ -260,6 +261,7 @@ def collate_excel_dailyreport_data(day):
         'Target VPs': totals_production['ctm'][0],
         '% Target': totals_production['ctm'][1],
         'Recording Hrs': totals_time['rec_time'],
+        'Ops Hrs': totals_time['ops_time'],
         'Standby Hrs': totals_time['standby'],
         'Downtime Hrs': totals_time['downtime'],
         'Skip VPs': totals_production['skips'],
