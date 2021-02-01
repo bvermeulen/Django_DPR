@@ -8,9 +8,6 @@ TCF_table = {
     'sabkha': 0.6,
 }
 
-SOURCETYPE_NAME = 'vibe_25m'
-RECEIVERTYPE_NAME = 'receiver_25m'
-
 BGP_DR_table = {
     'date': (0, 1),
     'seq_report': (1, 1),
@@ -96,7 +93,8 @@ time_breakdown_schema = [
 ]
 
 ops_time_keys = [
-    'rec_moveup', 'logistics', 'wait_source', 'wait_layout', 'wait_shift_change',
+    'rec_hours', 'rec_moveup', 'logistics', 'wait_source', 'wait_layout',
+    'wait_shift_change',
 ]
 
 standby_keys = ['company_suspension', 'company_tests', 'beyond_control', 'camp_move']
@@ -108,14 +106,22 @@ downtime_keys = [
 
 hse_weather_schema = [
     'stop', 'lti', 'fac', 'mtc', 'rwc', 'incident_nm', 'medevac', 'drills', 'audits',
-    'lsr_violations', 'ops_time', 'day_time', 'weather_condition', 'rain',
+    'lsr_violations', 'headcount', 'exposure_hours', 'weather_condition', 'rain',
     'temp_min', 'temp_max',
 ]
 
+CTM_METHOD = 'Legacy'
+WEEKDAYS = 7
+WEEKS = 6
 AVG_PERIOD = 14
+STOP_TARGET = (9, 9)
+PROD_TARGET = (0.9, 1)
+REC_TARGET = (21, 22)
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'
+SS_2 = '\u00B2'  # superscript 2 for like km2
+IMG_SIZE = (310, 248)
 NAME_LENGTH = 20
 DESCR_LENGTH = 100
 TYPE_LENGTH = 10

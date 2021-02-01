@@ -14,11 +14,12 @@ from daily_report.models.daily_models import (
     Daily, SourceProduction, ReceiverProduction, TimeBreakdown
 )
 from daily_report.models.project_models import Project
-from seismicreport.vars import SOURCETYPE_NAME, RECEIVERTYPE_NAME
+from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 
-report_filename = r'BGP-MS-GL19.xlsx'
+report_filename = r'..\BGP-MS-GL19.xlsx'
 project_name = '19GL'
-months = ['Jan-2020', 'Feb-2020', 'Mar-2020', 'Apr-2020',]
+
+months = ['Jan-2020', 'Feb-2020', 'Mar-2020', 'Apr-2020','May-2020']
 
 MPR_table = {
     'date': 2,
@@ -70,19 +71,20 @@ def populate_report(project, row_df):
             production_date=production_date,
             project=project)
 
+    sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
     # create/ update vp production values
     try:
         prod = SourceProduction.objects.create(
             daily=day,
             sourcetype=day.project.sourcetypes.get(
-                sourcetype_name=SOURCETYPE_NAME)
+                sourcetype_name=sourcetype_name)
         )
 
     except IntegrityError:
         prod = SourceProduction.objects.get(
             daily=day,
             sourcetype=day.project.sourcetypes.get(
-                sourcetype_name=SOURCETYPE_NAME)
+                sourcetype_name=sourcetype_name)
         )
 
     prod.sp_t1_flat = int(
@@ -103,14 +105,14 @@ def populate_report(project, row_df):
         rcvr = ReceiverProduction.objects.create(
             daily=day,
             receivertype=day.project.receivertypes.get(
-                receivertype_name=RECEIVERTYPE_NAME)
+                receivertype_name=receivertype_name)
         )
 
     except IntegrityError:
         rcvr = ReceiverProduction.objects.get(
             daily=day,
             receivertype=day.project.receivertypes.get(
-                receivertype_name=RECEIVERTYPE_NAME)
+                receivertype_name=receivertype_name)
         )
 
     rcvr.layout = 0
@@ -127,23 +129,23 @@ def populate_report(project, row_df):
     except IntegrityError:
         time_breakdown = TimeBreakdown.objects.get(daily=day)
 
-    time_breakdown.rec_hours = get_value(row_df, 'rec_hours')
-    time_breakdown.logistics = get_value(row_df, 'logistics') - time_breakdown.rec_hours
-    time_breakdown.beyond_control = get_value(row_df, 'beyond_contractor_control')
-    time_breakdown.other_downtime = get_value(row_df, 'other_dt')
-    time_breakdown.rec_moveup = np.nan
-    time_breakdown.camp_move = np.nan
-    time_breakdown.wait_source = np.nan
-    time_breakdown.wait_layout = np.nan
-    time_breakdown.wait_shift_change = np.nan
-    time_breakdown.company_suspension = np.nan
-    time_breakdown.company_tests = np.nan
-    time_breakdown.line_fault = np.nan
-    time_breakdown.instrument_fault = np.nan
-    time_breakdown.vibrator_fault = np.nan
-    time_breakdown.incident = np.nan
-    time_breakdown.holiday = np.nan
-    time_breakdown.recovering = np.nan
+    time_breakdown.rec_hours = np.nan_to_num(get_value(row_df, 'rec_hours'))
+    time_breakdown.logistics = np.nan_to_num(get_value(row_df, 'logistics') - time_breakdown.rec_hours)
+    time_breakdown.beyond_control = np.nan_to_num(get_value(row_df, 'beyond_contractor_control'))
+    time_breakdown.other_downtime = np.nan_to_num(get_value(row_df, 'other_dt'))
+    time_breakdown.rec_moveup = 0
+    time_breakdown.camp_move = 0
+    time_breakdown.wait_source = 0
+    time_breakdown.wait_layout = 0
+    time_breakdown.wait_shift_change = 0
+    time_breakdown.company_suspension = 0
+    time_breakdown.company_tests = 0
+    time_breakdown.line_fault = 0
+    time_breakdown.instrument_fault = 0
+    time_breakdown.vibrator_fault = 0
+    time_breakdown.incident = 0
+    time_breakdown.holiday = 0
+    time_breakdown.recovering = 0
     time_breakdown.save()
 
     return day.production_date

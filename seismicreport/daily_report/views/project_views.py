@@ -363,7 +363,7 @@ class ProjectView(View):
 
 def download_pdf_workorder(request, project_name):
     project = Project.objects.get(project_name=project_name)
-    f_pdf = io.BytesIO(project.pdf_work_order.tobytes())
+    f_pdf = io.BytesIO(project.pdf_work_order)
     f_pdf.seek(0)
     # note FileResponse will close the file/ buffer - do not use with block
     return FileResponse(f_pdf, content_type='application/pdf', as_attachment=False)
