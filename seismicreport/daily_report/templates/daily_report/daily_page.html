@@ -54,7 +54,6 @@
       {% endfor %}
     </div>
   </div>
-
     {% with year=form_daily.production_date.value|date:"Y" %}
     {% with month=form_daily.production_date.value|date:"m" %}
     <a class="btn btn-primary btn-sm my-1" href="{% url 'monthly_service_page' form_daily.id.value year month %}">
@@ -64,6 +63,7 @@
 
     <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
     <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' form_daily.id.value %}">MPR</a>
     <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
       onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
     </button>

@@ -1,4 +1,4 @@
-''' writing excel with python
+''' module to generate excel version of daily report
 '''
 from pathlib import Path
 from openpyxl import Workbook, drawing
@@ -144,36 +144,36 @@ class ExcelDayReport:
         self.ws['L8'].number_format = '0.00%'
 
         # block stats
-        self.ws.merge_cells('K11:L11')
+        self.ws.merge_cells('K10:L10')
         set_vertical_cells(
-            self.ws, 'K11', ['Block Statistics'], font_large_bold,
+            self.ws, 'K10', ['Block Statistics'], font_large_bold,
             Alignment(horizontal='center'))
         set_vertical_cells(
-            self.ws, 'K12', [key for key in self.block_stats_table], font_bold,
+            self.ws, 'K11', [key for key in self.block_stats_table], font_bold,
             Alignment())
         set_vertical_cells(
-            self.ws, 'L12', [val for _, val in self.block_stats_table.items()],
+            self.ws, 'L11', [val for _, val in self.block_stats_table.items()],
             font_normal, Alignment(horizontal='right'))
-        self.ws['L13'].number_format = '0.00'
-        self.ws['L14'].number_format = '0.00%'
+        self.ws['L12'].number_format = '0.00'
+        self.ws['L13'].number_format = '0.00%'
 
         # hse stats
-        self.ws.merge_cells('K17:L17')
+        self.ws.merge_cells('K15:L15')
         set_vertical_cells(
-            self.ws, 'K17', ['HSE Statistics'], font_large_bold,
+            self.ws, 'K15', ['HSE Statistics'], font_large_bold,
             Alignment(horizontal='center'))
         set_vertical_cells(
-            self.ws, 'K18', [key for key in self.hse_stats_table], font_bold, Alignment())
+            self.ws, 'K16', [key for key in self.hse_stats_table], font_bold, Alignment())
         set_vertical_cells(
-            self.ws, 'L18', [val for _, val in self.hse_stats_table.items()], font_normal,
+            self.ws, 'L16', [val for _, val in self.hse_stats_table.items()], font_normal,
             Alignment(horizontal='right'))
 
-        for i in range(18, 25):
+        for i in range(16, 23):
             self.ws['L'+str(i)].number_format = '0;-0;;@'
 
         fill = PatternFill(bgColor=green)
         self.ws.conditional_formatting.add(
-            'L25', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
+            'L23', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
 
         # csr comment
         self.ws.merge_cells('B17:I27')
@@ -214,10 +214,10 @@ class ExcelDayReport:
         set_outer_border(self.ws, 'H13:I16')
         set_outer_border(self.ws, 'K4:L9')
         set_outer_border(self.ws, 'K4:L4')
-        set_outer_border(self.ws, 'K11:L15')
-        set_outer_border(self.ws, 'K11:L11')
-        set_outer_border(self.ws, 'K17:L27')
-        set_outer_border(self.ws, 'K17:L17')
+        set_outer_border(self.ws, 'K10:L14')
+        set_outer_border(self.ws, 'K10:L10')
+        set_outer_border(self.ws, 'K15:L27')
+        set_outer_border(self.ws, 'K15:L15')
         set_outer_border(self.ws, 'B17:I27')
         self.ws['I3'].border = Border(top=Side(style='thin'), bottom=Side(style='thin'))
 

@@ -155,7 +155,7 @@ class Mixin:
     def create_weekly_graphs(self):
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
-            app_series = self.prod_series['total_sp']
+            app_series = self.prod_series['total_sp_series']
             ctm_tuple_series = self.prod_series['ctm_series']
 
         # line plot CTM and app

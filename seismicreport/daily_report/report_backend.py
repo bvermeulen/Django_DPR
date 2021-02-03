@@ -30,6 +30,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         self.media_dir = Path(media_dir)
         self.prod_series = None
         self.time_series = None
+        self.hse_series = None
         self.mpr_rec_hours = 24.0
 
     @staticmethod
@@ -489,10 +490,10 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         p_series['date_series'] = np.array(
             [val.daily.production_date for val in sp_query])
         p_series['tcf_series'] = []
-        p_series['total_sp'] = []
+        p_series['total_sp_series'] = []
         for terrain_sp in p_series['terrain_series']:
             sp_total = np.nansum(terrain_sp)
-            p_series['total_sp'].append(sp_total)
+            p_series['total_sp_series'].append(sp_total)
             if sp_total > 0:
                 p_series['tcf_series'].append(
                     terrain_sp[0] / sp_total * TCF_table['flat'] +
@@ -794,7 +795,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         day_hse = self.day_hse_totals(daily)
         week_hse = self.week_hse_totals(daily)
         month_hse = self.month_hse_totals(daily)
-        proj_hse = self.proj_hse_totals(daily)
+        proj_hse, self.hse_series = self.proj_hse_totals(daily)
 
         prod_total = {**day_prod, **week_prod, **month_prod, **proj_prod}
         times_total = {**day_times, **week_times, **month_times, **proj_times}
@@ -804,7 +805,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @property
     def series(self) -> typing.Optional[tuple]:
-        return self.prod_series, self.time_series
+        return self.prod_series, self.time_series, self.hse_series
 
     @timed(logger, print_log=True)
     def calc_block_totals(self, daily):
