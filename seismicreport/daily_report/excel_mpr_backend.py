@@ -9,7 +9,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
-    set_column_widths, save_excel,
+    set_column_widths, set_color, save_excel,
 )
 from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 from seismicreport.vars import (
@@ -20,6 +20,7 @@ fontname = 'Tahoma'
 font_large_bold = Font(name=fontname, bold=True, size=11)
 font_normal = Font(name=fontname, size=9)
 font_bold = Font(name=fontname, bold=True, size=9)
+lightblue = 'D8EFF8'
 
 #pylint: disable=line-too-long
 
@@ -165,6 +166,7 @@ class ExcelMprReport():
         ]
         set_horizontal_cells(self.ws, 'A12', header, font_bold,
             Alignment(horizontal='center', wrap_text=True, vertical='top'))
+        set_color(self.ws, 'A12:X12', color=lightblue)
 
         m_df = self.proj_df[
             (self.proj_df.date.dt.month == self.params['month']) &
@@ -262,7 +264,8 @@ class ExcelMprReport():
             self.params['TCF'], self.params['CTM'], self.params['APPCTM'], padtimesum,
         ]
         set_horizontal_cells(self.ws, f'A{13+self.params["days"]}', row_sum, font_bold, Alignment())
-        format_horizontal(self.ws, f'C{13+self.params["days"]}:H{20+self.params["days"]}', '#,##0')
+        format_horizontal(self.ws, f'C{13+self.params["days"]}:H{13+self.params["days"]}', '#,##0')
+        set_color(self.ws, f'A{13+self.params["days"]}:X{13+self.params["days"]}', color=lightblue)
 
     def create_tab_proj(self):
         set_column_widths(self.wp, 'A', [12.5])
