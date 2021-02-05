@@ -9,7 +9,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
-    set_column_widths, set_color, save_excel,
+    set_column_widths, save_excel,
 )
 from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 from seismicreport.vars import (
@@ -20,15 +20,9 @@ fontname = 'Tahoma'
 font_large_bold = Font(name=fontname, bold=True, size=11)
 font_normal = Font(name=fontname, size=9)
 font_bold = Font(name=fontname, bold=True, size=9)
-red = '00FF0000'
-green ='0000FF00'
-orange = 'FFA500'
-lightblue = 'D8EFF8'
-float_hide_zero = '0.00;-0;;@'
-int_hide_zero = '#,##0;0;;@'
-
 
 #pylint: disable=line-too-long
+
 
 class ExcelMprReport():
     ''' class to create excel mpr report
