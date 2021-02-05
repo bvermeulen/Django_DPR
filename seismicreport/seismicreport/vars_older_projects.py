@@ -113,6 +113,7 @@ hse_weather_schema = [
 ]
 
 AVG_PERIOD = 14
+CONTRACT = 'c3100000120'
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'

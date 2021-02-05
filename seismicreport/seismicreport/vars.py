@@ -119,6 +119,7 @@ hse_weather_schema = [
 ]
 
 CTM_METHOD = 'Legacy'
+CONTRACT = 'c3100000120'
 WEEKDAYS = 7
 WEEKS = 6
 AVG_PERIOD = 14
