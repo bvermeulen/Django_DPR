@@ -89,8 +89,7 @@ class WeeklyView(View):
                     self.w_iface.update_week_report(day, week_comment, author)
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
-                        f'in week report {day.production_date} for '
-                        f'{day.project.project_name}:\n{week_comment}'
+                        f'in week report {day.production_date} for {day.project.project_name}'
                     )
 
             elif button_pressed == 'delete':
