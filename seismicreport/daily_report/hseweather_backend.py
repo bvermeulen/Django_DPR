@@ -89,9 +89,16 @@ class Mixin:
         ).order_by('daily__production_date')
 
         if not hse_query:
-            return {f'proj_{key}': '' for key in hse_weather_schema}
+            return {f'proj_{key}': '' for key in hse_weather_schema}, None
+
+        hse_series = {
+            f'{key}_series': nan_array([val[key] for val in hse_query.values()])
+            for key in hse_weather_schema[:12]}
+        hse_series['date_series'] = np.array(
+            [val.daily.production_date for val in hse_query])
+
 
         p_hse = {f'proj_{key}': sum(nan_array([val[key] for val in hse_query.values()]))
                  for key in hse_weather_schema[:12]}
 
-        return p_hse
+        return p_hse, hse_series

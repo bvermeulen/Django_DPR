@@ -1,11 +1,9 @@
-''' writing excel with python
+''' module to generate excel version of weekly report
 '''
 from pathlib import Path
 import numpy as np
-import pandas as pd
 from openpyxl import Workbook, drawing
 from openpyxl.styles import Alignment, Font
-from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
 from daily_report.week_backend import WeekInterface
 import daily_report.graph_backend as _graph_backend
@@ -44,12 +42,10 @@ class ExcelWeekReport(_graph_backend.Mixin):
         self.wst = self.wb.create_sheet('Times')
         self.wsp = self.wb.create_sheet('Production')
         self.wsg = self.wb.create_sheet('Graphs')
-        self.ws_prod = self.wb.create_sheet('prod_table')
         self.wsw.sheet_view.showGridLines = False
         self.wst.sheet_view.showGridLines = False
         self.wsp.sheet_view.showGridLines = False
         self.wsg.sheet_view.showGridLines = False
-        self.ws_prod.sheet_view.showGridLines = False
 
         self.parse_data(report_data)
 
@@ -512,34 +508,12 @@ class ExcelWeekReport(_graph_backend.Mixin):
         img_daily_prod.height = height
         self.wsg.add_image(img_daily_prod, 'H30')
 
-    def create_tab_prod_table(self):
-        prod_table = {}
-        prod_table['date'] = self.prod_series['date_series']
-        prod_table['sp_t1'] = self.prod_series['sp_t1_series']
-        prod_table['sp_t2'] = self.prod_series['sp_t2_series']
-        prod_table['sp_t3'] = self.prod_series['sp_t3_series']
-        prod_table['sp_t4'] = self.prod_series['sp_t4_series']
-        prod_table['sp_t5'] = self.prod_series['sp_t5_series']
-        prod_table['skips'] = self.prod_series['skips_series']
-        prod_table['total'] = [sum(t) for t in self.prod_series['terrain_series']]
-        prod_table['tcf'] =  self.prod_series['tcf_series']
-        prod_table['target'] = [c[0] for c in self.prod_series['ctm_series']]
-        prod_table['achieved'] = [c[1] for c in self.prod_series['ctm_series']]
-
-        prod_df = pd.DataFrame(prod_table)
-        rows = dataframe_to_rows(prod_df, index=False, header=True)
-
-        for r_id, row in enumerate(rows, 1):
-            for c_id, value in enumerate(row, 1):
-                self.ws_prod.cell(row=r_id, column=c_id, value=value)
-
     def create_weekreport(self):
         self.create_tab_weekly()
         self.create_tab_times()
         self.create_tab_production()
         self.create_weekly_graphs()
         self.create_tab_graphs()
-        self.create_tab_prod_table()
         return save_excel(self.wb)
 
 
@@ -551,8 +525,7 @@ def collate_excel_weekreport_data(day):
     report_data = {}
     totals_prod, totals_time, totals_hse = r_iface.calc_totals(day)
     days, weeks = w_iface.collate_weekdata(day)
-    report_data['prod_series'], report_data['time_series'] = r_iface.series
-
+    report_data['prod_series'], report_data['time_series'], _ = r_iface.series
 
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
     report_data['month_days'] = day.production_date.day
@@ -561,7 +534,6 @@ def collate_excel_weekreport_data(day):
 
     else:
         report_data['proj_days'] = 1
-
 
     # CSR author and comment
     if _week:=day.project.weeklies.filter(week_report_date=day.production_date):
@@ -766,7 +738,5 @@ def collate_excel_weekreport_data(day):
         'skip': totals_prod[f'proj_{source_prod_schema[5][:5]}'],
         'total': totals_prod[f'proj_total'],
     }
-
-
 
     return report_data
