@@ -152,8 +152,7 @@ class DailyView(View):
                     day.save()
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
-                        f'in report {day.production_date} for '
-                        f'{day.project.project_name}:\n{csr_comment}'
+                        f'in report {day.production_date} for {day.project.project_name}'
                     )
 
             request.session['selected_project'] = project_name
