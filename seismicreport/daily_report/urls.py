@@ -1,7 +1,9 @@
 '''  daily_report URL Configuration
 '''
 from django.urls import path
-from daily_report.views import project_views, daily_views, weekly_views, service_views
+from daily_report.views import (
+     project_views, daily_views, weekly_views, mpr_views, service_views,
+)
 
 
 urlpatterns = [
@@ -17,6 +19,8 @@ urlpatterns = [
          weekly_views.WeeklyView.as_view(), name='weekly_page'),
     path('daily_report/csr_week_excel_report/<int:daily_id>/',
          weekly_views.csr_week_excel_report, name='csr_week_excel_report'),
+    path('daily_report/mpr_excel_report/<int:daily_id>/',
+         mpr_views.mpr_excel_report, name='mpr_page'),
     path('daily_report/service_page/<str:project_name>/',
          service_views.ServiceView.as_view(), name='service_page'),
     path('daily_report/monthly_services/<int:daily_id>/<int:year>/<int:month>/',
