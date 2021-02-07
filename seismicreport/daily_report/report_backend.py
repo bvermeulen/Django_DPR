@@ -66,7 +66,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             return 0, None
 
     def calc_ctm(self, daily, sourcetype_name, tcf):
-        if not daily or np.isnan(tcf):
+        if not daily:
             return np.nan
 
         sourcetype_obj = daily.project.sourcetypes.get(sourcetype_name=sourcetype_name)
@@ -79,7 +79,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if not isinstance(self.mpr_rec_hours, float):
             self.mpr_rec_hours = 24.0
 
-        if mpr_vibes == 0 or mpr_sweep == 0 or mpr_moveup == 0:
+        if np.isnan(tcf) or mpr_vibes == 0 or mpr_sweep == 0 or mpr_moveup == 0:
             return np.nan
 
         ctm = int(3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours)
