@@ -219,6 +219,15 @@ class ProjectInterface:
                 project=project,
                 sourcetype_name=new_sourcetype_name
             )
+            for daily in project.dailies.all():
+                try:
+                    SourceProduction.objects.create(
+                        daily=daily,
+                        sourcetype=sourcetype,
+                    )
+                except IntegrityError:
+                    pass
+
             return sourcetype, new_sourcetype_name
 
         except IntegrityError:
@@ -226,12 +235,23 @@ class ProjectInterface:
 
     @staticmethod
     def delete_sourcetype(sourcetype):
-        if sourcetype:
-            try:
-                sourcetype.delete()
+        # check if there are no source productions with data
+        total = 0
+        sourceprods = SourceProduction.objects.filter(sourcetype=sourcetype)
+        for sprod in sourceprods:
+            total += sprod.sp_t1_flat
+            total += sprod.sp_t2_rough
+            total += sprod.sp_t3_facilities
+            total += sprod.sp_t4_dunes
+            total += sprod.sp_t5_sabkha
+            total += sprod.skips
 
-            except ProtectedError:
-                logger.info(f'sourcetype "{sourcetype}" is used by daily reports')
+        if total > 0:
+            pass
+
+        else:
+            sourceprods.all().delete()
+            sourcetype.delete()
 
         return None, ''
 

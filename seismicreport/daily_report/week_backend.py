@@ -8,7 +8,7 @@ from daily_report.models.weekly_models import Weekly
 from daily_report.report_backend import ReportInterface
 from seismicreport.vars import WEEKDAYS, WEEKS
 from seismicreport.utils.plogger import timed, Logger
-from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
+from seismicreport.utils.utils_funcs import get_receivertype_name
 
 
 logger = Logger.getlogger()
@@ -105,7 +105,13 @@ class WeekInterface:
             except Daily.DoesNotExist:
                 day = None
 
-            sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+            #TODO fix sourcetype_name
+            if day:
+                sourcetype_name = day.project.sourcetypes.all()[0].sourcetype_name
+            else:
+                sourcetype_name = ''
+
+            receivertype_name = get_receivertype_name(day)
 
             days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, sourcetype_name)
             days[wd]['times'] = self.rprt_iface.calc_day_time_totals(day)
@@ -131,7 +137,8 @@ class WeekInterface:
                 # skip this week
                 day = None
 
-            sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+            #TODO fix sourcetype_name
+            receivertype_name = get_receivertype_name(day)
 
             weeks[wk]['prod'] = self.rprt_iface.calc_week_prod_totals(
                 day, sourcetype_name)

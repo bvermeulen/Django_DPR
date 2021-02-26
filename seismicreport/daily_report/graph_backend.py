@@ -28,20 +28,19 @@ class Mixin:
         '''
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
-            terrain_series = self.prod_series['terrain_series']
             ctm_tuple_series = self.prod_series['ctm_series']
-            assert len(date_series) == len(terrain_series), \
+            assert len(date_series) == len(self.prod_series['sp_t1_series']), \
                 'length date en terrain series must be equal'
 
         else:
             return
 
         # stacked bar plot of daily production
-        t1_series = np.array([val[0] for val in terrain_series]) * 0.001
-        t2_series = np.array([val[1] for val in terrain_series]) * 0.001
-        t3_series = np.array([val[2] for val in terrain_series]) * 0.001
-        t4_series = np.array([val[3] for val in terrain_series]) * 0.001
-        t5_series = np.array([val[4] for val in terrain_series]) * 0.001
+        t1_series = self.prod_series['sp_t1_series'] * 0.001
+        t2_series = self.prod_series['sp_t2_series'] * 0.001
+        t3_series = self.prod_series['sp_t3_series'] * 0.001
+        t4_series = self.prod_series['sp_t4_series'] * 0.001
+        t5_series = self.prod_series['sp_t5_series'] * 0.001
         base = np.zeros(len(date_series))
 
         width = 1

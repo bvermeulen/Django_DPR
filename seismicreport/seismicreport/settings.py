@@ -84,10 +84,12 @@ WSGI_APPLICATION = 'seismicreport.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+db_name = os.path.join(os.path.dirname(BASE_DIR), config('DB_NAME'))
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': config('DB_NAME'),
+        'NAME': db_name,
     },
 }
 

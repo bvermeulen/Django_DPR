@@ -19,7 +19,7 @@ from seismicreport.vars import (
 )
 from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import (
-    calc_ratio, nan_array, get_sourcereceivertype_names
+    calc_ratio, nan_array, get_receivertype_name, sum_keys,
 )
 
 logger = Logger.getlogger()
@@ -178,14 +178,16 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 production_date=self.get_value(day_df, 'date'),
                 project=project)
 
-        sourcetype_name, receivertype_name = get_sourcereceivertype_names(day)
+        receivertype_name = get_receivertype_name(day)
 
-        if not project.sourcetypes.filter(
-                sourcetype_name=sourcetype_name[:NAME_LENGTH]):
+        sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
+                            for stype in ['a', 'b', 'c']}
+        print(sourcetype_names)
+
+        if not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values()):
             return None
 
-        if not project.receivertypes.filter(
-                receivertype_name=receivertype_name[:NAME_LENGTH]):
+        if not project.receivertypes.filter(receivertype_name=receivertype_name):
             return None
 
         day.pm_comment = (
@@ -201,28 +203,44 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         day.save()
 
-        # create/ update source production values
-        try:
-            prod = SourceProduction.objects.create(
-                daily=day,
-                sourcetype=day.project.sourcetypes.get(
-                    sourcetype_name=sourcetype_name[:NAME_LENGTH])
-            )
+        # create/ update source production values for source types
+        skips_done = False
+        for stype, stype_name in sourcetype_names.items():
 
-        except IntegrityError:
-            prod = SourceProduction.objects.get(
-                daily=day,
-                sourcetype=day.project.sourcetypes.get(
-                    sourcetype_name=sourcetype_name[:NAME_LENGTH])
-            )
+            # check if sourcetype name exists in the project
+            if not project.sourcetypes.filter(sourcetype_name=stype_name):
+                continue
 
-        prod.sp_t1_flat = int(np.nan_to_num(self.get_value(day_df, 'sp_t1')))
-        prod.sp_t2_rough = int(np.nan_to_num(self.get_value(day_df, 'sp_t2')))
-        prod.sp_t3_facilities = int(np.nan_to_num(self.get_value(day_df, 'sp_t3')))
-        prod.sp_t4_dunes = int(np.nan_to_num(self.get_value(day_df, 'sp_t4')))
-        prod.sp_t5_sabkha = int(np.nan_to_num(self.get_value(day_df, 'sp_t5')))
-        prod.skips = int(np.nan_to_num(self.get_value(day_df, 'skips')))
-        prod.save()
+            try:
+                prod = SourceProduction.objects.create(
+                    daily=day,
+                    sourcetype=day.project.sourcetypes.get(
+                        sourcetype_name=stype_name)
+                )
+
+            except IntegrityError:
+                prod = SourceProduction.objects.get(
+                    daily=day,
+                    sourcetype=day.project.sourcetypes.get(
+                        sourcetype_name=stype_name)
+                )
+            prod.sp_t1_flat = int(
+                np.nan_to_num(self.get_value(day_df, f'sp_t1_{stype}')))
+            prod.sp_t2_rough = int(
+                np.nan_to_num(self.get_value(day_df, f'sp_t2_{stype}')))
+            prod.sp_t3_facilities = int(
+                np.nan_to_num(self.get_value(day_df, f'sp_t3_{stype}')))
+            prod.sp_t4_dunes = int(
+                np.nan_to_num(self.get_value(day_df, f'sp_t4_{stype}')))
+            prod.sp_t5_sabkha = int(
+                np.nan_to_num(self.get_value(day_df, f'sp_t5_{stype}')))
+
+            # only include skips in one sourcetype
+            if not skips_done:
+                prod.skips = int(
+                    np.nan_to_num(self.get_value(day_df, f'skips')))
+                skips_done = True
+            prod.save()
 
         # create/ update receiver production value
         try:
@@ -484,14 +502,13 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         p_series = {f'{key[:5]}_series': nan_array(
             [val[key] for val in sp_query.values()]) for key in source_prod_schema}
-        p_series['terrain_series'] = list(zip(
+        terrain_series = list(zip(
             *[val for key, val in p_series.items() if key != 'skips_series']
         ))
-        p_series['date_series'] = np.array(
-            [val.daily.production_date for val in sp_query])
         p_series['tcf_series'] = []
         p_series['total_sp_series'] = []
-        for terrain_sp in p_series['terrain_series']:
+
+        for terrain_sp in terrain_series:
             sp_total = np.nansum(terrain_sp)
             p_series['total_sp_series'].append(sp_total)
             if sp_total > 0:
@@ -506,7 +523,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             else:
                 p_series['tcf_series'].append(np.nan)
 
-
+        p_series['date_series'] = np.array(
+            [val.daily.production_date for val in sp_query])
 
         pp = {f'proj_{key[:5]}': np.nansum(
             p_series[f'{key[:5]}_series']) for key in source_prod_schema}
@@ -649,7 +667,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             pt['proj_total_time'] = np.nan
             return pt, {}
 
-
         ts = {f'{key}_series': nan_array([val[key] for val in tb_query.values()])
               for key in time_breakdown_schema}
 
@@ -673,6 +690,111 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         return pt, ts
 
+    def calc_prod_totals(self, daily, times, sourcetype_name):
+        day_prod = self.calc_day_prod_totals(daily, sourcetype_name)
+        day_ctm = self.calc_ctm(daily, sourcetype_name, day_prod['tcf'])
+
+        week_prod = self.calc_week_prod_totals(daily, sourcetype_name)
+        week_ctm = self.calc_ctm(daily, sourcetype_name, week_prod['week_tcf'])
+
+        month_prod = self.calc_month_prod_totals(daily, sourcetype_name)
+        month_ctm = self.calc_ctm(daily, sourcetype_name, month_prod['month_tcf'])
+
+        proj_prod, prod_series = self.calc_proj_prod_totals(daily, sourcetype_name)
+        proj_ctm = self.calc_ctm(daily, sourcetype_name, proj_prod['proj_tcf'])
+
+        if CTM_METHOD == 'Legacy':
+            day_ctm *= times['total_time'] / 24
+
+        else:
+            day_ctm *= (times['total_time'] - times['standby']) / 24
+
+        day_app_ctm = calc_ratio(day_prod['total_sp'], day_ctm)
+        day_rate = self.calc_rate(
+            daily, CTM_METHOD, day_app_ctm, times['total_time'], times['standby']
+        )
+        day_ctm = round(day_ctm) if not np.isnan(day_ctm) else 0
+        day_prod['ctm'] = (day_ctm, day_app_ctm, day_rate)
+        day_prod['vp_hour'] = (
+            round(day_prod['total_sp'] / times['rec_time'])
+            if times['rec_time'] else np.nan
+        )
+
+        if CTM_METHOD == 'Legacy':
+            week_ctm *= times['week_total_time'] / 24
+
+        else:
+            week_ctm *= (times['week_total_time'] - times['week_standby']) / 24
+
+        week_app_ctm = calc_ratio(week_prod['week_total'], week_ctm)
+        week_rate = self.calc_rate(
+            daily, CTM_METHOD, week_app_ctm,
+            times['week_total_time'], times['week_standby']
+        )
+        week_ctm = round(week_ctm) if not np.isnan(week_ctm) else 0
+        week_prod['week_ctm'] = (week_ctm, week_app_ctm, week_rate)
+        week_prod['week_vp_hour'] = (
+            round(week_prod['week_total'] / times['week_rec_time'])
+            if times['week_rec_time'] else np.nan
+        )
+
+        if CTM_METHOD == 'Legacy':
+            month_ctm *= times['month_total_time'] / 24
+
+        else:
+            month_ctm *= (
+                (times['month_total_time'] - times['month_standby']) / 24
+            )
+
+        month_app_ctm = calc_ratio(month_prod['month_total'], month_ctm)
+        month_rate = self.calc_rate(
+            daily, CTM_METHOD, month_app_ctm,
+            times['month_total_time'], times['month_standby']
+        )
+        month_ctm = round(month_ctm) if not np.isnan(month_ctm) else 0
+        month_prod['month_ctm'] = (month_ctm, month_app_ctm, month_rate)
+        month_prod['month_vp_hour'] = (
+            round(month_prod['month_total'] / times['month_rec_time'])
+            if times['month_rec_time'] else np.nan
+        )
+
+        if CTM_METHOD == 'Legacy':
+            proj_ctm *= times['proj_total_time'] / 24
+
+        else:
+            proj_ctm *= (times['proj_total_time'] - times['proj_standby']) / 24
+
+        proj_app_ctm = calc_ratio(proj_prod['proj_total'], proj_ctm)
+        proj_rate = self.calc_rate(
+            daily, CTM_METHOD, proj_app_ctm,
+            times['proj_total_time'], times['proj_standby']
+        )
+        proj_ctm = round(proj_ctm) if not np.isnan(proj_ctm) else 0
+        proj_prod['proj_ctm'] = (proj_ctm, proj_app_ctm, proj_rate)
+        proj_prod['proj_vp_hour'] = (
+            round(proj_prod['proj_total'] / times['proj_rec_time'])
+            if times['proj_rec_time'] else np.nan
+        )
+
+        prod_total = {**day_prod, **week_prod, **month_prod, **proj_prod}
+
+        ctm_series = self.calc_ctm_series(
+            daily, sourcetype_name, prod_series['tcf_series'])
+
+        if CTM_METHOD == 'Legacy':
+            ops_time_series = self.time_series['total_time_series']
+
+        else:
+            ops_time_series = (
+                self.time_series['total_time_series'] - self.time_series['standby_series']
+            )
+        ctm_series = ctm_series * ops_time_series / 24
+        app_ctm_series = np.array([calc_ratio(total_sp, ctm) for total_sp, ctm in
+                                  zip(prod_series['total_sp_series'], ctm_series)])
+        prod_series['ctm_series'] = np.array(list(zip(ctm_series, app_ctm_series)))
+
+        return prod_total, prod_series
+
     @timed(logger, print_log=True)
     def calc_totals(self, daily):
         if not daily:
@@ -683,122 +805,26 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         week_times = self.calc_week_time_totals(daily)
         month_times = self.calc_month_time_totals(daily)
         proj_times, self.time_series = self.calc_proj_time_totals(daily)
+        times_total = {**day_times, **week_times, **month_times, **proj_times}
 
         # TODO make loop over source types
-        sourcetype_name, _ = get_sourcereceivertype_names(daily)
-
-        # get the production stats
-        day_prod = self.calc_day_prod_totals(daily, sourcetype_name)
-        day_ctm = self.calc_ctm(daily, sourcetype_name, day_prod['tcf'])
-
-        week_prod = self.calc_week_prod_totals(daily, sourcetype_name)
-        week_ctm = self.calc_ctm(daily, sourcetype_name, week_prod['week_tcf'])
-
-        month_prod = self.calc_month_prod_totals(daily, sourcetype_name)
-        month_ctm = self.calc_ctm(daily, sourcetype_name, month_prod['month_tcf'])
-
-        proj_prod, self.prod_series = self.calc_proj_prod_totals(daily, sourcetype_name)
-        proj_ctm = self.calc_ctm(daily, sourcetype_name, proj_prod['proj_tcf'])
-
-        if CTM_METHOD == 'Legacy':
-            day_ctm *= day_times['total_time'] / 24
-
-        else:
-            day_ctm *= (day_times['total_time'] - day_times['standby']) / 24
-
-        day_app_ctm = calc_ratio(day_prod['total_sp'], day_ctm)
-        day_rate = self.calc_rate(
-            daily, CTM_METHOD, day_app_ctm, day_times['total_time'], day_times['standby']
-        )
-        day_ctm = round(day_ctm) if not np.isnan(day_ctm) else 0
-        day_prod['ctm'] = (day_ctm, day_app_ctm, day_rate)
-        day_prod['vp_hour'] = (
-            round(day_prod['total_sp'] / day_times['rec_time'])
-            if day_times['rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            week_ctm *= week_times['week_total_time'] / 24
-
-        else:
-            week_ctm *= (week_times['week_total_time'] - week_times['week_standby']) / 24
-
-        week_app_ctm = calc_ratio(week_prod['week_total'], week_ctm)
-        week_rate = self.calc_rate(
-            daily, CTM_METHOD, week_app_ctm,
-            week_times['week_total_time'], week_times['week_standby']
-        )
-        week_ctm = round(week_ctm) if not np.isnan(week_ctm) else 0
-        week_prod['week_ctm'] = (week_ctm, week_app_ctm, week_rate)
-        week_prod['week_vp_hour'] = (
-            round(week_prod['week_total'] / week_times['week_rec_time'])
-            if week_times['week_rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            month_ctm *= month_times['month_total_time'] / 24
-
-        else:
-            month_ctm *= (
-                (month_times['month_total_time'] - month_times['month_standby']) / 24
-            )
-
-        month_app_ctm = calc_ratio(month_prod['month_total'], month_ctm)
-        month_rate = self.calc_rate(
-            daily, CTM_METHOD, month_app_ctm,
-            month_times['month_total_time'], month_times['month_standby']
-        )
-        month_ctm = round(month_ctm) if not np.isnan(month_ctm) else 0
-        month_prod['month_ctm'] = (month_ctm, month_app_ctm, month_rate)
-        month_prod['month_vp_hour'] = (
-            round(month_prod['month_total'] / month_times['month_rec_time'])
-            if month_times['month_rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            proj_ctm *= proj_times['proj_total_time'] / 24
-
-        else:
-            proj_ctm *= (proj_times['proj_total_time'] - proj_times['proj_standby']) / 24
-
-        proj_app_ctm = calc_ratio(proj_prod['proj_total'], proj_ctm)
-        proj_rate = self.calc_rate(
-            daily, CTM_METHOD, proj_app_ctm,
-            proj_times['proj_total_time'], proj_times['proj_standby']
-        )
-        proj_ctm = round(proj_ctm) if not np.isnan(proj_ctm) else 0
-        proj_prod['proj_ctm'] = (proj_ctm, proj_app_ctm, proj_rate)
-        proj_prod['proj_vp_hour'] = (
-            round(proj_prod['proj_total'] / proj_times['proj_rec_time'])
-            if proj_times['proj_rec_time'] else np.nan
-        )
-
-        ctm_series = self.calc_ctm_series(
-            daily, sourcetype_name, self.prod_series['tcf_series'])
-
-        if CTM_METHOD == 'Legacy':
-            ops_time_series = self.time_series['total_time_series']
-
-        else:
-            ops_time_series = (
-                self.time_series['total_time_series'] - self.time_series['standby_series']
-            )
-        ctm_series = ctm_series * ops_time_series / 24
-        total_sp_series = np.array(
-            [sum(terrain) for terrain in self.prod_series['terrain_series']])
-        app_ctm_series = np.array(
-            [calc_ratio(total_sp, ctm)
-             for total_sp, ctm in zip(total_sp_series, ctm_series)])
-        self.prod_series['ctm_series'] = np.array(list(zip(ctm_series, app_ctm_series)))
+        prod_totals_by_type = {}
+        prod_series_by_type = {}
+        prod_total = {}
+        self.prod_series = {}
+        for stype in daily.project.sourcetypes.all():
+            prod, series = self.calc_prod_totals(
+                daily, times_total, stype.sourcetype_name)
+            prod_totals_by_type[stype.sourcetype_name] = prod
+            prod_series_by_type[stype.sourcetype_name] = series
+            prod_total = sum_keys(prod_total, prod)
+            self.prod_series = sum_keys(self.prod_series, series)
 
         # get the HSE stats
         day_hse = self.day_hse_totals(daily)
         week_hse = self.week_hse_totals(daily)
         month_hse = self.month_hse_totals(daily)
         proj_hse, self.hse_series = self.proj_hse_totals(daily)
-
-        prod_total = {**day_prod, **week_prod, **month_prod, **proj_prod}
-        times_total = {**day_times, **week_times, **month_times, **proj_times}
         hse_total = {**day_hse, **week_hse, **month_hse, **proj_hse}
 
         return prod_total, times_total, hse_total

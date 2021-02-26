@@ -11,7 +11,6 @@ from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
     set_column_widths, set_color, save_excel,
 )
-from seismicreport.utils.utils_funcs import get_sourcereceivertype_names
 from seismicreport.vars import (
     CONTRACT, source_prod_schema, time_breakdown_schema, hse_weather_schema
 )
@@ -41,8 +40,8 @@ class ExcelMprReport():
         self.params = self.get_parameters(prod_total, times_total)
 
     def get_parameters(self, prod_total, times_total):
-        sourcetype_name, _ = get_sourcereceivertype_names(self.day)
-        sourcetype = self.day.project.sourcetypes.get(sourcetype_name=sourcetype_name)
+        #TODO fix sourcetype
+        sourcetype = self.day.project.sourcetypes.all()[0]
         params = {}
         params['project'] = self.day.project.project_name
         params['crew'] = self.day.project.crew_name

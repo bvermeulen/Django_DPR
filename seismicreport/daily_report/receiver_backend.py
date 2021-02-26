@@ -4,7 +4,7 @@ from django.db.models import Q
 from daily_report.models.daily_models import ReceiverProduction
 from seismicreport.vars import WEEKDAYS, receiver_prod_schema
 from seismicreport.utils.plogger import Logger, timed
-from seismicreport.utils.utils_funcs import nan_array, get_sourcereceivertype_names
+from seismicreport.utils.utils_funcs import nan_array, get_receivertype_name
 
 logger = Logger.getlogger()
 
@@ -107,7 +107,7 @@ class Mixin:
         ''' method to calc the receiver totals. Outstanding:
             loop over receivertypes and handling of qc_field, qc_camp, upload
         '''
-        _, receivertype_name = get_sourcereceivertype_names(daily)
+        receivertype_name = get_receivertype_name(daily)
 
         d_rcvr = self.day_receiver_total(daily, receivertype_name)
         w_rcvr = self.week_receiver_total(daily, receivertype_name)
