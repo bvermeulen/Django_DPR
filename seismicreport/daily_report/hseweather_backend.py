@@ -36,7 +36,8 @@ class Mixin:
         # weather
         d_hse['weather_text'] = (
             f'Weather condition: {d_hse["weather_condition"]}, rain: {d_hse["rain"]}\n'
-            f'Temperatures: minimum {d_hse["temp_min"]:.1f}, maxumum {d_hse["temp_max"]:.1f}\n'  #pylint: disable=line-too-long
+            f'Temperatures: minimum {d_hse["temp_min"]:.1f}, '
+            f'maximum {d_hse["temp_max"]:.1f}\n'
         )
 
         return d_hse
