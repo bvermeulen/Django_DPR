@@ -118,11 +118,12 @@ class WeekInterface:
             days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, receivertype_name)
 
             try:
-                days[wd]['prod']['vp_hour'] = (round(
-                    days[wd]['prod']['total_sp'] / days[wd]['times']['rec_time']))
+                days[wd]['prod']['day_vp_hour'] = (round(
+                    days[wd]['prod']['day_total'] /
+                    days[wd]['times']['day_rec_time']))
 
             except ValueError:
-                days[wd]['prod']['vp_hour'] = np.nan
+                days[wd]['prod']['day_vp_hour'] = np.nan
 
         # get the weekly production figures for the 6 weeks before
         weeks = {}

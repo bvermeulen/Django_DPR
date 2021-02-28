@@ -21,14 +21,14 @@ class Mixin:
                     )
 
             except ReceiverProduction.DoesNotExist:
-                d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
+                d_rcvr = {f'day_{key}': 0 for key in receiver_prod_schema}
                 return d_rcvr
 
         else:
-            d_rcvr = {f'{key}': 0 for key in receiver_prod_schema}
+            d_rcvr = {f'day_{key}': 0 for key in receiver_prod_schema}
             return d_rcvr
 
-        d_rcvr = {f'{key}': np.nan_to_num(getattr(rcvr, key))
+        d_rcvr = {f'day_{key}': np.nan_to_num(getattr(rcvr, key))
                   for key in receiver_prod_schema}
 
         return d_rcvr

@@ -19,13 +19,13 @@ class Mixin:
             hse = HseWeather.objects.get(daily=daily)
 
         except HseWeather.DoesNotExist:
-            d_hse = {f'{key}': '' for key in hse_weather_schema}
+            d_hse = {f'day_{key}': '' for key in hse_weather_schema}
             d_hse['toolbox_text'] = ''
             d_hse['weather_text'] = ''
             return d_hse
 
         # HSE stats
-        d_hse = {f'{key}': np.nan_to_num(getattr(hse, key))
+        d_hse = {f'day_{key}': np.nan_to_num(getattr(hse, key))
                  for key in hse_weather_schema}
 
         # toolboxes
@@ -35,9 +35,9 @@ class Mixin:
 
         # weather
         d_hse['weather_text'] = (
-            f'Weather condition: {d_hse["weather_condition"]}, rain: {d_hse["rain"]}\n'
-            f'Temperatures: minimum {d_hse["temp_min"]:.1f}, '
-            f'maximum {d_hse["temp_max"]:.1f}\n'
+            f'Weather condition: {d_hse["day_weather_condition"]}, rain: {d_hse["day_rain"]}\n'
+            f'Temperatures: minimum {d_hse["day_temp_min"]:.1f}, '
+            f'maximum {d_hse["day_temp_max"]:.1f}\n'
         )
 
         return d_hse

@@ -24,6 +24,14 @@ def calc_ratio(a, b):
         return np.nan
 
 
+def calc_weightedsum(weightedsum, val, weight):
+    if np.isnan(val) or np.isnan(weight):
+        return weightedsum
+
+    else:
+        return weightedsum + val * weight
+
+
 def toggle_month(year: int, month: int, deltamonths: int) -> tuple:
     ''' returns year and month based on change of number of months
         arguments:
