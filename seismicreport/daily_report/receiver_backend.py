@@ -4,11 +4,7 @@ from django.db.models import Q
 from daily_report.models.daily_models import ReceiverProduction
 from seismicreport.vars import WEEKDAYS, receiver_prod_schema
 from seismicreport.utils.plogger import Logger
-<<<<<<< HEAD
-from seismicreport.utils.utils_funcs import nan_array, get_sourcereceivertype_names
-=======
 from seismicreport.utils.utils_funcs import nan_array
->>>>>>> master
 
 logger = Logger.getlogger()
 

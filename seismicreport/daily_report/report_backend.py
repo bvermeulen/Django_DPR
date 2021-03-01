@@ -774,7 +774,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         return prod_total, prod_series
 
-    @timed(logger, print_log=True)
     def calc_totals(self, daily):
 
         # get time breakdown stats

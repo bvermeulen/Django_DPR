@@ -35,7 +35,8 @@ class Mixin:
 
         # weather
         d_hse['weather_text'] = (
-            f'Weather condition: {d_hse["day_weather_condition"]}, rain: {d_hse["day_rain"]}\n'
+            f'Weather condition: {d_hse["day_weather_condition"]}, '
+            f'rain: {d_hse["day_rain"]}\n'
             f'Temperatures: minimum {d_hse["day_temp_min"]:.1f}, '
             f'maximum {d_hse["day_temp_max"]:.1f}\n'
         )

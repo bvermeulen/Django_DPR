@@ -7,7 +7,7 @@ from daily_report.models.daily_models import Person, Daily
 from daily_report.models.weekly_models import Weekly
 from daily_report.report_backend import ReportInterface
 from seismicreport.vars import WEEKDAYS, WEEKS
-from seismicreport.utils.plogger import timed, Logger
+from seismicreport.utils.plogger import Logger
 
 
 logger = Logger.getlogger()
