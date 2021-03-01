@@ -8,7 +8,6 @@ from daily_report.models.weekly_models import Weekly
 from daily_report.report_backend import ReportInterface
 from seismicreport.vars import WEEKDAYS, WEEKS
 from seismicreport.utils.plogger import timed, Logger
-from seismicreport.utils.utils_funcs import get_receivertype_name
 
 
 logger = Logger.getlogger()
@@ -104,25 +103,19 @@ class WeekInterface:
                 day = Daily.objects.get(project=project, production_date=report_date)
             except Daily.DoesNotExist:
                 day = None
-
-            #TODO fix sourcetype_name
-            if day:
-                sourcetype_name = day.project.sourcetypes.all()[0].sourcetype_name
-            else:
-                sourcetype_name = ''
-
-            receivertype_name = get_receivertype_name(day)
-
-            days[wd]['prod']  = self.rprt_iface.calc_day_prod_totals(day, sourcetype_name)
-            days[wd]['times'] = self.rprt_iface.calc_day_time_totals(day)
-            days[wd]['rcvr'] = self.rprt_iface.day_receiver_total(day, receivertype_name)
+            (
+                days[wd]['prod'],
+                days[wd]['times'],
+                days[wd]['rcvr'],
+                _
+            ) = self.rprt_iface.calc_totals(day)
 
             try:
                 days[wd]['prod']['day_vp_hour'] = (round(
                     days[wd]['prod']['day_total'] /
                     days[wd]['times']['day_rec_time']))
 
-            except ValueError:
+            except (ValueError, KeyError):
                 days[wd]['prod']['day_vp_hour'] = np.nan
 
         # get the weekly production figures for the 6 weeks before
@@ -138,21 +131,19 @@ class WeekInterface:
                 # skip this week
                 day = None
 
-            #TODO fix sourcetype_name
-            receivertype_name = get_receivertype_name(day)
+            (
+                weeks[wk]['prod'],
+                weeks[wk]['times'],
+                weeks[wk]['rcvr'],
+                _
+            ) = self.rprt_iface.calc_totals(day)
 
-            weeks[wk]['prod'] = self.rprt_iface.calc_week_prod_totals(
-                day, sourcetype_name)
-            weeks[wk]['times'] = self.rprt_iface.calc_week_time_totals(
-                day)
-            weeks[wk]['rcvr'] = self.rprt_iface.week_receiver_total(
-                day, receivertype_name)
             try:
                 weeks[wk]['prod']['week_vp_hour'] = (round(
                     weeks[wk]['prod']['week_total'] /
                     weeks[wk]['times']['week_rec_time']))
 
-            except ValueError:
+            except (ValueError, KeyError):
                 weeks[wk]['prod']['week_vp_hour'] = np.nan
 
         return days, weeks

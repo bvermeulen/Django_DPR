@@ -17,19 +17,11 @@ def nan_array(a_list: list):
 def calc_ratio(a, b):
     ''' calculates ratio a/b, gives np.nan when b is zero
     '''
-    if not np.isnan(b) and b > 0:
-        return a / b
-
-    else:
+    if np.isnan(a) or np.isnan(b) or b == 0:
         return np.nan
 
-
-def calc_weightedsum(weightedsum, val, weight):
-    if np.isnan(val) or np.isnan(weight):
-        return weightedsum
-
     else:
-        return weightedsum + val * weight
+        return a / b
 
 
 def toggle_month(year: int, month: int, deltamonths: int) -> tuple:

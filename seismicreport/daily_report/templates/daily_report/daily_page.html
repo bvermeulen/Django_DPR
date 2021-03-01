@@ -171,21 +171,21 @@
             </tr>
             <tr>
               <td>CTM</td>
-              <td class="text-right">{{ totals_production.day_ctm.0|floatformat:0|intcomma }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.0|floatformat:0|intcomma }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm|floatformat:0|intcomma }}</td>
             </tr>
             <tr>
               <td>APP/CTM</td>
-              <td class="text-right">{{ totals_production.day_ctm.1|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.1|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.day_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_appctm|floatformat:4 }}</td>
             </tr>
             <tr>
               <td>Rate</td>
-              <td class="text-right">{{ totals_production.day_ctm.2|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.2|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.day_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_rate|floatformat:4 }}</td>
             </tr>
           </tbody>
         </table>

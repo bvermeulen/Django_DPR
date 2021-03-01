@@ -19,7 +19,7 @@ from seismicreport.vars import (
 )
 from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import (
-    calc_ratio, calc_weightedsum, nan_array, get_receivertype_name, sum_keys,
+    calc_ratio, nan_array, get_receivertype_name, sum_keys,
 )
 
 logger = Logger.getlogger()
@@ -65,9 +65,26 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         else:
             return 0, None
 
-    def calc_ctm(self, daily, sourcetype, tcf):
-        if not daily:
+    @staticmethod
+    def calc_tcf(period, prod_total):
+        if period not in ['day', 'week', 'month', 'proj']:
             return np.nan
+
+        total = np.nan_to_num(prod_total[f'{period}_total'])
+
+        if total < 1:
+            return np.nan
+
+        terrain_prod = [
+            np.nan_to_num(prod_total[f'{period}_{key[:5]}']) * TCF_table[f'{key[:5]}']
+                          for key in source_prod_schema[:-1]]
+        tcf = 0
+        for tp in terrain_prod:
+            tcf += tp / total
+
+        return tcf
+
+    def calc_ctm(self, sourcetype, tcf):
 
         mpr_vibes = sourcetype.mpr_vibes
         mpr_sweep = sourcetype.mpr_sweep_length
@@ -85,12 +102,39 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         return ctm
 
-    def calc_ctm_series(self, daily, sourcetype, tcf_series):
-        ctm_series = []
-        for tcf in tcf_series:
-            ctm_series.append(self.calc_ctm(daily, sourcetype, tcf))
+    def calc_ctm_series(self, p_series, sourcetype):
+        terrain_series = list(zip(
+            *[val for key, val in p_series.items() if key != 'skips_series']
+        ))
+        p_series['tcf_series'] = []
+        p_series['total_sp_series'] = []
+        p_series['ctm_series'] = []
+        p_series['appctm_series'] = []
+        p_series['rate_series'] = []
 
-        return np.array(ctm_series)
+        for terrain_sp in terrain_series:
+            sp_total = np.nansum(terrain_sp)
+            p_series['total_sp_series'].append(sp_total)
+            if sp_total > 0:
+                p_series['tcf_series'].append(
+                    terrain_sp[0] / sp_total * TCF_table['sp_t1'] +
+                    terrain_sp[1] / sp_total * TCF_table['sp_t2'] +
+                    terrain_sp[2] / sp_total * TCF_table['sp_t3'] +
+                    terrain_sp[3] / sp_total * TCF_table['sp_t4'] +
+                    terrain_sp[4] / sp_total * TCF_table['sp_t5']
+                )
+
+            else:
+                p_series['tcf_series'].append(np.nan)
+
+        for tcf, total in zip(p_series['tcf_series'], p_series['total_sp_series']):
+            ctm = self.calc_ctm(sourcetype, tcf)
+            appctm = calc_ratio(total, ctm)
+            p_series['ctm_series'].append(ctm)
+            p_series['appctm_series'].append(appctm)
+            p_series['rate_series'].append(np.nan)
+
+        return p_series
 
     @staticmethod
     def calc_rate(daily, ctm_method, app_ctm, total_time, standby_time):
@@ -178,10 +222,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 project=project)
 
         receivertype_name = get_receivertype_name(day)
-
         sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
                             for stype in ['a', 'b', 'c']}
-        print(sourcetype_names)
 
         if not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values()):
             return None
@@ -351,49 +393,35 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return day.production_date
 
     @staticmethod
-    def calc_day_prod_totals(daily, sourcetype_name):
+    def calc_day_prod_totals(daily, sourcetype):
         if daily:
             try:
                 prod = SourceProduction.objects.get(
-                    daily=daily,
-                    sourcetype=daily.project.sourcetypes.get(
-                        sourcetype_name=sourcetype_name)
+                    daily=daily, sourcetype=sourcetype,
                 )
 
             except SourceProduction.DoesNotExist:
                 dp = {f'{key[:5]}': np.nan for key in source_prod_schema}
                 dp['day_total'] = np.nan
-                dp['day_tcf'] = np.nan
                 return dp
 
         else:
             dp = {f'day_{key[:5]}': np.nan for key in source_prod_schema}
             dp['day_total'] = np.nan
-            dp['day_tcf'] = np.nan
-            dp['day_vp_hour'] = np.nan
             return dp
 
         dp = {f'day_{key[:5]}': np.nan_to_num(getattr(prod, key))
               for key in source_prod_schema}
 
         # exclude last key for skips
-        dp['day_total'] = np.nansum(
-            [dp[f'day_{key[:5]}'] for key in source_prod_schema[:-1]]
+        dp['day_total'] = np.sum(
+            dp[f'day_{key[:5]}'] for key in source_prod_schema[:-1]
         )
-
-        if dp['day_total'] > 0:
-            dp['day_tcf'] = sum(
-                dp[f'day_{key[:5]}'] / dp['day_total'] * TCF_table[key[6:]]
-                for key in source_prod_schema[:-1]
-            )
-
-        else:
-            dp['day_tcf'] = np.nan
 
         return dp
 
     @staticmethod
-    def calc_week_prod_totals(daily, sourcetype_name):
+    def calc_week_prod_totals(daily, sourcetype):
         if daily:
             end_date = daily.production_date
             start_date = end_date - timedelta(days=WEEKDAYS-1)
@@ -401,7 +429,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             sp_query = SourceProduction.objects.filter(
                 Q(daily__production_date__gte=start_date),
                 Q(daily__production_date__lte=end_date),
-                sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
+                sourcetype=sourcetype,
             )
 
         else:
@@ -410,10 +438,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if not sp_query:
             wp = {f'week_{key[:5]}': np.nan for key in source_prod_schema}
             wp['week_total'] = np.nan
-            wp['week_tcf'] = np.nan
-            wp['week_vp_hour'] = np.nan
-            wp['week_avg'] = np.nan
-            wp['week_perc_skips'] = np.nan
             return wp
 
         wp = {f'week_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
@@ -424,42 +448,26 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             wp[f'week_{key[:5]}'] for key in source_prod_schema[:-1]
         )
 
-        if wp['week_total'] > 0:
-            wp['week_tcf'] = sum(
-                wp[f'week_{key[:5]}'] / wp['week_total'] * TCF_table[key[6:]]
-                for key in source_prod_schema[:-1]
-            )
-            wp['week_avg'] = round(wp['week_total'] / len(sp_query))
-            wp['week_perc_skips'] = (
-                wp['week_skips'] / (wp['week_total'] + wp['week_skips'])
-            )
-
-        else:
-            wp['week_tcf'] = np.nan
-            wp['week_avg'] = np.nan
-            wp['week_perc_skips'] = np.nan
-
         return wp
 
     @staticmethod
-    def calc_month_prod_totals(daily, sourcetype_name):
+    def calc_month_prod_totals(daily, sourcetype):
         # filter for days in the month up to and including the production date
-        sp_query = SourceProduction.objects.filter(
-            Q(daily__production_date__year=daily.production_date.year) &
-            Q(daily__production_date__month=daily.production_date.month) &
-            Q(daily__production_date__day__lte=daily.production_date.day),
-            sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
-        )
+        if daily:
+            sp_query = SourceProduction.objects.filter(
+                Q(daily__production_date__year=daily.production_date.year) &
+                Q(daily__production_date__month=daily.production_date.month) &
+                Q(daily__production_date__day__lte=daily.production_date.day),
+                sourcetype=sourcetype,
+            )
+
+        else:
+            sp_query = None
 
         if not sp_query:
             mp = {f'month_{key[:5]}': np.nan for key in source_prod_schema}
             mp['month_total'] = np.nan
-            mp['month_tcf'] = np.nan
-            mp['month_vp_hour'] = np.nan
-            mp['month_avg'] = np.nan
-            mp['month_perc_skips'] = np.nan
             return mp
-
 
         mp = {f'month_{key[:5]}': np.nansum([val[key] for val in sp_query.values()])
               for key in source_prod_schema}
@@ -469,61 +477,29 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             mp[f'month_{key[:5]}'] for key in source_prod_schema[:-1]
         )
 
-        if mp['month_total'] > 0:
-            mp['month_tcf'] = sum(
-                mp[f'month_{key[:5]}'] / mp['month_total'] * TCF_table[key[6:]]
-                for key in source_prod_schema[:-1]
-            )
-            mp['month_avg'] = round(mp['month_total'] / len(sp_query))
-            mp['month_perc_skips'] = (
-                mp['month_skips'] / (mp['month_total'] + mp['month_skips'])
-            )
-        else:
-            mp['month_tcf'] = np.nan
-            mp['month_avg'] = np.nan
-            mp['month_perc_skips'] = np.nan
-
         return mp
 
-    def calc_proj_prod_totals(self, daily, sourcetype_name):
+    def calc_proj_prod_totals(self, daily, sourcetype):
         # filter for all days in the project up to and including the production date
-        sp_query = SourceProduction.objects.filter(
-            daily__production_date__lte=daily.production_date,
-            sourcetype=daily.project.sourcetypes.get(sourcetype_name=sourcetype_name),
-        ).order_by('daily__production_date')
+        if daily:
+            sp_query = SourceProduction.objects.filter(
+                daily__production_date__lte=daily.production_date,
+                sourcetype=sourcetype,
+            ).order_by('daily__production_date')
+
+        else:
+            sp_query = None
 
         if not sp_query:
             pp = {f'proj_{key[:5]}': np.nan for key in source_prod_schema}
             pp['proj_total'] = np.nan
-            pp['proj_tcf'] = np.nan
-            pp['proj_vp_hour'] = np.nan
-            pp['proj_avg'] = np.nan
-            pp['proj_perc_skips'] = np.nan
             return pp, {}
 
         p_series = {f'{key[:5]}_series': nan_array(
             [val[key] for val in sp_query.values()]) for key in source_prod_schema}
-        terrain_series = list(zip(
-            *[val for key, val in p_series.items() if key != 'skips_series']
-        ))
-        p_series['tcf_series'] = []
-        p_series['total_sp_series'] = []
+        p_series = self.calc_ctm_series(p_series, sourcetype)
 
-        for terrain_sp in terrain_series:
-            sp_total = np.nansum(terrain_sp)
-            p_series['total_sp_series'].append(sp_total)
-            if sp_total > 0:
-                p_series['tcf_series'].append(
-                    terrain_sp[0] / sp_total * TCF_table['flat'] +
-                    terrain_sp[1] / sp_total * TCF_table['rough'] +
-                    terrain_sp[2] / sp_total * TCF_table['facilities'] +
-                    terrain_sp[3] / sp_total * TCF_table['dunes'] +
-                    terrain_sp[4] / sp_total * TCF_table['sabkha']
-                )
-
-            else:
-                p_series['tcf_series'].append(np.nan)
-
+        # important date_series should come last as this is not numerical value!
         p_series['date_series'] = np.array(
             [val.daily.production_date for val in sp_query])
 
@@ -534,27 +510,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         pp['proj_total'] = np.sum(
             pp[f'proj_{key[:5]}'] for key in source_prod_schema[:-1]
         )
-
-        if pp['proj_total'] > 0:
-            pp['proj_tcf'] = sum(
-                pp[f'proj_{key[:5]}'] / pp['proj_total'] * TCF_table[key[6:]]
-                for key in source_prod_schema[:-1]
-            )
-            if (daily.project.planned_start_date and pp['proj_total'] and
-                (p_days := (daily.production_date - daily.project.planned_start_date).days + 1) > 0):  #pylint: disable=line-too-long
-                pp['proj_avg'] = round(pp['proj_total'] / p_days)
-
-            else:
-                pp['proj_avg'] = np.nan
-
-            pp['proj_perc_skips'] = (
-                pp['proj_skips'] / (pp['proj_total'] + pp['proj_skips'])
-            )
-
-        else:
-            pp['proj_tcf'] = np.nan
-            pp['proj_avg'] = np.nan
-            pp['proj_perc_skips']= np.nan
 
         return pp, p_series
 
@@ -624,12 +579,15 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @staticmethod
     def calc_month_time_totals(daily):
-        tb_query = TimeBreakdown.objects.filter(
-            Q(daily__production_date__year=daily.production_date.year) &
-            Q(daily__production_date__month=daily.production_date.month) &
-            Q(daily__production_date__day__lte=daily.production_date.day),
-            daily__project=daily.project,
-        )
+        if daily:
+            tb_query = TimeBreakdown.objects.filter(
+                Q(daily__production_date__year=daily.production_date.year) &
+                Q(daily__production_date__month=daily.production_date.month) &
+                Q(daily__production_date__day__lte=daily.production_date.day),
+                daily__project=daily.project,
+            )
+        else:
+            tb_query = None
 
         if not tb_query:
             mt = {f'month_{key}': np.nan for key in time_breakdown_schema}
@@ -639,7 +597,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             mt['month_downtime'] = np.nan
             mt['month_total_time'] = np.nan
             return mt
-
 
         mt = {f'month_{key}': np.nansum([val[key] for val in tb_query.values()])
               for key in time_breakdown_schema}
@@ -655,10 +612,14 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return mt
 
     def calc_proj_time_totals(self, daily):
-        tb_query = TimeBreakdown.objects.filter(
-            daily__production_date__lte=daily.production_date,
-            daily__project=daily.project,
-        ).order_by('daily__production_date')
+        if daily:
+            tb_query = TimeBreakdown.objects.filter(
+                daily__production_date__lte=daily.production_date,
+                daily__project=daily.project,
+            ).order_by('daily__production_date')
+
+        else:
+            tb_query = None
 
         if not tb_query:
             pt = {f'proj_{key}': np.nan for key in time_breakdown_schema}
@@ -693,155 +654,130 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         return pt, ts
 
     def calc_prod_totals(self, daily, times, sourcetype):
-        day_prod = self.calc_day_prod_totals(daily, sourcetype.sourcetype_name)
-        day_ctm = self.calc_ctm(daily, sourcetype, day_prod['day_tcf'])
-
-        week_prod = self.calc_week_prod_totals(daily, sourcetype.sourcetype_name)
-        week_ctm = self.calc_ctm(daily, sourcetype, week_prod['week_tcf'])
-
-        month_prod = self.calc_month_prod_totals(daily, sourcetype.sourcetype_name)
-        month_ctm = self.calc_ctm(daily, sourcetype, month_prod['month_tcf'])
-
-        proj_prod, prod_series = self.calc_proj_prod_totals(
-            daily, sourcetype.sourcetype_name)
-        proj_ctm = self.calc_ctm(daily, sourcetype, proj_prod['proj_tcf'])
-
-        if CTM_METHOD == 'Legacy':
-            day_ctm *= times['day_total_time'] / 24
-
-        else:
-            day_ctm *= (times['day_total_time'] - times['day_standby']) / 24
-
-        day_app_ctm = calc_ratio(day_prod['day_total'], day_ctm)
-        day_rate = self.calc_rate(
-            daily, CTM_METHOD, day_app_ctm,
-            times['day_total_time'], times['day_standby']
-        )
-        day_ctm = round(day_ctm) if not np.isnan(day_ctm) else 0
-        day_prod['day_ctm'] = (day_ctm, day_app_ctm, day_rate)
-        day_prod['day_vp_hour'] = (
-            round(day_prod['day_total'] / times['day_rec_time'])
-            if times['day_rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            week_ctm *= times['week_total_time'] / 24
-
-        else:
-            week_ctm *= (times['week_total_time'] - times['week_standby']) / 24
-
-        week_app_ctm = calc_ratio(week_prod['week_total'], week_ctm)
-        week_rate = self.calc_rate(
-            daily, CTM_METHOD, week_app_ctm,
-            times['week_total_time'], times['week_standby']
-        )
-        week_ctm = round(week_ctm) if not np.isnan(week_ctm) else 0
-        week_prod['week_ctm'] = (week_ctm, week_app_ctm, week_rate)
-        week_prod['week_vp_hour'] = (
-            round(week_prod['week_total'] / times['week_rec_time'])
-            if times['week_rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            month_ctm *= times['month_total_time'] / 24
-
-        else:
-            month_ctm *= (
-                (times['month_total_time'] - times['month_standby']) / 24
-            )
-
-        month_app_ctm = calc_ratio(month_prod['month_total'], month_ctm)
-        month_rate = self.calc_rate(
-            daily, CTM_METHOD, month_app_ctm,
-            times['month_total_time'], times['month_standby']
-        )
-        month_ctm = round(month_ctm) if not np.isnan(month_ctm) else 0
-        month_prod['month_ctm'] = (month_ctm, month_app_ctm, month_rate)
-        month_prod['month_vp_hour'] = (
-            round(month_prod['month_total'] / times['month_rec_time'])
-            if times['month_rec_time'] else np.nan
-        )
-
-        if CTM_METHOD == 'Legacy':
-            proj_ctm *= times['proj_total_time'] / 24
-
-        else:
-            proj_ctm *= (times['proj_total_time'] - times['proj_standby']) / 24
-
-        proj_app_ctm = calc_ratio(proj_prod['proj_total'], proj_ctm)
-        proj_rate = self.calc_rate(
-            daily, CTM_METHOD, proj_app_ctm,
-            times['proj_total_time'], times['proj_standby']
-        )
-        proj_ctm = round(proj_ctm) if not np.isnan(proj_ctm) else 0
-        proj_prod['proj_ctm'] = (proj_ctm, proj_app_ctm, proj_rate)
-        proj_prod['proj_vp_hour'] = (
-            round(proj_prod['proj_total'] / times['proj_rec_time'])
-            if times['proj_rec_time'] else np.nan
-        )
-
+        day_prod = self.calc_day_prod_totals(daily, sourcetype)
+        week_prod = self.calc_week_prod_totals(daily, sourcetype)
+        month_prod = self.calc_month_prod_totals(daily, sourcetype)
+        proj_prod, prod_series = self.calc_proj_prod_totals(daily, sourcetype)
         prod_total = {**day_prod, **week_prod, **month_prod, **proj_prod}
-
-        ctm_series = self.calc_ctm_series(daily, sourcetype, prod_series['tcf_series'])
-
-        if CTM_METHOD == 'Legacy':
-            ops_time_series = self.time_series['total_time_series']
-
-        else:
-            ops_time_series = (
-                self.time_series['total_time_series'] - self.time_series['standby_series']
-            )
-        ctm_series = ctm_series * ops_time_series / 24
-        app_ctm_series = np.array([calc_ratio(total_sp, ctm) for total_sp, ctm in
-                                  zip(prod_series['total_sp_series'], ctm_series)])
-        prod_series['ctm_series'] = np.array(list(zip(ctm_series, app_ctm_series)))
 
         return prod_total, prod_series
 
-    def calc_prod_combined(self, daily, times_total,
-                           prod_totals_by_type, prod_series_by_type):
+    def calc_period_totals(self, day, times_total, prod_total, proj_series):
+        proj_df = pd.DataFrame(proj_series)
+        proj_df['date_series'] = pd.to_datetime(proj_df['date_series'])
+
+        # day attributes
+        d_df = proj_df[proj_df.date_series.dt.date == day.production_date]
+        prod_total['day_ctm'] = d_df['ctm_series'].sum()
+        prod_total['day_appctm'] = calc_ratio(
+            prod_total['day_total'], prod_total['day_ctm'])
+        prod_total['day_avg'] = prod_total['day_total']
+        prod_total['day_tcf'] = d_df['tcf_series'].sum()
+        prod_total['day_rate'] = self.calc_rate(
+            day, CTM_METHOD, prod_total['day_appctm'],
+            times_total['day_total_time'], times_total['day_standby']
+        )
+        prod_total['day_perc_skips'] = calc_ratio(
+            prod_total['day_skips'], prod_total['day_total'])
+
+        # week attributes
+        w_df = proj_df[
+            proj_df.date_series.dt.date > day.production_date - pd.to_timedelta('7d')]
+        prod_total['week_ctm'] = w_df['ctm_series'].sum()
+        prod_total['week_appctm'] = calc_ratio(
+            prod_total['week_total'], prod_total['week_ctm'])
+        prod_total['week_avg'] = int(prod_total['week_total'] / WEEKDAYS)
+        prod_total['week_tcf'] = self.calc_tcf('week', prod_total)
+        prod_total['week_rate'] = self.calc_rate(
+            day, CTM_METHOD, prod_total['week_appctm'],
+            times_total['week_total_time'], times_total['week_standby']
+        )
+        prod_total['week_perc_skips'] = calc_ratio(
+            prod_total['week_skips'], prod_total['week_total'])
+
+        # month attributes
+        m_df = proj_df[
+            (proj_df.date_series.dt.month == day.production_date.month) &
+            (proj_df.date_series.dt.year == day.production_date.year)
+        ]
+        prod_total['month_ctm'] = m_df['ctm_series'].sum()
+        prod_total['month_appctm'] = calc_ratio(
+            prod_total['month_total'], prod_total['month_ctm'])
+        prod_total['month_avg'] = int(prod_total['month_total'] / len(m_df))
+        prod_total['month_tcf'] = self.calc_tcf('month', prod_total)
+        prod_total['month_rate'] = self.calc_rate(
+            day, CTM_METHOD, prod_total['month_appctm'],
+            times_total['month_total_time'], times_total['month_standby']
+        )
+        prod_total['month_perc_skips'] = calc_ratio(
+            prod_total['month_skips'], prod_total['month_total'])
+
+        # project attibutes
+        prod_total['proj_ctm'] = proj_df['ctm_series'].sum()
+        prod_total['proj_appctm'] = calc_ratio(
+            prod_total['proj_total'], prod_total['proj_ctm'])
+        days = (day.production_date - day.project.planned_start_date).days
+        if days > 0:
+            prod_total['proj_avg'] = int(prod_total['proj_total'] / days)
+
+        else:
+            prod_total['proj_avg'] = np.nan
+
+        prod_total['proj_tcf'] = self.calc_tcf('proj', prod_total)
+        prod_total['proj_rate'] = self.calc_rate(
+            day, CTM_METHOD, prod_total['proj_appctm'],
+            times_total['proj_total_time'], times_total['proj_standby']
+        )
+        prod_total['proj_perc_skips'] = calc_ratio(
+            prod_total['proj_skips'], prod_total['proj_total'])
+
+        return prod_total
+
+    def calc_prod_combined(
+        self, day, times_total, prod_totals_by_type, prod_series_by_type):
+
         prod_total = {}
+        for ptotal in prod_totals_by_type.values():
+            prod_total = sum_keys(prod_total, ptotal)
+
         prod_series = {}
-        periods = ['day', 'week', 'month', 'proj']
-
-        for ptot in prod_totals_by_type.values():
-            prod_total = sum_keys(prod_total, ptot)
-
-        for key in periods:
-            total = prod_total[f'{key}_total']
-            ctm_weightedsum = 0
-            tcf_weightedsum = 0
-            for ptot in prod_totals_by_type.values():
-                app = ptot[f'{key}_total']
-                ctm = ptot[f'{key}_ctm'][0]
-                tcf = ptot[f'{key}_tcf']
-                if total > 0:
-                    weight = app / total
-                    ctm_weightedsum = calc_weightedsum(ctm_weightedsum, ctm, weight)
-                    tcf_weightedsum = calc_weightedsum(tcf_weightedsum, tcf, weight)
-
-                else:
-                    ctm_weightedsum = 0
-                    tcf_weightedsum = 0
-
-            prod_total[f'{key}_tcf'] = tcf_weightedsum
-            app_ctm = calc_ratio(total, ctm_weightedsum)
-            rate = self.calc_rate(
-                daily, CTM_METHOD, app_ctm,
-                times_total[f'{key}_total_time'], times_total[f'{key}_standby']
-            )
-            prod_total[f'{key}_ctm'] = (ctm_weightedsum, app_ctm, rate)
-
-
         for pseries in prod_series_by_type.values():
             prod_series = sum_keys(prod_series, pseries)
+        ps_length = len(prod_series['total_sp_series'])
+
+        ctm_series = np.zeros(ps_length)
+        tcf_series = np.zeros(ps_length)
+        totals = np.array(prod_series['total_sp_series'])
+        for pseries in prod_series_by_type.values():
+            ctm = np.array(pseries['ctm_series'])
+            app = np.array(pseries['total_sp_series'])
+            tcf = np.array(pseries['tcf_series'])
+
+            weights = np.array([v1 / v2 if v2 > 0 else 0 for v1, v2 in zip(app, totals)])
+            ctm_series = ctm_series + ctm * weights
+            tcf_series = tcf_series + tcf * weights
+
+        prod_series['ctm_series'] = ctm_series
+        prod_series['tcf_series'] = tcf_series
+        prod_series['appctm_series'] = np.array(
+            [calc_ratio(v1, v2) if v2 > 0 else np.nan
+            for v1, v2 in zip(totals, ctm_series)])
+
+        rate_series = []
+        for appctm, total_time, standby in zip(prod_series['appctm_series'],
+                                               self.time_series['total_time_series'],
+                                               self.time_series['standby_series']):
+            rate_series.append(
+                self.calc_rate(day, CTM_METHOD, appctm, total_time, standby)
+            )
+        prod_series['rate_series'] = np.array(rate_series)
+
+        prod_total = self.calc_period_totals(day, times_total, prod_total, prod_series)
 
         return prod_total, prod_series
 
     @timed(logger, print_log=True)
     def calc_totals(self, daily):
-        if not daily:
-            return {}, {}, {}
 
         # get time breakdown stats
         day_times = self.calc_day_time_totals(daily)
@@ -850,29 +786,54 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         proj_times, self.time_series = self.calc_proj_time_totals(daily)
         times_total = {**day_times, **week_times, **month_times, **proj_times}
 
+        # get production stats per sourcetype, then combine results
         prod_totals_by_type = {}
         self.prod_series_by_type = {}
-        for stype in daily.project.sourcetypes.all():
+        if daily:
+            sourcetypes = daily.project.sourcetypes.all()
+
+        else:
+            sourcetypes = [None]
+
+        for stype in sourcetypes:
             prod, series = self.calc_prod_totals(daily, times_total, stype)
-            prod_totals_by_type[stype.sourcetype_name] = prod
-            self.prod_series_by_type[stype.sourcetype_name] = series
+            if stype:
+                prod_totals_by_type[stype.sourcetype_name] = prod
+                self.prod_series_by_type[stype.sourcetype_name] = series
+                prod_total, self.prod_series = self.calc_prod_combined(
+                    daily, times_total, prod_totals_by_type, self.prod_series_by_type)
+            else:
+                prod_total = prod
+                self.prod_series_by_type = series
 
-        prod_total, self.prod_series = self.calc_prod_combined(
-            daily, times_total, prod_totals_by_type, self.prod_series_by_type)
+        # get receiver stats
+        if daily:
+            receivertype_name = get_receivertype_name(daily)
 
-        # get the HSE stats
+        else:
+            receivertype_name = None
+
+        day_rcvr = self.day_receiver_total(daily, receivertype_name)
+        week_rcvr = self.week_receiver_total(daily, receivertype_name)
+        month_rcvr = self.month_receiver_total(daily, receivertype_name)
+        proj_rcvr, self.rcvr_series = self.project_receiver_total(
+            daily, receivertype_name)
+        rcvr_total = {**day_rcvr, **week_rcvr, **month_rcvr, **proj_rcvr}
+
+        # get hse stats
         day_hse = self.day_hse_totals(daily)
         week_hse = self.week_hse_totals(daily)
         month_hse = self.month_hse_totals(daily)
         proj_hse, self.hse_series = self.proj_hse_totals(daily)
         hse_total = {**day_hse, **week_hse, **month_hse, **proj_hse}
 
-        return prod_total, times_total, hse_total
+        return prod_total, times_total, rcvr_total, hse_total
 
     @property
     def series(self) -> typing.Optional[tuple]:
         return (
-            self.prod_series_by_type, self.prod_series, self.time_series, self.hse_series,
+            self.prod_series_by_type, self.prod_series,
+            self.time_series, self.rcvr_series, self.hse_series,
         )
 
     @timed(logger, print_log=True)

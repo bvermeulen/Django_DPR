@@ -47,8 +47,11 @@ class ExcelMprReport():
         self.wp.sheet_view.showGridLines = False
 
         r_iface = ReportInterface('')
-        self.prod_total, self.times_total, _ = r_iface.calc_totals(self.day)
-        self.prod_series_by_type, self.prod_series, self.time_series, self.hse_series = r_iface.series
+        self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
+        (
+            self.prod_series_by_type, self.prod_series,
+            self.time_series, _, self.hse_series
+        ) = r_iface.series
 
     def get_parameters(self, prod_total, times_total, sourcetype):
         if sourcetype:
@@ -58,7 +61,7 @@ class ExcelMprReport():
             rechours = sourcetype.mpr_rec_hours
 
         else:
-            sweep = 'more than one sourcetype was used'
+            sweep = 'mixed sourcetypes'
             vibes = ''
             moveup = ''
             rechours = ''
@@ -76,9 +79,9 @@ class ExcelMprReport():
         params['production_days'] = (
             self.day.production_date - self.day.project.planned_start_date).days + 1
         params['TCF'] = self.prod_total['month_tcf']
-        params['CTM'] = self.prod_total['month_ctm'][0]
-        params['APPCTM'] = self.prod_total['month_ctm'][1]
-        params['RATE'] = self.prod_total['month_ctm'][2]
+        params['CTM'] = self.prod_total['month_ctm']
+        params['APPCTM'] = self.prod_total['month_appctm']
+        params['RATE'] = self.prod_total['month_rate']
         params['APP'] = self.prod_total['month_total']
         params['stby_days'] = self.times_total['month_standby'] / 24
         return params
@@ -87,9 +90,7 @@ class ExcelMprReport():
 
         prod_keys = ['date_series']
         prod_keys += [f'{key[:5]}_series' for key in source_prod_schema]
-        prod_keys += ['total_sp_series', 'tcf_series', 'ctmvp_series', 'appctm_series']
-        prod_series['ctmvp_series'] = [val[0] for val in prod_series['ctm_series']]
-        prod_series['appctm_series'] = [val[1] for val in prod_series['ctm_series']]
+        prod_keys += ['total_sp_series', 'tcf_series', 'ctm_series', 'appctm_series']
         p_series = {f'{key[:-7]}':prod_series[key] for key in prod_keys}
 
         time_keys = [f'{key}_series' for key in time_breakdown_schema]
@@ -197,7 +198,7 @@ class ExcelMprReport():
         vp_type['total'] = np.array(m_df.total_sp.to_list(), dtype=float)
         vp_type['cumtotal'] = np.cumsum(vp_type['total'])
         vp_typesum['total'] = np.sum(vp_type['total'])
-        vp_type['ctm'] = np.array(m_df.ctmvp.to_list(), dtype=float)
+        vp_type['ctm'] = np.array(m_df.ctm.to_list(), dtype=float)
         vp_typesum['ctm'] = np.nansum(vp_type['ctm'])
 
         # calculate the vp terrain distributions and sums

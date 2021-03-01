@@ -67,12 +67,15 @@ class Mixin:
 
     @staticmethod
     def month_hse_totals(daily):
-        hse_query = HseWeather.objects.filter(
-            Q(daily__production_date__year=daily.production_date.year) &
-            Q(daily__production_date__month=daily.production_date.month) &
-            Q(daily__production_date__day__lte=daily.production_date.day),
-            daily__project=daily.project,
-        )
+        if daily:
+            hse_query = HseWeather.objects.filter(
+                Q(daily__production_date__year=daily.production_date.year) &
+                Q(daily__production_date__month=daily.production_date.month) &
+                Q(daily__production_date__day__lte=daily.production_date.day),
+                daily__project=daily.project,
+            )
+        else:
+            hse_query = None
 
         if not hse_query:
             return {f'month_{key}': '' for key in hse_weather_schema}
@@ -84,10 +87,14 @@ class Mixin:
 
     @staticmethod
     def proj_hse_totals(daily):
-        hse_query = HseWeather.objects.filter(
-            daily__production_date__lte=daily.production_date,
-            daily__project=daily.project,
-        ).order_by('daily__production_date')
+        if daily:
+            hse_query = HseWeather.objects.filter(
+                daily__production_date__lte=daily.production_date,
+                daily__project=daily.project,
+            ).order_by('daily__production_date')
+
+        else:
+            hse_query = None
 
         if not hse_query:
             return {f'proj_{key}': '' for key in hse_weather_schema}, None

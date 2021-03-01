@@ -523,9 +523,12 @@ def collate_excel_weekreport_data(day):
     project = day.project
 
     report_data = {}
-    totals_prod, totals_time, totals_hse = r_iface.calc_totals(day)
+    totals_prod, totals_time, _, totals_hse = r_iface.calc_totals(day)
     days, weeks = w_iface.collate_weekdata(day)
-    _, report_data['prod_series'], report_data['time_series'], _ = r_iface.series
+    (
+        _, report_data['prod_series'], report_data['time_series'],
+        _, _
+    ) = r_iface.series
 
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
     report_data['month_days'] = day.production_date.day
@@ -598,8 +601,8 @@ def collate_excel_weekreport_data(day):
     for period in ['week', 'month', 'proj']:
         report_data[f'prod_stats_{period}_table'] = {
             'Total VPs': totals_prod[f'{period}_total'],
-            'Target VPS': totals_prod[f'{period}_ctm'][0],
-            '% Target': totals_prod[f'{period}_ctm'][1],
+            'Target VPS': totals_prod[f'{period}_ctm'],
+            '% Target': totals_prod[f'{period}_appctm'],
             'Rec. Hrs': totals_time[f'{period}_rec_time'],
             'Standby Hrs': totals_time[f'{period}_standby'],
             'Avg VPs/day': totals_prod[f'{period}_avg'],
@@ -665,7 +668,7 @@ def collate_excel_weekreport_data(day):
     for key, day in reversed(days.items()):
         report_data['days_times'][key] = [
             day['date'].strftime('%d-%b-%Y'),
-            day['times']['day_day_rec_time'],
+            day['times']['day_rec_time'],
             day['times']['day_rec_moveup'],
             day['times']['day_logistics'],
             day['times']['day_wait_source'],

@@ -28,7 +28,6 @@ class Mixin:
         '''
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
-            ctm_tuple_series = self.prod_series['ctm_series']
             assert len(date_series) == len(self.prod_series['sp_t1_series']), \
                 'length date en terrain series must be equal'
 
@@ -135,10 +134,10 @@ class Mixin:
 
         # line plot ratio APP / CTM
         plot_filename = self.media_dir / 'images/app_ctm_ratio.png'
-        app_ctm_series = np.array([val[1] for val in ctm_tuple_series])
-        target_series = np.ones(len(app_ctm_series))
+        appctm_series = self.prod_series['appctm_series']
+        target_series = np.ones(len(appctm_series))
         plt.plot(date_series, target_series, label="Target", zorder=2)
-        plt.plot(date_series, app_ctm_series, label="APP/CTM", zorder=3)
+        plt.plot(date_series, appctm_series, label="APP/CTM", zorder=3)
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
         plt.gca().yaxis.grid(zorder=1)
         plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
@@ -155,11 +154,10 @@ class Mixin:
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
             app_series = self.prod_series['total_sp_series']
-            ctm_tuple_series = self.prod_series['ctm_series']
 
         # line plot CTM and app
         plot_filename = self.media_dir / 'images/app_ctm.png'
-        ctm_series = np.array([val[0] for val in ctm_tuple_series])
+        ctm_series = self.prod_series['ctm_series']
         plt.plot(date_series, ctm_series, label="CTM", zorder=2)
         plt.plot(date_series, app_series, label="APP", zorder=3)
         plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)

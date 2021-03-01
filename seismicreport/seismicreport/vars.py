@@ -1,11 +1,11 @@
 # common variables for seismicreport
 
 TCF_table = {
-    'flat': 0.85,
-    'rough': 0.50,
-    'facilities': 0.55,
-    'dunes': 0.60,
-    'sabkha': 0.6,
+    'sp_t1': 0.85,
+    'sp_t2': 0.50,
+    'sp_t3': 0.55,
+    'sp_t4': 0.60,
+    'sp_t5': 0.6,
 }
 
 BGP_DR_table = {
