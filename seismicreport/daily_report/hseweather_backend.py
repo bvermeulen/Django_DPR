@@ -19,13 +19,13 @@ class Mixin:
             hse = HseWeather.objects.get(daily=daily)
 
         except HseWeather.DoesNotExist:
-            d_hse = {f'{key}': '' for key in hse_weather_schema}
+            d_hse = {f'day_{key}': '' for key in hse_weather_schema}
             d_hse['toolbox_text'] = ''
             d_hse['weather_text'] = ''
             return d_hse
 
         # HSE stats
-        d_hse = {f'{key}': np.nan_to_num(getattr(hse, key))
+        d_hse = {f'day_{key}': np.nan_to_num(getattr(hse, key))
                  for key in hse_weather_schema}
 
         # toolboxes
@@ -35,8 +35,9 @@ class Mixin:
 
         # weather
         d_hse['weather_text'] = (
-            f'Weather condition: {d_hse["weather_condition"]}, rain: {d_hse["rain"]}\n'
-            f'Temperatures: minimum {d_hse["temp_min"]:.1f}, maxumum {d_hse["temp_max"]:.1f}\n'  #pylint: disable=line-too-long
+            f'Weather condition: {d_hse["day_weather_condition"]}, rain: {d_hse["day_rain"]}\n'
+            f'Temperatures: minimum {d_hse["day_temp_min"]:.1f}, '
+            f'maximum {d_hse["day_temp_max"]:.1f}\n'
         )
 
         return d_hse
@@ -66,12 +67,15 @@ class Mixin:
 
     @staticmethod
     def month_hse_totals(daily):
-        hse_query = HseWeather.objects.filter(
-            Q(daily__production_date__year=daily.production_date.year) &
-            Q(daily__production_date__month=daily.production_date.month) &
-            Q(daily__production_date__day__lte=daily.production_date.day),
-            daily__project=daily.project,
-        )
+        if daily:
+            hse_query = HseWeather.objects.filter(
+                Q(daily__production_date__year=daily.production_date.year) &
+                Q(daily__production_date__month=daily.production_date.month) &
+                Q(daily__production_date__day__lte=daily.production_date.day),
+                daily__project=daily.project,
+            )
+        else:
+            hse_query = None
 
         if not hse_query:
             return {f'month_{key}': '' for key in hse_weather_schema}
@@ -83,10 +87,14 @@ class Mixin:
 
     @staticmethod
     def proj_hse_totals(daily):
-        hse_query = HseWeather.objects.filter(
-            daily__production_date__lte=daily.production_date,
-            daily__project=daily.project,
-        ).order_by('daily__production_date')
+        if daily:
+            hse_query = HseWeather.objects.filter(
+                daily__production_date__lte=daily.production_date,
+                daily__project=daily.project,
+            ).order_by('daily__production_date')
+
+        else:
+            hse_query = None
 
         if not hse_query:
             return {f'proj_{key}': '' for key in hse_weather_schema}, None

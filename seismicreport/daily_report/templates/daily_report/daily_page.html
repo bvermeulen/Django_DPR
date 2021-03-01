@@ -109,43 +109,43 @@
           <tbody">
             <tr>
               <td>flat</td>
-              <td class="text-right">{{ totals_production.sp_t1|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_sp_t1|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_sp_t1|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_sp_t1|intcomma }}</td>
             </tr>
             <tr>
               <td>rough</td>
-              <td class="text-right">{{ totals_production.sp_t2|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_sp_t2|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_sp_t2|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_sp_t2|intcomma }}</td>
             </tr>
             <tr>
               <td>facilities</td>
-              <td class="text-right">{{ totals_production.sp_t3|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_sp_t3|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_sp_t3|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_sp_t3|intcomma }}</td>
             </tr>
             <tr>
               <td>dunes</td>
-              <td class="text-right">{{ totals_production.sp_t4|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_sp_t4|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_sp_t4|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_sp_t4|intcomma }}</td>
             </tr>
             <tr>
               <td>sabkha</td>
-              <td class="text-right">{{ totals_production.sp_t5|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_sp_t5|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_sp_t5|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_sp_t5|intcomma }}</td>
             </tr>
             <tr>
               <td>skips</td>
-              <td class="text-right">{{ totals_production.skips|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_skips|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_skips|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_skips|intcomma }}</td>
             </tr>
             <tr>
               <td>Total SP's</td>
-              <td class="text-right">{{ totals_production.total_sp|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_total|intcomma }}</td>
               <td class="text-right">{{ totals_production.month_total|intcomma }}</td>
               <td class="text-right">{{ totals_production.proj_total|intcomma }}</td>
             </tr>
@@ -165,27 +165,27 @@
           <tbody>
             <tr>
               <td>TCF</td>
-              <td class="text-right">{{ totals_production.tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.day_tcf|floatformat:4 }}</td>
               <td class="text-right">{{ totals_production.month_tcf|floatformat:4 }}</td>
               <td class="text-right">{{ totals_production.proj_tcf|floatformat:4 }}</td>
             </tr>
             <tr>
               <td>CTM</td>
-              <td class="text-right">{{ totals_production.ctm.0|floatformat:0|intcomma }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.0|floatformat:0|intcomma }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.0|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.day_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm|floatformat:0|intcomma }}</td>
             </tr>
             <tr>
               <td>APP/CTM</td>
-              <td class="text-right">{{ totals_production.ctm.1|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.1|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.1|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.day_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_appctm|floatformat:4 }}</td>
             </tr>
             <tr>
               <td>Rate</td>
-              <td class="text-right">{{ totals_production.ctm.2|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.month_ctm.2|floatformat:4 }}</td>
-              <td class="text-right">{{ totals_production.proj_ctm.2|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.day_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_rate|floatformat:4 }}</td>
             </tr>
           </tbody>
         </table>
@@ -209,14 +209,14 @@
           <tbody>
             <tr>
               <td>recording hours</td>
-              <td class="text-right">{{ totals_time.rec_hours|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_rec_hours|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_rec_hours|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_rec_hours|floatformat:3 }}</td>
             </tr>
             {% if totals_time.proj_rec_moveup > 0 %}
               <tr>
                 <td>rt move</td>
-                <td class="text-right">{{ totals_time.rec_moveup|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_rec_moveup|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_rec_moveup|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_rec_moveup|floatformat:3 }}</td>
               </tr>
@@ -224,7 +224,7 @@
             {% if totals_time.proj_logistics > 0 %}
               <tr>
                 <td>logistics time</td>
-                <td class="text-right">{{ totals_time.logistics|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_logistics|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_logistics|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_logistics|floatformat:3 }}</td>
               </tr>
@@ -232,7 +232,7 @@
             {% if totals_time.proj_camp_move > 0 %}
               <tr>
                 <td>camp move time</td>
-                <td class="text-right">{{ totals_time.camp_move|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_camp_move|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_camp_move|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_camp_move|floatformat:3 }}</td>
               </tr>
@@ -240,7 +240,7 @@
             {% if totals_time.proj_wait_source > 0 %}
               <tr>
                 <td>waiting on source</td>
-                <td class="text-right">{{ totals_time.wait_source|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_wait_source|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_wait_source|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_wait_source|floatformat:3 }}</td>
               </tr>
@@ -248,7 +248,7 @@
             {% if totals_time.proj_wait_layout > 0 %}
               <tr>
                 <td>waiting on layout</td>
-                <td class="text-right">{{ totals_time.wait_layout|floatformat:3}}</td>
+                <td class="text-right">{{ totals_time.day_wait_layout|floatformat:3}}</td>
                 <td class="text-right">{{ totals_time.month_wait_layout|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_wait_layout|floatformat:3 }}</td>
               </tr>
@@ -256,7 +256,7 @@
             {% if totals_time.proj_wait_shift_change > 0 %}
               <tr>
                 <td>delays shift change</td>
-                <td class="text-right">{{ totals_time.wait_shift_change|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_wait_shift_change|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_wait_shift_change|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_wait_shift_change|floatformat:3 }}</td>
               </tr>
@@ -264,7 +264,7 @@
             {% if totals_time.proj_company_suspension > 0 %}
               <tr>
                 <td>company suspension</td>
-                <td class="text-right">{{ totals_time.company_suspension|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_company_suspension|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_company_suspension|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_company_suspension|floatformat:3 }}</td>
               </tr>
@@ -272,7 +272,7 @@
             {% if totals_time.proj_company_tests > 0 %}
               <tr>
                 <td>tests (company)</td>
-                <td class="text-right">{{ totals_time.company_tests|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_company_tests|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_company_tests|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_company_tests|floatformat:3 }}</td>
               </tr>
@@ -280,7 +280,7 @@
             {% if totals_time.proj_beyond_control > 0 %}
               <tr>
                 <td>delays beyond control</td>
-                <td class="text-right">{{ totals_time.beyond_control|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_beyond_control|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_beyond_control|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_beyond_control|floatformat:3 }}</td>
               </tr>
@@ -288,7 +288,7 @@
             {% if totals_time.proj_line_fault > 0 %}
               <tr>
                 <td>line fault</td>
-                <td class="text-right">{{ totals_time.line_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_line_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_line_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_line_fault|floatformat:3 }}</td>
               </tr>
@@ -296,7 +296,7 @@
             {% if totals_time.proj_rec_eqpmt_fault > 0 %}
               <tr>
                 <td>Rec. eqpmt fault</td>
-                <td class="text-right">{{ totals_time.rec_eqpmt_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_rec_eqpmt_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_rec_eqpmt_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_rec_eqpmt_fault|floatformat:3 }}</td>
               </tr>
@@ -304,7 +304,7 @@
             {% if totals_time.proj_vibrator_fault > 0 %}
               <tr>
                 <td>vibrator fault</td>
-                <td class="text-right">{{ totals_time.vibrator_fault|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_vibrator_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_vibrator_fault|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_vibrator_fault|floatformat:3 }}</td>
               </tr>
@@ -312,7 +312,7 @@
             {% if totals_time.proj_incident > 0 %}
               <tr>
                 <td>time lost for incident</td>
-                <td class="text-right">{{ totals_time.incident|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_incident|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_incident|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_incident|floatformat:3 }}</td>
               </tr>
@@ -320,7 +320,7 @@
             {% if totals_time.proj_legal_dispute > 0 %}
               <tr>
                 <td>Legal/ dispute</td>
-                <td class="text-right">{{ totals_time.legal_dispute|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_legal_dispute|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_legal_dispute|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_legal_dispute|floatformat:3 }}</td>
               </tr>
@@ -328,7 +328,7 @@
             {% if totals_time.proj_comp_instruction > 0 %}
               <tr>
                 <td>Company Instruction</td>
-                <td class="text-right">{{ totals_time.comp_instruction|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_comp_instruction|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_comp_instruction|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_comp_instruction|floatformat:3 }}</td>
               </tr>
@@ -336,7 +336,7 @@
             {% if totals_time.proj_contractor_noise > 0 %}
             <tr>
               <td>Contractor noise</td>
-              <td class="text-right">{{ totals_time.contractor_noise|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_contractor_noise|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_contractor_noise|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_contractor_noise|floatformat:3 }}</td>
             </tr>
@@ -344,38 +344,38 @@
             {% if totals_time.proj_other_downtime > 0 %}
               <tr>
                 <td>other downtime</td>
-                <td class="text-right">{{ totals_time.other_downtime|floatformat:3 }}</td>
+                <td class="text-right">{{ totals_time.day_other_downtime|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.month_other_downtime|floatformat:3 }}</td>
                 <td class="text-right">{{ totals_time.proj_other_downtime|floatformat:3 }}</td>
               </tr>
             {% endif %}
             <tr>
               <td>Total recording</td>
-              <td class="text-right">{{ totals_time.rec_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_rec_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_rec_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_rec_time|floatformat:3 }}</td>
             </tr>
             <tr>
               <td>Total operational</td>
-              <td class="text-right">{{ totals_time.ops_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_ops_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_ops_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_ops_time|floatformat:3 }}</td>
             </tr>
             <tr>
               <td>Total standby</td>
-              <td class="text-right">{{ totals_time.standby|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_standby|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_standby|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_standby|floatformat:3 }}</td>
             </tr>
             <tr>
               <td>Total downtime</td>
-              <td class="text-right">{{ totals_time.downtime|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_downtime|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_downtime|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_downtime|floatformat:3 }}</td>
             </tr>
             <tr>
               <td>Total time</td>
-              <td class="text-right">{{ totals_time.total_time|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_time.day_total_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.month_total_time|floatformat:3 }}</td>
               <td class="text-right">{{ totals_time.proj_total_time|floatformat:3 }}</td>
             </tr>
@@ -394,42 +394,42 @@
           <tbody>
             <tr>
               <td>Layout</td>
-              <td class="text-right">{{ totals_receiver.layout|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_layout|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_layout|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_layout|intcomma }}</td>
             </tr>
             <tr>
               <td>Pickup</td>
-              <td class="text-right">{{ totals_receiver.pickup|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_pickup|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_pickup|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_pickup|intcomma }}</td>
             </tr>
             <tr>
               <td>Node download</td>
-              <td class="text-right">{{ totals_receiver.node_download|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_node_download|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_node_download|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_node_download|intcomma }}</td>
             </tr>
               <td>Node charged</td>
-              <td class="text-right">{{ totals_receiver.node_charged|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_node_charged|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_node_charged|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_node_charged|intcomma }}</td>
             </tr>
             <tr>
               <td>Node failure</td>
-              <td class="text-right">{{ totals_receiver.node_failure|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_node_failure|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_node_failure|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_node_failure|intcomma }}</td>
             </tr>
             <tr>
               <td>Node repair</td>
-              <td class="text-right">{{ totals_receiver.node_repair|intcomma }}</td>
+              <td class="text-right">{{ totals_receiver.day_node_repair|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.month_node_repair|intcomma }}</td>
               <td class="text-right">{{ totals_receiver.proj_node_repair|intcomma }}</td>
             </tr>
             <tr>
               <td>Field QC</td>
-              <td class="text-right">{{ totals_receiver.qc_field|floatformat:3 }}</td>
+              <td class="text-right">{{ totals_receiver.day_qc_field|floatformat:3 }}</td>
               <td class="text-right">{{ totals_receiver.month_qc_field|floatformat:3 }}</td>
               <td class="text-right">{{ totals_receiver.proj_qc_field|floatformat:3 }}</td>
             </tr>
@@ -452,74 +452,74 @@
           </thead>
           <tbody">
             <tr>
-              <td>Ethimam/ Stop</td>
-              <td class="text-right">{{ totals_hse.stop|intcomma }}</td>
+              <td>Ihtimam/ Stop</td>
+              <td class="text-right">{{ totals_hse.day_stop|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_stop|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_stop|intcomma }}</td>
             </tr>
             <tr>
               <td>LTI</td>
-              <td class="text-right">{{ totals_hse.lti|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_lti|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_lti|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_lti|intcomma }}</td>
             </tr>
             <tr>
               <td>FAC</td>
-              <td class="text-right">{{ totals_hse.fac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_fac|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_fac|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_fac|intcomma }}</td>
             </tr>
             <tr>
               <td>MTC</td>
-              <td class="text-right">{{ totals_hse.mtc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_mtc|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_mtc|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_mtc|intcomma }}</td>
             </tr>
             <tr>
               <td>RWC</td>
-              <td class="text-right">{{ totals_hse.rwc|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_rwc|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_rwc|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_rwc|intcomma }}</td>
             </tr>
             <tr>
               <td>Incident/ NM</td>
-              <td class="text-right">{{ totals_hse.incident_nm|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_incident_nm|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_incident_nm|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_incident_nm|intcomma }}</td>
             </tr>
             <tr>
               <td>Medevac</td>
-              <td class="text-right">{{ totals_hse.medevac|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_medevac|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_medevac|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_medevac|intcomma }}</td>
             </tr>
             <tr>
               <td>Drills</td>
-              <td class="text-right">{{ totals_hse.drills|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_drills|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_drills|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_drills|intcomma }}</td>
             </tr>
             <tr>
               <td>Audits</td>
-              <td class="text-right">{{ totals_hse.audits|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_audits|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_audits|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_audits|intcomma }}</td>
             </tr>
             <tr>
               <td>LSR violation</td>
-              <td class="text-right">{{ totals_hse.lsr_violations|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_lsr_violations|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_lsr_violations|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_lsr_violations|intcomma }}</td>
             </tr>
             <tr>
               <td>Headcount</td>
-              <td class="text-right">{{ totals_hse.headcount|intcomma }}</td>
+              <td class="text-right">{{ totals_hse.day_headcount|intcomma }}</td>
               <td class="text-right">{{ totals_hse.month_headcount|intcomma }}</td>
               <td class="text-right">{{ totals_hse.proj_headcount|intcomma }}</td>
             </tr>
             <tr>
               <td>Exposure hours</td>
-              <td class="text-right">{{ totals_hse.exposure_hours|f_format:",.0f" }}</td>
+              <td class="text-right">{{ totals_hse.day_exposure_hours|f_format:",.0f" }}</td>
               <td class="text-right">{{ totals_hse.month_exposure_hours|f_format:",.0f" }}</td>
               <td class="text-right">{{ totals_hse.proj_exposure_hours|f_format:",.0f" }}</td>
             </tr>

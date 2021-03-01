@@ -84,14 +84,12 @@ WSGI_APPLICATION = 'seismicreport.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+db_name = os.path.join(os.path.dirname(BASE_DIR), config('DB_NAME'))
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': db_name,
     },
 }
 
@@ -157,10 +155,7 @@ logger.info(f'{nl}------------------------------------------------------------'
             f"{nl}        Alowed hosts: {ALLOWED_HOSTS}"
             f'{nl}------------------------------------------------------------')
 
-logger.info(f"{nl}DB_NAME: {config('DB_NAME')}"
-            f"{nl}DB_USER: {config('DB_USER')}"
-            f"{nl}DB_PASSWORD: {'XXXXXXXX'}"
-            f'{nl}EMAIL_BACKEND: {EMAIL_BACKEND}'
+logger.info(f'{nl}EMAIL_BACKEND: {EMAIL_BACKEND}'
             f'{nl}EMAIL_HOST: {EMAIL_HOST}'
             f'{nl}EMAIL_PORT: {EMAIL_PORT}'
             f'{nl}EMAIL_HOST_USER: {EMAIL_HOST_USER}'

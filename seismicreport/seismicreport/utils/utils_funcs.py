@@ -17,11 +17,11 @@ def nan_array(a_list: list):
 def calc_ratio(a, b):
     ''' calculates ratio a/b, gives np.nan when b is zero
     '''
-    if not np.isnan(b) and b > 0:
-        return a / b
+    if np.isnan(a) or np.isnan(b) or b == 0:
+        return np.nan
 
     else:
-        return np.nan
+        return a / b
 
 
 def toggle_month(year: int, month: int, deltamonths: int) -> tuple:
@@ -75,13 +75,58 @@ def check_expiry_date(expiry_date: datetime):
     else:
         logger.info('License is valid')
 
-def get_sourcereceivertype_names(daily):
-    ''' hardwired patch function until proper loop over sourcetypes, receivertypes
-        is implemented
+
+def sum_keys(dict_a: dict, dict_b: dict) -> dict:
+    ''' function to sum values that have the same key for scalar
+        list and tuple. Values must be numerical or np.nan
     '''
-    #TODO delete after proper loop is implemented
+    for key, val_b in dict_b.items():
+        val_a = dict_a.get(key, None)
+
+        if val_a is not None:
+            if isinstance(val_b, (list, tuple)):
+                sum_result = []
+                for v in zip(val_a, val_b):
+                    try:
+                        sum_result.append(np.nansum(v))
+
+                    except TypeError:
+                        sum_result = val_a
+
+                if isinstance(val_b, tuple):
+                    sum_result = tuple(sum_result)
+
+            elif isinstance(val_b, np.ndarray):
+                try:
+                    where_nan = np.isnan(val_a)
+                    val_a[where_nan] = 0
+                    where_nan = np.isnan(val_b)
+                    val_b[where_nan] = 0
+                    sum_result = val_a + val_b
+
+                except TypeError:
+                    sum_result = val_a
+
+            else:
+                try:
+                    sum_result = val_a + val_b
+
+                except TypeError:
+                    sum_result = val_a
+
+            dict_a[key] = sum_result
+
+        else:
+            dict_a[key] = dict_b[key]
+
+    return dict_a
+
+
+def get_receivertype_name(daily):
+    ''' hardwired patch to get receivertype
+    '''
     if daily and daily.project.project_name[:6] == 'Haniya':
-        return 'vibe_25_25', 'node_75_75'
+        return 'node_75_75'
 
     else:
-        return 'vibe_25m', 'receiver_25m'
+        return 'receiver_25m'
