@@ -10,7 +10,7 @@ from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import check_expiry_date
 
 SEISMICREPORT_VERSION = 'https://github.com/bvermeulen/seismicreport'
-SEISMICREPORT_DATE = 'January 2021'
+SEISMICREPORT_DATE = 'February 2021'
 SEISMICREPORT_AUTHOR = 'bruno.vermeulen@hotmail.com'
 EXPIRY_DATE = datetime.strptime(config('EXPIRY_DATE'), '%Y-%b-%d')
 
@@ -84,12 +84,14 @@ WSGI_APPLICATION = 'seismicreport.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-db_name = os.path.join(os.path.dirname(BASE_DIR), config('DB_NAME'))
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': db_name,
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': 'localhost',
+        'PORT': '5432',
     },
 }
 
