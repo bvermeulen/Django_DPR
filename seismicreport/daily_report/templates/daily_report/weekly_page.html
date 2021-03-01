@@ -274,17 +274,17 @@
         {% for key, d in days.items reversed %}
           <tr class="text-right">
             <td class="text-left">{{ d.date|date:"d-b-Y" }}</td>
-            <td>{{ d.prod.total_sp|intcomma }}</td>
-            <td>{{ d.times.rec_time|floatformat:2 }}</td>
-            <td>{{ d.prod.vp_hour }}</td>
-            <td>{{ d.prod.skips|intcomma }}</td>
-            <td>{{ d.rcvr.layout|intcomma }}</td>
-            <td>{{ d.rcvr.pickup|intcomma }}</td>
-            <td>{{ d.rcvr.node_download|intcomma }}</td>
-            <td>{{ d.rcvr.node_charged|intcomma }}</td>
-            <td>{{ d.rcvr.node_failure|intcomma }}</td>
-            <td>{{ d.rcvr.node_repair|intcomma }}</td>
-            <td>{{ d.rcvr.qc_field|f_format:".2f" }}</td>
+            <td>{{ d.prod.day_total|intcomma }}</td>
+            <td>{{ d.times.day_rec_time|floatformat:2 }}</td>
+            <td>{{ d.prod.day_vp_hour }}</td>
+            <td>{{ d.prod.day_skips|intcomma }}</td>
+            <td>{{ d.rcvr.day_layout|intcomma }}</td>
+            <td>{{ d.rcvr.day_pickup|intcomma }}</td>
+            <td>{{ d.rcvr.day_node_download|intcomma }}</td>
+            <td>{{ d.rcvr.day_node_charged|intcomma }}</td>
+            <td>{{ d.rcvr.day_node_failure|intcomma }}</td>
+            <td>{{ d.rcvr.day_node_repair|intcomma }}</td>
+            <td>{{ d.rcvr.day_qc_field|f_format:".2f" }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -362,26 +362,26 @@
         {% for key, d in days.items reversed %}
         <tr class="text-right">
           <td class="text-left">{{ d.date|date:"d-b-Y" }}</td>
-          <td>{{ d.times.rec_time|f_format:".2f" }}</td>
-          <td>{{ d.times.rec_moveup|f_format:".2f" }}</dh>
-          <td>{{ d.times.logistics|f_format:".2f" }}</td>
-          <td>{{ d.times.wait_source|f_format:".2f" }}</td>
-          <td>{{ d.times.wait_layout|f_format:".2f" }}</td>
-          <td>{{ d.times.wait_shift_change|f_format:".2f" }}</td>
-          <td>{{ d.times.company_suspension|f_format:".2f" }}</td>
-          <td>{{ d.times.company_tests|f_format:".2f" }}</td>
-          <td>{{ d.times.beyond_control|f_format:".2f" }}</td>
-          <td>{{ d.times.camp_move|f_format:".2f" }}</td>
-          <td>{{ d.times.rec_eqpmt_fault|f_format:".2f" }}</td>
-          <td>{{ d.times.vibrator_fault|f_format:".2f" }}</td>
-          <td>{{ d.times.incident|f_format:".2f" }}</td>
-          <td>{{ d.times.legal_dispute|f_format:".2f" }}</td>
-          <td>{{ d.times.comp_instruction|f_format:".2f" }}</td>
-          <td>{{ d.times.contractor_noise|f_format:".2f" }}</td>
-          <td>{{ d.times.other_downtime|f_format:".2f" }}</td>
-          <td>{{ d.times.ops_time|f_format:".2f" }}</td>
-          <td>{{ d.times.standby|f_format:".2f" }}</td>
-          <td>{{ d.times.downtime|f_format:".2f" }}</td>
+          <td>{{ d.times.day_rec_time|f_format:".2f" }}</td>
+          <td>{{ d.times.day_rec_moveup|f_format:".2f" }}</dh>
+          <td>{{ d.times.day_logistics|f_format:".2f" }}</td>
+          <td>{{ d.times.day_wait_source|f_format:".2f" }}</td>
+          <td>{{ d.times.day_wait_layout|f_format:".2f" }}</td>
+          <td>{{ d.times.day_wait_shift_change|f_format:".2f" }}</td>
+          <td>{{ d.times.day_company_suspension|f_format:".2f" }}</td>
+          <td>{{ d.times.day_company_tests|f_format:".2f" }}</td>
+          <td>{{ d.times.day_beyond_control|f_format:".2f" }}</td>
+          <td>{{ d.times.day_camp_move|f_format:".2f" }}</td>
+          <td>{{ d.times.day_rec_eqpmt_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.day_vibrator_fault|f_format:".2f" }}</td>
+          <td>{{ d.times.day_incident|f_format:".2f" }}</td>
+          <td>{{ d.times.day_legal_dispute|f_format:".2f" }}</td>
+          <td>{{ d.times.day_comp_instruction|f_format:".2f" }}</td>
+          <td>{{ d.times.day_contractor_noise|f_format:".2f" }}</td>
+          <td>{{ d.times.day_other_downtime|f_format:".2f" }}</td>
+          <td>{{ d.times.day_ops_time|f_format:".2f" }}</td>
+          <td>{{ d.times.day_standby|f_format:".2f" }}</td>
+          <td>{{ d.times.day_downtime|f_format:".2f" }}</td>
         </tr>
         {% endfor %}
       </tbody>

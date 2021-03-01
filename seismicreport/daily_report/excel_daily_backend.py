@@ -226,8 +226,7 @@ class ExcelDayReport:
 
 def collate_excel_dailyreport_data(day):
     r_iface = ReportInterface('')
-    totals_production, totals_time, totals_hse = r_iface.calc_totals(day)
-    totals_receiver = r_iface.calc_receiver_totals(day)
+    totals_production, totals_time, totals_receiver, totals_hse = r_iface.calc_totals(day)
     # no need to call create_daily_graphs as this has been done in DailyView
 
     project = day.project
@@ -257,23 +256,23 @@ def collate_excel_dailyreport_data(day):
 
     report_data['daily_table'] = {
         'Oper Day': ops_days,
-        'Total VPs': totals_production['total_sp'],
-        'Target VPs': totals_production['ctm'][0],
-        '% Target': totals_production['ctm'][1],
-        'Recording Hrs': totals_time['rec_time'],
-        'Ops Hrs': totals_time['ops_time'],
-        'Standby Hrs': totals_time['standby'],
-        'Downtime Hrs': totals_time['downtime'],
-        'Skip VPs': totals_production['skips'],
+        'Total VPs': totals_production['day_total'],
+        'Target VPs': totals_production['day_ctm'],
+        '% Target': totals_production['day_appctm'],
+        'Recording Hrs': totals_time['day_rec_time'],
+        'Ops Hrs': totals_time['day_ops_time'],
+        'Standby Hrs': totals_time['day_standby'],
+        'Downtime Hrs': totals_time['day_downtime'],
+        'Skip VPs': totals_production['day_skips'],
     }
 
     report_data['receiver_table'] = {
-        'Layout': totals_receiver['layout'],
-        'Pickup': totals_receiver['pickup'],
-        'Node download': totals_receiver['node_download'],
-        'Node charged': totals_receiver['node_charged'],
-        'Node failure': totals_receiver['node_failure'],
-        'Node repair': totals_receiver['node_repair'],
+        'Layout': totals_receiver['day_layout'],
+        'Pickup': totals_receiver['day_pickup'],
+        'Node download': totals_receiver['day_node_download'],
+        'Node charged': totals_receiver['day_node_charged'],
+        'Node failure': totals_receiver['day_node_failure'],
+        'Node repair': totals_receiver['day_node_repair'],
     }
 
     # cst table XG0 first then CSR
@@ -331,14 +330,14 @@ def collate_excel_dailyreport_data(day):
     }
 
     report_data['hse_stats_table'] = {
-        'LTI': totals_hse['lti'],
-        'RWC': totals_hse['rwc'],
-        'MTC': totals_hse['mtc'],
-        'FAC': totals_hse['fac'],
-        'NM/ Incidents': totals_hse['incident_nm'],
-        'LSR': totals_hse['lsr_violations'],
-        'Inspections': totals_hse['audits'],
-        'STOP': totals_hse['stop'],
+        'LTI': totals_hse['day_lti'],
+        'RWC': totals_hse['day_rwc'],
+        'MTC': totals_hse['day_mtc'],
+        'FAC': totals_hse['day_fac'],
+        'NM/ Incidents': totals_hse['day_incident_nm'],
+        'LSR': totals_hse['day_lsr_violations'],
+        'Inspections': totals_hse['day_audits'],
+        'STOP': totals_hse['day_stop'],
     }
 
     report_data['csr_comment_table'] = {

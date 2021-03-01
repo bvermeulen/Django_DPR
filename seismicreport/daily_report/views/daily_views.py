@@ -52,8 +52,13 @@ class DailyView(View):
                 'projects': day.project.project_name,
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
-            totals_production, totals_time, totals_hse = self.rprt_iface.calc_totals(day)
-            totals_receiver = self.rprt_iface.calc_receiver_totals(day)
+            (
+                totals_production,
+                totals_time,
+                totals_receiver,
+                totals_hse
+             ) = self.rprt_iface.calc_totals(day)
+
             self.rprt_iface.create_daily_graphs()
             context = {
                 'form_daily': self.form_daily(initial=day_initial),

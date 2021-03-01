@@ -27,20 +27,18 @@ class Mixin:
         '''
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
-            terrain_series = self.prod_series['terrain_series']
-            ctm_tuple_series = self.prod_series['ctm_series']
-            assert len(date_series) == len(terrain_series), \
+            assert len(date_series) == len(self.prod_series['sp_t1_series']), \
                 'length date en terrain series must be equal'
 
         else:
             return
 
         # stacked bar plot of daily production
-        t1_series = np.array([val[0] for val in terrain_series]) * 0.001
-        t2_series = np.array([val[1] for val in terrain_series]) * 0.001
-        t3_series = np.array([val[2] for val in terrain_series]) * 0.001
-        t4_series = np.array([val[3] for val in terrain_series]) * 0.001
-        t5_series = np.array([val[4] for val in terrain_series]) * 0.001
+        t1_series = self.prod_series['sp_t1_series'] * 0.001
+        t2_series = self.prod_series['sp_t2_series'] * 0.001
+        t3_series = self.prod_series['sp_t3_series'] * 0.001
+        t4_series = self.prod_series['sp_t4_series'] * 0.001
+        t5_series = self.prod_series['sp_t5_series'] * 0.001
         base = np.zeros(len(date_series))
 
         width = 1
@@ -135,10 +133,10 @@ class Mixin:
 
         # line plot ratio APP / CTM
         plot_filename = self.media_dir / 'images/app_ctm_ratio.png'
-        app_ctm_series = np.array([val[1] for val in ctm_tuple_series])
-        target_series = np.ones(len(app_ctm_series))
+        appctm_series = self.prod_series['appctm_series']
+        target_series = np.ones(len(appctm_series))
         plt.plot(date_series, target_series, label="Target", zorder=2)
-        plt.plot(date_series, app_ctm_series, label="APP/CTM", zorder=3)
+        plt.plot(date_series, appctm_series, label="APP/CTM", zorder=3)
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
         plt.gca().yaxis.grid(zorder=1)
         plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)
@@ -154,11 +152,10 @@ class Mixin:
         if self.prod_series and self.time_series:
             date_series = self.prod_series['date_series']
             app_series = self.prod_series['total_sp_series']
-            ctm_tuple_series = self.prod_series['ctm_series']
 
         # line plot CTM and app
         plot_filename = self.media_dir / 'images/app_ctm.png'
-        ctm_series = np.array([val[0] for val in ctm_tuple_series])
+        ctm_series = self.prod_series['ctm_series']
         plt.plot(date_series, ctm_series, label="CTM", zorder=2)
         plt.plot(date_series, app_series, label="APP", zorder=3)
         plt.gca().xaxis.set_major_formatter(TICK_DATE_FORMAT)

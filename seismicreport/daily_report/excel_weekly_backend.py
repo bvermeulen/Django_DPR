@@ -523,9 +523,12 @@ def collate_excel_weekreport_data(day):
     project = day.project
 
     report_data = {}
-    totals_prod, totals_time, totals_hse = r_iface.calc_totals(day)
+    totals_prod, totals_time, _, totals_hse = r_iface.calc_totals(day)
     days, weeks = w_iface.collate_weekdata(day)
-    report_data['prod_series'], report_data['time_series'], _ = r_iface.series
+    (
+        _, report_data['prod_series'], report_data['time_series'],
+        _, _
+    ) = r_iface.series
 
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
     report_data['month_days'] = day.production_date.day
@@ -598,8 +601,8 @@ def collate_excel_weekreport_data(day):
     for period in ['week', 'month', 'proj']:
         report_data[f'prod_stats_{period}_table'] = {
             'Total VPs': totals_prod[f'{period}_total'],
-            'Target VPS': totals_prod[f'{period}_ctm'][0],
-            '% Target': totals_prod[f'{period}_ctm'][1],
+            'Target VPS': totals_prod[f'{period}_ctm'],
+            '% Target': totals_prod[f'{period}_appctm'],
             'Rec. Hrs': totals_time[f'{period}_rec_time'],
             'Standby Hrs': totals_time[f'{period}_standby'],
             'Avg VPs/day': totals_prod[f'{period}_avg'],
@@ -618,18 +621,17 @@ def collate_excel_weekreport_data(day):
     for key, day in reversed(days.items()):
         report_data['days_prod'][key] = [
             day['date'].strftime('%d-%b-%Y'),
-            day['prod']['total_sp'],
-            day['times']['rec_time'],
-            day['prod']['vp_hour'],
-            day['prod']['skips'],
-            day['rcvr']['layout'],
-            day['rcvr']['pickup'],
-            day['rcvr']['node_download'],
-            day['rcvr']['node_charged'],
-            day['rcvr']['node_failure'],
-            day['rcvr']['node_repair'],
-            day['rcvr']['qc_field'],
-
+            day['prod']['day_total'],
+            day['times']['day_rec_time'],
+            day['prod']['day_vp_hour'],
+            day['prod']['day_skips'],
+            day['rcvr']['day_layout'],
+            day['rcvr']['day_pickup'],
+            day['rcvr']['day_node_download'],
+            day['rcvr']['day_node_charged'],
+            day['rcvr']['day_node_failure'],
+            day['rcvr']['day_node_repair'],
+            day['rcvr']['day_qc_field'],
         ]
 
     report_data['weeks_prod'] = {}
@@ -666,26 +668,26 @@ def collate_excel_weekreport_data(day):
     for key, day in reversed(days.items()):
         report_data['days_times'][key] = [
             day['date'].strftime('%d-%b-%Y'),
-            day['times']['rec_time'],
-            day['times']['rec_moveup'],
-            day['times']['logistics'],
-            day['times']['wait_source'],
-            day['times']['wait_layout'],
-            day['times']['wait_shift_change'],
-            day['times']['company_suspension'],
-            day['times']['company_tests'],
-            day['times']['beyond_control'],
-            day['times']['camp_move'],
-            day['times']['rec_eqpmt_fault'],
-            day['times']['vibrator_fault'],
-            day['times']['incident'],
-            day['times']['legal_dispute'],
-            day['times']['comp_instruction'],
-            day['times']['contractor_noise'],
-            day['times']['other_downtime'],
-            day['times']['ops_time'],
-            day['times']['standby'],
-            day['times']['downtime'],
+            day['times']['day_rec_time'],
+            day['times']['day_rec_moveup'],
+            day['times']['day_logistics'],
+            day['times']['day_wait_source'],
+            day['times']['day_wait_layout'],
+            day['times']['day_wait_shift_change'],
+            day['times']['day_company_suspension'],
+            day['times']['day_company_tests'],
+            day['times']['day_beyond_control'],
+            day['times']['day_camp_move'],
+            day['times']['day_rec_eqpmt_fault'],
+            day['times']['day_vibrator_fault'],
+            day['times']['day_incident'],
+            day['times']['day_legal_dispute'],
+            day['times']['day_comp_instruction'],
+            day['times']['day_contractor_noise'],
+            day['times']['day_other_downtime'],
+            day['times']['day_ops_time'],
+            day['times']['day_standby'],
+            day['times']['day_downtime'],
         ]
 
     #weeks times stat

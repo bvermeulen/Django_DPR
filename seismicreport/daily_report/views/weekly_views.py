@@ -36,7 +36,12 @@ class WeeklyView(View):
             return redirect('daily_page', daily_id)
 
         week_initial = self.w_iface.get_week_values(day)
-        totals_prod, totals_time, totals_hse = self.r_iface.calc_totals(day)
+        (
+            totals_prod,
+            totals_time,
+            _,
+            totals_hse
+        ) = self.r_iface.calc_totals(day)
         days, weeks = self.w_iface.collate_weekdata(day)
 
         if day.project.planned_vp > 0:
@@ -89,7 +94,8 @@ class WeeklyView(View):
                     self.w_iface.update_week_report(day, week_comment, author)
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
-                        f'in week report {day.production_date} for {day.project.project_name}'
+                        f'in week report {day.production_date} '
+                        f'for {day.project.project_name}'
                     )
 
             elif button_pressed == 'delete':

@@ -10,7 +10,7 @@ from seismicreport.utils.plogger import Logger
 from seismicreport.utils.utils_funcs import check_expiry_date
 
 SEISMICREPORT_VERSION = 'https://github.com/bvermeulen/seismicreport'
-SEISMICREPORT_DATE = 'January 2021'
+SEISMICREPORT_DATE = 'February 2021'
 SEISMICREPORT_AUTHOR = 'bruno.vermeulen@hotmail.com'
 EXPIRY_DATE = datetime.strptime(config('EXPIRY_DATE'), '%Y-%b-%d')
 
@@ -157,10 +157,7 @@ logger.info(f'{nl}------------------------------------------------------------'
             f"{nl}        Alowed hosts: {ALLOWED_HOSTS}"
             f'{nl}------------------------------------------------------------')
 
-logger.info(f"{nl}DB_NAME: {config('DB_NAME')}"
-            f"{nl}DB_USER: {config('DB_USER')}"
-            f"{nl}DB_PASSWORD: {'XXXXXXXX'}"
-            f'{nl}EMAIL_BACKEND: {EMAIL_BACKEND}'
+logger.info(f'{nl}EMAIL_BACKEND: {EMAIL_BACKEND}'
             f'{nl}EMAIL_HOST: {EMAIL_HOST}'
             f'{nl}EMAIL_PORT: {EMAIL_PORT}'
             f'{nl}EMAIL_HOST_USER: {EMAIL_HOST_USER}'
