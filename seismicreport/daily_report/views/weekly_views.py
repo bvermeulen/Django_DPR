@@ -37,6 +37,7 @@ class WeeklyView(View):
 
         week_initial = self.w_iface.get_week_values(day)
         (
+            _,
             totals_prod,
             totals_time,
             _,

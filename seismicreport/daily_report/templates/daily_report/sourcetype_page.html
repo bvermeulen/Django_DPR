@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load humanize %}
+{% load mytags %}
+
+{% block title %}Sourcetype{% endblock %}
+
+{% block stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/container-styles.css' %}">
+{% endblock %}
+
+{% block navbutton %}
+<ul class="navbar-nav mr-auto">
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle mr-1" href="#" data-toggle="dropdown">
+      Sourcetype
+    </a>
+    <div class="dropdown-menu dropdown-menu-left">
+      <a class="dropdown-item" href="{% url 'daily_page' form_daily.id.value %}">Daily</a>
+      <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
+      <a class="dropdown-item" href="{% url 'home' %}">Home</a>
+    </div>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<form id="id_form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'daily_page' form_daily.id.value %}">Daily</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' form_daily.id.value %}">MPR</a>
+  </div>
+  <p><strong>
+    Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
+    Daily report: {{ form_project_control.report_date.value }}
+  </strong></p>
+
+  {% if form_daily.production_date.value %}
+    <div class="row align-items-top mb-5">
+      {% for name, source_prod in totals_production_by_type.items %}
+        <div style="max-width: 80vw" class="col-lg-3 mb-3">
+          <strong>{{ name }}</strong>
+          <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+            <thead class="custom-thead-grey">
+              <tr>
+                <th>Item</th>
+                <th>Day</th>
+                <th>Month</th>
+                <th>Project</th>
+              </tr>
+            </thead>
+            <tbody">
+              <tr>
+                <td>flat</td>
+                <td class="text-right">{{ source_prod.day_sp_t1|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_sp_t1|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_sp_t1|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>rough</td>
+                <td class="text-right">{{ source_prod.day_sp_t2|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_sp_t2|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_sp_t2|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>facilities</td>
+                <td class="text-right">{{ source_prod.day_sp_t3|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_sp_t3|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_sp_t3|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>dunes</td>
+                <td class="text-right">{{ source_prod.day_sp_t4|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_sp_t4|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_sp_t4|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>sabkha</td>
+                <td class="text-right">{{ source_prod.day_sp_t5|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_sp_t5|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_sp_t5|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>skips</td>
+                <td class="text-right">{{ source_prod.day_skips|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_skips|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_skips|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>Total SP's</td>
+                <td class="text-right">{{ source_prod.day_total|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_total|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_total|intcomma }}</td>
+              </tr>
+              </tbody>
+          </table>
+
+          <strong>Targets</strong>
+          <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+            <thead class="custom-thead-grey">
+              <tr>
+                <th>Item</th>
+                <th>Day</th>
+                <th>Month</th>
+                <th>Project</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TCF</td>
+                <td class="text-right">{{ source_prod.day_tcf|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.month_tcf|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.proj_tcf|floatformat:4 }}</td>
+              </tr>
+              <tr>
+                <td>CTM</td>
+                <td class="text-right">{{ source_prod.day_ctm|floatformat:0|intcomma }}</td>
+                <td class="text-right">{{ source_prod.month_ctm|floatformat:0|intcomma }}</td>
+                <td class="text-right">{{ source_prod.proj_ctm|floatformat:0|intcomma }}</td>
+              </tr>
+              <tr>
+                <td>APP/CTM</td>
+                <td class="text-right">{{ source_prod.day_appctm|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.month_appctm|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.proj_appctm|floatformat:4 }}</td>
+              </tr>
+              <tr>
+                <td>Rate</td>
+                <td class="text-right">{{ source_prod.day_rate|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.month_rate|floatformat:4 }}</td>
+                <td class="text-right">{{ source_prod.proj_rate|floatformat:4 }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      {% endfor %}
+
+      <div style="max-width: 80vw" class="col-lg-3 mb-3">
+        <strong>Production</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody">
+            <tr>
+              <td>flat</td>
+              <td class="text-right">{{ totals_production.day_sp_t1|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t1|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t1|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>rough</td>
+              <td class="text-right">{{ totals_production.day_sp_t2|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t2|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t2|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>facilities</td>
+              <td class="text-right">{{ totals_production.day_sp_t3|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t3|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t3|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>dunes</td>
+              <td class="text-right">{{ totals_production.day_sp_t4|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t4|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t4|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>sabkha</td>
+              <td class="text-right">{{ totals_production.day_sp_t5|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_sp_t5|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_sp_t5|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>skips</td>
+              <td class="text-right">{{ totals_production.day_skips|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_skips|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_skips|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Total SP's</td>
+              <td class="text-right">{{ totals_production.day_total|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_total|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_total|intcomma }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <strong>Targets</strong>
+        <table class="table table-striped mb-2 mt-1 table-sm" cellspacing="0">
+          <thead class="custom-thead-grey">
+            <tr>
+              <th>Item</th>
+              <th>Day</th>
+              <th>Month</th>
+              <th>Project</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TCF</td>
+              <td class="text-right">{{ totals_production.day_tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_tcf|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_tcf|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>CTM</td>
+              <td class="text-right">{{ totals_production.day_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.month_ctm|floatformat:0|intcomma }}</td>
+              <td class="text-right">{{ totals_production.proj_ctm|floatformat:0|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>APP/CTM</td>
+              <td class="text-right">{{ totals_production.day_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_appctm|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_appctm|floatformat:4 }}</td>
+            </tr>
+            <tr>
+              <td>Rate</td>
+              <td class="text-right">{{ totals_production.day_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.month_rate|floatformat:4 }}</td>
+              <td class="text-right">{{ totals_production.proj_rate|floatformat:4 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</form>
+{% endblock content %}
+
+{% block javascript %}{% endblock %}

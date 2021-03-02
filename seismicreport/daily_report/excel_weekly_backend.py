@@ -523,7 +523,7 @@ def collate_excel_weekreport_data(day):
     project = day.project
 
     report_data = {}
-    totals_prod, totals_time, _, totals_hse = r_iface.calc_totals(day)
+    _, totals_prod, totals_time, _, totals_hse = r_iface.calc_totals(day)
     days, weeks = w_iface.collate_weekdata(day)
     (
         _, report_data['prod_series'], report_data['time_series'],
