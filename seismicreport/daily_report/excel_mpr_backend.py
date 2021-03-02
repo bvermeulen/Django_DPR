@@ -48,7 +48,7 @@ class ExcelMprReport():
         self.wp.sheet_view.showGridLines = False
 
         r_iface = ReportInterface('')
-        self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
+        _, self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
         (
             self.prod_series_by_type, self.prod_series,
             self.time_series, _, self.hse_series
@@ -314,7 +314,8 @@ class ExcelMprReport():
                 'rechours': 24,
                 'rate': self.prod_total['month_rate']
             }
-            params = self.get_parameters(self.prod_total, self.times_total, stype)
+            params = self.get_parameters(
+                self.prod_total, self.times_total, header_sourcetype)
             self.create_tab_mpr(self.ws, params, main_proj_df)
 
             for stype_name in self.sourcetype_names:

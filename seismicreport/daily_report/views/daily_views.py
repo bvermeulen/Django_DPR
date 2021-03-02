@@ -53,6 +53,7 @@ class DailyView(View):
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
             (
+                _,
                 totals_production,
                 totals_time,
                 totals_receiver,
@@ -80,9 +81,10 @@ class DailyView(View):
                 'report_date': report_date_str,
             })
 
-            context = {'arrow_symbols': self.arrow_symbols,
-                       'form_project_control': form_project_control,
-                      }
+            context = {
+                'arrow_symbols': self.arrow_symbols,
+                'form_project_control': form_project_control,
+            }
 
         return render(request, self.template_daily_page, context)
 
@@ -165,6 +167,97 @@ class DailyView(View):
 
         day_id = day.id if day else 0
         return redirect('daily_page', day_id)
+
+
+@method_decorator(login_required, name='dispatch')
+class SourcetypeView(View):
+
+    form_daily = DailyForm
+    form_project_control = ProjectControlForm
+    template_sourcetype_page = 'daily_report/sourcetype_page.html'
+    rprt_iface = ReportInterface(settings.MEDIA_ROOT)
+    arrow_symbols = {'right': RIGHT_ARROW, 'left': LEFT_ARROW}
+
+    def get(self, request, daily_id):
+        day = None
+        try:
+            day = Daily.objects.get(id=daily_id)
+            day, day_initial = self.rprt_iface.load_report_db(
+                day.project, day.production_date
+            )
+
+        except Daily.DoesNotExist:
+            pass
+
+        if day:
+            form_project_control = self.form_project_control(initial={
+                'projects': day.project.project_name,
+                'report_date':day.production_date.strftime('%#d %b %Y'),
+            })
+            (
+                totals_production_by_type,
+                totals_production,
+                _,
+                _,
+                _,
+             ) = self.rprt_iface.calc_totals(day)
+
+            context = {
+                'daily_id': daily_id,
+                'form_daily': self.form_daily(initial=day_initial),
+                'form_project_control': form_project_control,
+                'totals_production_by_type': totals_production_by_type,
+                'totals_production': totals_production,
+                'arrow_symbols': self.arrow_symbols,
+            }
+
+        else:
+            project_name = request.session.get('selected_project', '')
+            report_date = string_to_date(request.session.get('report_date', ''))
+            if report_date:
+                report_date_str = report_date.strftime('%#d %b %Y')
+            else:
+                report_date_str = ''
+
+            form_project_control = self.form_project_control(initial={
+                'projects': project_name,
+                'report_date': report_date_str,
+            })
+            context = {
+                'daily_id': daily_id,
+                'form_project_control': form_project_control,
+                'arrow_symbols': self.arrow_symbols,
+            }
+
+        return render(request, self.template_sourcetype_page, context)
+
+    def post(self, request, daily_id):
+        day = None
+        if request.method == 'POST':
+            report_date = request.session.get('report_date', '')
+            project_name = request.session.get('selected_project', '')
+            project = self.rprt_iface.get_project(project_name)
+
+            button_pressed = request.POST.get('button_pressed', '')
+
+            new_report_date = request.POST.get('report_date', '')
+            if new_report_date:
+                report_date = new_report_date
+
+            report_date = string_to_date(report_date)
+
+            if button_pressed == self.arrow_symbols['right']:
+                report_date += timedelta(days=1)
+
+            elif button_pressed == self.arrow_symbols['left']:
+                report_date -= timedelta(days=1)
+
+            request.session['report_date'] = date_to_string(report_date)
+
+            day, _ = self.rprt_iface.load_report_db(project, report_date)
+
+        day_id = day.id if day else 0
+        return redirect('sourcetype_page', day_id)
 
 
 def csr_excel_report(request, daily_id):

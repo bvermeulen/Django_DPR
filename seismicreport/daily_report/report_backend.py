@@ -140,7 +140,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
     def calc_rate(daily, ctm_method, app_ctm, total_time, standby_time):
         ''' IMH opinion correct calculation of the rate is to incorpoeate
         '''
-
         if ctm_method == 'Legacy':
             standby_rate = daily.project.standby_rate
             cap_rate = daily.project.cap_rate
@@ -783,25 +782,20 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         proj_times, self.time_series = self.calc_proj_time_totals(daily)
         times_total = {**day_times, **week_times, **month_times, **proj_times}
 
-        # get production stats per sourcetype, then combine results
-        prod_totals_by_type = {}
+        prod_total_by_type = {}
         self.prod_series_by_type = {}
         if daily:
-            sourcetypes = daily.project.sourcetypes.all()
+            for stype in daily.project.sourcetypes.all():
+                prod, series = self.calc_prod_totals(daily, times_total, stype)
+                prod = self.calc_period_totals(daily, times_total, prod, series)
+                prod_total_by_type[stype.sourcetype_name] = prod
+                self.prod_series_by_type[stype.sourcetype_name] = series
+
+            prod_total, self.prod_series = self.calc_prod_combined(
+                daily, times_total, prod_total_by_type, self.prod_series_by_type)
 
         else:
-            sourcetypes = [None]
-
-        for stype in sourcetypes:
-            prod, series = self.calc_prod_totals(daily, times_total, stype)
-            if stype:
-                prod_totals_by_type[stype.sourcetype_name] = prod
-                self.prod_series_by_type[stype.sourcetype_name] = series
-                prod_total, self.prod_series = self.calc_prod_combined(
-                    daily, times_total, prod_totals_by_type, self.prod_series_by_type)
-            else:
-                prod_total = prod
-                self.prod_series_by_type = series
+            prod_total, self.prod_series = self.calc_prod_totals(daily, times_total, None)
 
         # get receiver stats
         if daily:
@@ -824,7 +818,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         proj_hse, self.hse_series = self.proj_hse_totals(daily)
         hse_total = {**day_hse, **week_hse, **month_hse, **proj_hse}
 
-        return prod_total, times_total, rcvr_total, hse_total
+        return prod_total_by_type, prod_total, times_total, rcvr_total, hse_total
 
     @property
     def series(self) -> typing.Optional[tuple]:

@@ -13,6 +13,8 @@ urlpatterns = [
          project_views.download_pdf_workorder, name='download'),
     path('daily_report/daily_page/<int:daily_id>/',
          daily_views.DailyView.as_view(), name='daily_page'),
+    path('daily_report/sourcetype_page/<int:daily_id>/',
+         daily_views.SourcetypeView.as_view(), name='sourcetype_page'),
     path('daily_report/csr_excel_report/<int:daily_id>/',
          daily_views.csr_excel_report, name='csr_excel_report'),
     path('daily_report/weekly_page/<int:daily_id>/',

@@ -103,6 +103,7 @@ class WeekInterface:
             except Daily.DoesNotExist:
                 day = None
             (
+                _,
                 days[wd]['prod'],
                 days[wd]['times'],
                 days[wd]['rcvr'],
@@ -131,6 +132,7 @@ class WeekInterface:
                 day = None
 
             (
+                _,
                 weeks[wk]['prod'],
                 weeks[wk]['times'],
                 weeks[wk]['rcvr'],
