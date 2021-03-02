@@ -17,7 +17,7 @@
       Sourcetype
     </a>
     <div class="dropdown-menu dropdown-menu-left">
-      <a class="dropdown-item" href="{% url 'daily_page' form_daily.id.value %}">Daily</a>
+      <a class="dropdown-item" href="{% url 'daily_page' daily_id %}">Daily</a>
       <a class="dropdown-item" href="{% url 'project_page' %}">Projects</a>
       <a class="dropdown-item" href="{% url 'home' %}">Home</a>
     </div>
@@ -30,9 +30,13 @@
 <form id="id_form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   <div>
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'daily_page' form_daily.id.value %}">Daily</a>
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' form_daily.id.value %}">MPR</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'daily_page' daily_id %}">Daily</a>
+    <input type="hidden" name="report_date" />
+    <button class="btn btn-primary btn-sm my-1" onclick="return promptProductionDate()">Select date</button>
+    <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
+    <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' daily_id %}">Weekly</a>
+    <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' daily_id %}">MPR</a>
   </div>
   <p><strong>
     Project: {{ form_project_control.projects.value }}, {{ form_daily.block_name.value }} -
@@ -240,4 +244,24 @@
 </form>
 {% endblock content %}
 
-{% block javascript %}{% endblock %}
+{% block javascript %}
+<script>
+  var form = document.getElementById("id_form");
+
+  function promptProductionDate() {
+    var date_regex = /^(19|20)\d{2}-([0-9]|0[1-9]|1[0-2])-([1-9]|0[1-9]|1\d|2\d|3[01])$/;
+
+    var productionDate = ''
+    while (!(date_regex.test(productionDate))) {
+
+      productionDate = prompt('What is the production date [YYYY-MM-DD]', '');
+      // cancel if empy or null
+      if (productionDate == "" | productionDate == null) {
+        return false;
+      }
+    }
+    form.report_date.value = productionDate;
+    return true;
+  }
+</script>
+{% endblock %}

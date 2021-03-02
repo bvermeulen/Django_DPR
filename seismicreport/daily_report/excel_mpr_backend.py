@@ -314,7 +314,8 @@ class ExcelMprReport():
                 'rechours': 24,
                 'rate': self.prod_total['month_rate']
             }
-            params = self.get_parameters(self.prod_total, self.times_total, stype)
+            params = self.get_parameters(
+                self.prod_total, self.times_total, header_sourcetype)
             self.create_tab_mpr(self.ws, params, main_proj_df)
 
             for stype_name in self.sourcetype_names:
