@@ -48,7 +48,7 @@ class ExcelMprReport():
         self.wp.sheet_view.showGridLines = False
 
         r_iface = ReportInterface('')
-        self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
+        _, self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
         (
             self.prod_series_by_type, self.prod_series,
             self.time_series, _, self.hse_series

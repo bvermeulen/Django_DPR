@@ -53,6 +53,7 @@ class DailyView(View):
                 'report_date':day.production_date.strftime('%#d %b %Y'),
             })
             (
+                _,
                 totals_production,
                 totals_time,
                 totals_receiver,
@@ -80,9 +81,10 @@ class DailyView(View):
                 'report_date': report_date_str,
             })
 
-            context = {'arrow_symbols': self.arrow_symbols,
-                       'form_project_control': form_project_control,
-                      }
+            context = {
+                'arrow_symbols': self.arrow_symbols,
+                'form_project_control': form_project_control,
+            }
 
         return render(request, self.template_daily_page, context)
 
@@ -165,6 +167,50 @@ class DailyView(View):
 
         day_id = day.id if day else 0
         return redirect('daily_page', day_id)
+
+
+@method_decorator(login_required, name='dispatch')
+class SourcetypeView(View):
+
+    form_daily = DailyForm
+    form_project_control = ProjectControlForm
+    template_sourcetype_page = 'daily_report/sourcetype_page.html'
+    rprt_iface = ReportInterface(settings.MEDIA_ROOT)
+
+    def get(self, request, daily_id):
+        try:
+            day = Daily.objects.get(id=daily_id)
+            day, day_initial = self.rprt_iface.load_report_db(
+                day.project, day.production_date
+            )
+
+        except Daily.DoesNotExist:
+            return redirect('daily_page', daily_id)
+
+        if day:
+            form_project_control = self.form_project_control(initial={
+                'projects': day.project.project_name,
+                'report_date':day.production_date.strftime('%#d %b %Y'),
+            })
+            (
+                totals_production_by_type,
+                totals_production,
+                _,
+                _,
+                _,
+             ) = self.rprt_iface.calc_totals(day)
+
+            context = {
+                'form_daily': self.form_daily(initial=day_initial),
+                'form_project_control': form_project_control,
+                'totals_production_by_type': totals_production_by_type,
+                'totals_production': totals_production,
+            }
+
+        else:
+            pass
+
+        return render(request, self.template_sourcetype_page, context)
 
 
 def csr_excel_report(request, daily_id):
