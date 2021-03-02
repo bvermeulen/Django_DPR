@@ -398,7 +398,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 )
 
             except SourceProduction.DoesNotExist:
-                dp = {f'{key[:5]}': np.nan for key in source_prod_schema}
+                dp = {f'day_{key[:5]}': np.nan for key in source_prod_schema}
                 dp['day_total'] = np.nan
                 return dp
 
@@ -516,7 +516,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             tb = TimeBreakdown.objects.get(daily=daily)
 
         except TimeBreakdown.DoesNotExist:
-            dt = {f'{key}': np.nan for key in time_breakdown_schema}
+            dt = {f'day_{key}': np.nan for key in time_breakdown_schema}
             dt['day_rec_time'] = np.nan
             dt['day_ops_time'] = np.nan
             dt['day_standby'] = np.nan
