@@ -140,7 +140,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
     def calc_rate(daily, ctm_method, app_ctm, total_time, standby_time):
         ''' IMH opinion correct calculation of the rate is to incorpoeate
         '''
-
         if ctm_method == 'Legacy':
             standby_rate = daily.project.standby_rate
             cap_rate = daily.project.cap_rate
@@ -788,14 +787,18 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         prod_total_by_type = {}
         self.prod_series_by_type = {}
-        for stype in daily.project.sourcetypes.all():
-            prod, series = self.calc_prod_totals(daily, times_total, stype)
-            prod = self.calc_period_totals(daily, times_total, prod, series)
-            prod_total_by_type[stype.sourcetype_name] = prod
-            self.prod_series_by_type[stype.sourcetype_name] = series
+        if daily:
+            for stype in daily.project.sourcetypes.all():
+                prod, series = self.calc_prod_totals(daily, times_total, stype)
+                prod = self.calc_period_totals(daily, times_total, prod, series)
+                prod_total_by_type[stype.sourcetype_name] = prod
+                self.prod_series_by_type[stype.sourcetype_name] = series
 
-        prod_total, self.prod_series = self.calc_prod_combined(
-            daily, times_total, prod_total_by_type, self.prod_series_by_type)
+            prod_total, self.prod_series = self.calc_prod_combined(
+                daily, times_total, prod_total_by_type, self.prod_series_by_type)
+
+        else:
+            prod_total, self.prod_series = self.calc_prod_totals(daily, times_total, None)
 
         # get receiver stats
         if daily:
