@@ -226,7 +226,13 @@ class ExcelDayReport:
 
 def collate_excel_dailyreport_data(day):
     r_iface = ReportInterface('')
-    totals_production, totals_time, totals_receiver, totals_hse = r_iface.calc_totals(day)
+    (
+        _,
+        totals_production,
+        totals_time,
+        totals_receiver,
+        totals_hse
+     ) = r_iface.calc_totals(day)
     # no need to call create_daily_graphs as this has been done in DailyView
 
     project = day.project
