@@ -31,8 +31,8 @@
   <div style="display: none">{{ form_receivertype_control.new_receivertype_name }}{{ form_receivertype_control.receivertypes }}</div>
   <div style="display: none">{{ form_block }}{{ form_project }}{{ form_sourcetype }}{{ form_receivertype }}</div>
 
-  <div class="row align-items-top mb-4">
-    <div class="col-lg-3 mb-4">
+  <div class="row align-items-top mb-5">
+    <div class="col-lg-3 mb-5">
       <div class="dropdown mb-2">
         <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Project</button>
         <div class="dropdown-content">
@@ -63,13 +63,13 @@
           {{ form_project.as_table }}
           <tr>
             <td>
-              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'download' form_project_control.projects.value %}">PDF work order:</a></strong>
+              <strong><a class="font-weight-bold text-xs-center text-dark my-0" href="{% url 'download' form_project_control.projects.value %}" target='_blank'>PDF work order:</a></strong>
             </td>
             <td>
-              <div class="fileUpload btn btn-outline-dark btn-sm my-0 mx-0 w-100">
-                <span>Choose pdf workorder</span>
-                <input type="file" class="upload" name="pdf_workorder_file" onchange="form.submit()" />
-              </div>
+              <label class="btn btn-outline-dark btn-sm my-0 mx-0 w-100">
+                <input type="file" style="display:none" name="pdf_workorder_file" onchange="form.submit()" /><span>Choose pdf workorder</span>
+
+              </label>
             </td>
         </tr>
         <tr>
@@ -82,7 +82,7 @@
     </div>
 
     {% if form_project_control.projects.value != '' %}
-      <div class="col-lg-3 mb-4">
+      <div class="col-lg-3 mb-5">
         <div class="dropdown mb-2">
           <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Block</button>
           <div class="dropdown-content">
@@ -114,7 +114,7 @@
         {% endif %}
       </div>
 
-      <div class="col-lg-3 mb-4">
+      <div class="col-lg-3 mb-5">
         <div class="dropdown mb-2">
           <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Sourcetype</button>
           <div class="dropdown-content">
@@ -147,7 +147,7 @@
         {% endif %}
       </div>
 
-      <div class="col-lg-3 mb-4">
+      <div class="col-lg-3 mb-5">
         <div class="dropdown mb-2">
           <button type="button" class="dropdown-toggle btn btn-outline-primary btn-sm">Receivertype</button>
           <div class="dropdown-content">
