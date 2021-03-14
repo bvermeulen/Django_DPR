@@ -200,15 +200,15 @@
           </tr>
           <tr>
             <td>Target VPs</td>
-            <td class="text-right">{{ totals_prod.week_ctm.0|intcomma }}</td>
-            <td class="text-right">{{ totals_prod.month_ctm.0|intcomma }}</td>
-            <td class="text-right">{{ totals_prod.proj_ctm.0|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.week_ctm|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.month_ctm|intcomma }}</td>
+            <td class="text-right">{{ totals_prod.proj_ctm|intcomma }}</td>
           </tr>
           <tr>
             <td>% Target</td>
-            <td class="text-right">{{ totals_prod.week_ctm.1|f_format:"0.2%" }}</td>
-            <td class="text-right">{{ totals_prod.month_ctm.1|f_format:"0.2%" }}</td>
-            <td class="text-right">{{ totals_prod.proj_ctm.1|f_format:"0.2%"}}</td>
+            <td class="text-right">{{ totals_prod.week_appctm|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.month_appctm|f_format:"0.2%" }}</td>
+            <td class="text-right">{{ totals_prod.proj_appctm|f_format:"0.2%"}}</td>
           </tr>
           <tr>
             <td>Rec. Hrs</td>
