@@ -206,7 +206,13 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             the BGP_DR_table
         '''
         day_df = pd.read_excel(daily_report_file, header=None)
-        if project.project_name != self.get_value(day_df, 'project'):
+        if project.project_prefix != self.get_value(day_df, 'project'):
+            return None
+
+        sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
+                            for stype in ['a', 'b', 'c']}
+
+        if not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values()):
             return None
 
         # create/ update day values
@@ -221,14 +227,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 project=project)
 
         receivertype_name = get_receivertype_name(day)
-        sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
-                            for stype in ['a', 'b', 'c']}
-
-        if not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values()):
-            return None
-
         if not project.receivertypes.filter(receivertype_name=receivertype_name):
-            return None
+            assert False, 'populate_report: fix this code'
 
         day.pm_comment = (
             '\n'.join([str(self.get_value(day_df, f'comment {i}')) for i in range(1, 8)
