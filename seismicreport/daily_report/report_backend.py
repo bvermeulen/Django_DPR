@@ -211,8 +211,13 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
                             for stype in ['a', 'b', 'c']}
-
-        if not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values()):
+        receivertype_name = get_receivertype_name(project)
+        incorrect_source_reveiver_type = (
+            not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values())
+            or
+            not project.receivertypes.filter(receivertype_name__in=[receivertype_name])
+        )
+        if incorrect_source_reveiver_type:
             return None
 
         # create/ update day values
@@ -225,10 +230,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             day = Daily.objects.get(
                 production_date=self.get_value(day_df, 'date'),
                 project=project)
-
-        receivertype_name = get_receivertype_name(day)
-        if not project.receivertypes.filter(receivertype_name=receivertype_name):
-            assert False, 'populate_report: fix this code'
 
         day.pm_comment = (
             '\n'.join([str(self.get_value(day_df, f'comment {i}')) for i in range(1, 8)
@@ -800,18 +801,11 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         else:
             prod_total, self.prod_series = self.calc_prod_totals(daily, times_total, None)
 
-        # get receiver stats
-        if daily:
-            receivertype_name = get_receivertype_name(daily)
-
-        else:
-            receivertype_name = None
-
-        day_rcvr = self.day_receiver_total(daily, receivertype_name)
-        week_rcvr = self.week_receiver_total(daily, receivertype_name)
-        month_rcvr = self.month_receiver_total(daily, receivertype_name)
-        proj_rcvr, self.rcvr_series = self.project_receiver_total(
-            daily, receivertype_name)
+        receivertype = daily.project.receivertypes.all()[0]
+        day_rcvr = self.day_receiver_total(daily, receivertype)
+        week_rcvr = self.week_receiver_total(daily, receivertype)
+        month_rcvr = self.month_receiver_total(daily, receivertype)
+        proj_rcvr, self.rcvr_series = self.project_receiver_total(daily, receivertype)
         rcvr_total = {**day_rcvr, **week_rcvr, **month_rcvr, **proj_rcvr}
 
         # get hse stats
