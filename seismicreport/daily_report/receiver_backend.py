@@ -11,14 +11,13 @@ logger = Logger.getlogger()
 class Mixin:
 
     @staticmethod
-    def day_receiver_total(daily, receivertype_name):
+    def day_receiver_total(daily, receivertype):
         if daily:
             try:
                 rcvr = ReceiverProduction.objects.get(
                     daily=daily,
-                    receivertype=daily.project.receivertypes.get(
-                        receivertype_name=receivertype_name),
-                    )
+                    receivertype=receivertype,
+                )
 
             except ReceiverProduction.DoesNotExist:
                 d_rcvr = {f'day_{key}': 0 for key in receiver_prod_schema}
@@ -34,16 +33,14 @@ class Mixin:
         return d_rcvr
 
     @staticmethod
-    def week_receiver_total(daily, receivertype_name):
+    def week_receiver_total(daily, receivertype):
         if daily:
             end_date = daily.production_date
             start_date = end_date - timedelta(days=WEEKDAYS-1)
             rcvr_query = ReceiverProduction.objects.filter(
                 Q(daily__production_date__gte=start_date),
                 Q(daily__production_date__lte=end_date),
-                receivertype = daily.project.receivertypes.get(
-                    receivertype_name=receivertype_name
-                ),
+                receivertype = receivertype,
             )
 
         else:
@@ -61,15 +58,13 @@ class Mixin:
         return w_rcvr
 
     @staticmethod
-    def month_receiver_total(daily, receivertype_name):
+    def month_receiver_total(daily, receivertype):
         if daily:
             rcvr_query = ReceiverProduction.objects.filter(
                 Q(daily__production_date__year=daily.production_date.year) &
                 Q(daily__production_date__month=daily.production_date.month) &
                 Q(daily__production_date__day__lte=daily.production_date.day),
-                receivertype = daily.project.receivertypes.get(
-                    receivertype_name=receivertype_name
-                ),
+                receivertype = receivertype,
             )
 
         else:
@@ -87,13 +82,11 @@ class Mixin:
         return m_rcvr
 
     @staticmethod
-    def project_receiver_total(daily, receivertype_name):
+    def project_receiver_total(daily, receivertype):
         if daily:
             rcvr_query = ReceiverProduction.objects.filter(
                 daily__production_date__lte=daily.production_date,
-                receivertype = daily.project.receivertypes.get(
-                    receivertype_name=receivertype_name
-                ),
+                receivertype = receivertype,
             )
 
         else:

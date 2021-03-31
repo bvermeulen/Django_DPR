@@ -88,6 +88,8 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
 
+        self.fields['project_prefix'] = forms.CharField(
+            max_length=TYPE_LENGTH, required=False)
         self.fields['project_name'] = forms.CharField(
             max_length=NAME_LENGTH, required=False)
         self.fields['crew_name'] = forms.CharField(
@@ -109,7 +111,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = (
-            'project_name', 'crew_name', 'start_report',
+            'project_prefix', 'project_name', 'crew_name', 'start_report',
             'planned_area', 'planned_vp', 'planned_receivers',
             'planned_start_date', 'planned_end_date',
             'standby_rate', 'cap_rate', 'cap_app_ctm'

@@ -3,6 +3,7 @@ from seismicreport.vars import NAME_LENGTH, TYPE_LENGTH
 
 
 class Project(models.Model):
+    project_prefix = models.CharField(max_length=TYPE_LENGTH, unique=True, )
     project_name = models.CharField(max_length=NAME_LENGTH, unique=True, )
     crew_name = models.CharField(max_length=NAME_LENGTH, default='')
     start_report = models.DateField(null=True)

@@ -17,7 +17,7 @@ class DailyForm(forms.ModelForm):
         self.fields['pm_comment'] = forms.CharField(max_length=COMMENT_LENGTH, required=False, widget=forms.Textarea)
 
         # get staff list order by XGO first and then CSR -
-        #TODO DailyForm: bit patch as it relies department is either XG0 or CSR, have a look at it
+        #TODO DailyForm: bit patch as it relies department is either XGO or CSR, have a look at it
         person_choices = [
             (person.id, person.name) for person in
             Person.objects.filter(department__startswith='X').order_by('department')

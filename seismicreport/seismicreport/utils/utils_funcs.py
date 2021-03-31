@@ -122,11 +122,15 @@ def sum_keys(dict_a: dict, dict_b: dict) -> dict:
     return dict_a
 
 
-def get_receivertype_name(daily):
+def get_receivertype_name(project):
     ''' hardwired patch to get receivertype
     '''
-    if daily and daily.project.project_name[:6] == 'Haniya':
-        return 'node_75_75'
+    if not project:
+        return None
 
     else:
-        return 'receiver_25m'
+        try:
+            return project.receivertypes.all()[0].receivertype_name
+
+        except IndexError:
+            return None

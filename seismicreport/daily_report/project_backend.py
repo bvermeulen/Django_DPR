@@ -26,6 +26,7 @@ class ProjectInterface:
                 project = Project.objects.get(project_name=selected_project)
                 initial_project_form = {
                     'projects': project.project_name,
+                    'project_prefix': project.project_prefix,
                     'project_name': project.project_name,
                     'start_report': project.start_report,
                     'crew_name': project.crew_name,
