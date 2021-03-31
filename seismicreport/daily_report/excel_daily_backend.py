@@ -119,7 +119,7 @@ class ExcelDayReport:
         self.ws['I15'].number_format = '#,##0'
         self.ws['I16'].number_format = '#,##0'
 
-        # XG01 and CSR
+        # XGO and CSR
         set_vertical_cells(
             self.ws, 'D10', [key[:-3] for key in self.csr_table], font_bold,
             Alignment(horizontal='right'))
@@ -281,8 +281,8 @@ def collate_excel_dailyreport_data(day):
         'Node repair': totals_receiver['day_node_repair'],
     }
 
-    # cst table XG0 first then CSR
-    xg0_staff = {
+    # cst table XGO first then CSR
+    xgo_staff = {
         f'{p.department}_{i:02}': p.name for i, p in
         enumerate(day.staff.filter(department__startswith='X').order_by('department'))
     }
@@ -290,7 +290,7 @@ def collate_excel_dailyreport_data(day):
         f'{p.department}_{i:02}': p.name for i, p in
         enumerate(day.staff.filter(department__startswith='C').order_by('name'))
     }
-    report_data['csr_table'] = {**xg0_staff, **csr_staff}
+    report_data['csr_table'] = {**xgo_staff, **csr_staff}
 
     # proj_stats
     proj_total = totals_production['proj_total']
