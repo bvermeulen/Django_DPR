@@ -19,7 +19,7 @@ from seismicreport.vars import (
 )
 from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import (
-    calc_ratio, nan_array, get_receivertype_name, sum_keys,
+    calc_ratio, calc_avg, nan_array, get_receivertype_name, sum_keys,
 )
 
 logger = Logger.getlogger()
@@ -209,16 +209,19 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if project.project_prefix != self.get_value(day_df, 'project'):
             return None
 
-        sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
-                            for stype in ['a', 'b', 'c']}
+        # the daily report must contain all source and receiver types defined in the
+        # the project
+        sourcetype_names = {
+            stype: self.get_value(day_df, f'source_{stype}') for stype in ['a', 'b', 'c']
+        }
+        for stype in project.sourcetypes.all():
+            if stype.sourcetype_name not in sourcetype_names.values():
+                return None
+
         receivertype_name = get_receivertype_name(project)
-        incorrect_source_reveiver_type = (
-            not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values())
-            or
-            not project.receivertypes.filter(receivertype_name__in=[receivertype_name])
-        )
-        if incorrect_source_reveiver_type:
-            return None
+        for rtype in project.receivertypes.all():
+            if rtype.receivertype_name not in [receivertype_name]:
+                return None
 
         # create/ update day values
         try:
@@ -686,7 +689,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         prod_total['week_ctm'] = w_df['ctm_series'].sum()
         prod_total['week_appctm'] = calc_ratio(
             prod_total['week_total'], prod_total['week_ctm'])
-        prod_total['week_avg'] = int(prod_total['week_total'] / WEEKDAYS)
+        prod_total['week_avg'] = calc_avg(prod_total['week_total'], WEEKDAYS)
         prod_total['week_tcf'] = self.calc_tcf('week', prod_total)
         prod_total['week_rate'] = self.calc_rate(
             day, CTM_METHOD, prod_total['week_appctm'],
@@ -703,7 +706,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         prod_total['month_ctm'] = m_df['ctm_series'].sum()
         prod_total['month_appctm'] = calc_ratio(
             prod_total['month_total'], prod_total['month_ctm'])
-        prod_total['month_avg'] = int(prod_total['month_total'] / len(m_df))
+        prod_total['month_avg'] = calc_avg(prod_total['month_total'], len(m_df))
         prod_total['month_tcf'] = self.calc_tcf('month', prod_total)
         prod_total['month_rate'] = self.calc_rate(
             day, CTM_METHOD, prod_total['month_appctm'],
@@ -717,12 +720,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         prod_total['proj_appctm'] = calc_ratio(
             prod_total['proj_total'], prod_total['proj_ctm'])
         days = (day.production_date - day.project.planned_start_date).days
-        if days > 0:
-            prod_total['proj_avg'] = int(prod_total['proj_total'] / days)
-
-        else:
-            prod_total['proj_avg'] = np.nan
-
+        prod_total['proj_avg'] = calc_avg(prod_total['proj_total'], days)
         prod_total['proj_tcf'] = self.calc_tcf('proj', prod_total)
         prod_total['proj_rate'] = self.calc_rate(
             day, CTM_METHOD, prod_total['proj_appctm'],
