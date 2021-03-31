@@ -209,16 +209,19 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if project.project_prefix != self.get_value(day_df, 'project'):
             return None
 
-        sourcetype_names = {stype: self.get_value(day_df, f'source_{stype}')
-                            for stype in ['a', 'b', 'c']}
+        # the daily report must contain all source and receiver types defined in the
+        # the project
+        sourcetype_names = {
+            stype: self.get_value(day_df, f'source_{stype}') for stype in ['a', 'b', 'c']
+        }
+        for stype in project.sourcetypes.all():
+            if stype.sourcetype_name not in sourcetype_names.values():
+                return None
+
         receivertype_name = get_receivertype_name(project)
-        incorrect_source_reveiver_type = (
-            not project.sourcetypes.filter(sourcetype_name__in=sourcetype_names.values())
-            or
-            not project.receivertypes.filter(receivertype_name__in=[receivertype_name])
-        )
-        if incorrect_source_reveiver_type:
-            return None
+        for rtype in project.receivertypes.all():
+            if rtype.receivertype_name not in [receivertype_name]:
+                return None
 
         # create/ update day values
         try:
