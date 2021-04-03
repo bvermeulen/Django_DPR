@@ -98,8 +98,9 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if np.isnan(tcf) or mpr_vibes == 0 or mpr_sweep == 0 or mpr_moveup == 0:
             return np.nan
 
-        ctm = int(3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours)
-
+        ctm = round(
+            3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours
+        )
         return ctm
 
     def calc_ctm_series(self, p_series, sourcetype):
