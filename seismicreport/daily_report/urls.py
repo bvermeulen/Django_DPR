@@ -27,4 +27,6 @@ urlpatterns = [
          service_views.ServiceView.as_view(), name='service_page'),
     path('daily_report/monthly_services/<int:daily_id>/<int:year>/<int:month>/',
          service_views.MonthlyServiceView.as_view(), name='monthly_service_page'),
+    path('daily_report/services_excel_report/<int:daily_id>/<int:year>/<int:month>/',
+         service_views.services_excel_report, name='services_excel_report'),
 ]

@@ -46,6 +46,8 @@
   <button class="btn btn-primary btn-sm my-1 mb-1" type="submit" value="submit_quantities" name="button_pressed">
     Submit
   </button>
+  <a class="btn btn-primary btn-sm my-1" href="{% url 'daily_page' daily_id %}">Daily</a>
+  <a class="btn btn-primary btn-sm my-1" href="{% url 'services_excel_report' daily_id year month %}">Print</a>
   <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
   <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
   <a class="font-weight-bold h5 ml-4">Services for {{ services.project }}: {{ services.month }} {{ services.year }}</a>
