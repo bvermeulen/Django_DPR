@@ -359,5 +359,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
             self.create_tab_mpr(self.ws_mpr, params, main_proj_df)
 
         self.create_tab_proj(self.ws_proj, main_proj_df)
-        self.create_tab_services(self.ws_service, self.day)
+        self.create_tab_services(
+            self.ws_service, self.day.project, params['year'], params['month']
+        )
         return save_excel(self.wb)
