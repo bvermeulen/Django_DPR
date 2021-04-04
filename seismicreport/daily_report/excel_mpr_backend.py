@@ -7,6 +7,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
+import daily_report.excel_services_backend as _excel_services_backend
 from seismicreport.utils.utils_funcs import calc_ratio
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
@@ -25,7 +26,7 @@ lightblue = 'D8EFF8'
 #pylint: disable=line-too-long
 
 
-class ExcelMprReport():
+class ExcelMprReport(_excel_services_backend.Mixin):
     ''' class to create excel mpr report
     '''
     def __init__(self, day):
@@ -35,8 +36,8 @@ class ExcelMprReport():
         ]
         self.wb = Workbook()
         self.wb.remove_sheet(self.wb.get_sheet_by_name('Sheet'))
-        self.ws = self.wb.create_sheet('MPR')
-        self.ws.sheet_view.showGridLines = False
+        self.ws_mpr = self.wb.create_sheet('MPR')
+        self.ws_mpr.sheet_view.showGridLines = False
 
         self.ws_stypes = {}
         if len(self.sourcetype_names) > 1:
@@ -44,8 +45,11 @@ class ExcelMprReport():
                 self.ws_stypes[stype_name] = self.wb.create_sheet(stype_name)
                 self.ws_stypes[stype_name].sheet_view.showGridLines = False
 
-        self.wp = self.wb.create_sheet('Project')
-        self.wp.sheet_view.showGridLines = False
+        self.ws_proj = self.wb.create_sheet('Project')
+        self.ws_proj.sheet_view.showGridLines = False
+
+        self.ws_service = self.wb.create_sheet('Services')
+        self.ws_service.sheet_view.showGridLines = False
 
         r_iface = ReportInterface('')
         _, self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
@@ -94,7 +98,8 @@ class ExcelMprReport():
 
         return proj_df
 
-    def create_tab_mpr(self, ws, params, proj_df):
+    @staticmethod
+    def create_tab_mpr(ws, params, proj_df):
         ''' method to create excel mpr report tab
         '''
         def calc_mpr_values():
@@ -193,7 +198,6 @@ class ExcelMprReport():
         set_vertical_cells(ws, 'D2', [CONTRACT], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'D3', [f'{params["project"]}'], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'D4', [f'{params["crew"]}'], font_normal, Alignment(horizontal='right'))
-        set_vertical_cells(ws, 'D4', [f'{params["crew"]}'], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'D5', [monthyear], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'D6', [params['days']], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'D7', [params['sourcetype_name']], font_normal, Alignment(horizontal='right'))
@@ -289,15 +293,16 @@ class ExcelMprReport():
         format_horizontal(ws, f'C{14+params["days"]}:H{14+params["days"]}', '#,##0')
         set_color(ws, f'A{14+params["days"]}:X{14+params["days"]}', color=lightblue)
 
-    def create_tab_proj(self, proj_df):
-        set_column_widths(self.wp, 'A', [12.5])
+    @staticmethod
+    def create_tab_proj(ws, proj_df):
+        set_column_widths(ws, 'A', [12.5])
         proj_df['date'] = proj_df['date'].dt.date
         rows = dataframe_to_rows(proj_df, index=False, header=True)
-        self.wp.freeze_panes = 'B2'
+        ws.freeze_panes = 'B2'
 
         for r_id, row in enumerate(rows, 1):
             for c_id, value in enumerate(row, 1):
-                self.wp.cell(row=r_id, column=c_id, value=value)
+                ws.cell(row=r_id, column=c_id, value=value)
 
     def create_mprreport(self):
         main_proj_df = self.collate_mpr_data(
@@ -316,7 +321,7 @@ class ExcelMprReport():
             }
             params = self.get_parameters(
                 self.prod_total, self.times_total, header_sourcetype)
-            self.create_tab_mpr(self.ws, params, main_proj_df)
+            self.create_tab_mpr(self.ws_mpr, params, main_proj_df)
 
             for stype_name in self.sourcetype_names:
                 stype = self.day.project.sourcetypes.get(
@@ -351,7 +356,10 @@ class ExcelMprReport():
             }
             params = self.get_parameters(
                 self.prod_total, self.times_total, header_sourcetype)
-            self.create_tab_mpr(self.ws, params, main_proj_df)
+            self.create_tab_mpr(self.ws_mpr, params, main_proj_df)
 
-        self.create_tab_proj(main_proj_df)
+        self.create_tab_proj(self.ws_proj, main_proj_df)
+        self.create_tab_services(
+            self.ws_service, self.day.project, params['year'], params['month']
+        )
         return save_excel(self.wb)

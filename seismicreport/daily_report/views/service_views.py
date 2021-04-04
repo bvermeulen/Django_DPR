@@ -1,5 +1,6 @@
 import calendar
 from django.shortcuts import render, redirect
+from django.http import FileResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.generic import View
@@ -11,6 +12,7 @@ from daily_report.models.service_models import (
 from daily_report.models.daily_models import Daily
 from daily_report.forms.service_forms import MonthDaysForm
 from daily_report.report_backend import ReportInterface
+from daily_report.excel_services_backend import ExcelServiceReport
 from seismicreport.vars import NAME_LENGTH, DESCR_LENGTH, RIGHT_ARROW, LEFT_ARROW
 from seismicreport.utils.utils_funcs import date_to_string, string_to_date
 from seismicreport.utils.plogger import Logger
@@ -245,6 +247,8 @@ class MonthlyServiceView(View):
 
         context = {
             'daily_id': daily_id,
+            'year': year,
+            'month': month,
             'services': services,
             'arrow_symbols': self.arrow_symbols,
         }
@@ -326,3 +330,17 @@ class MonthlyServiceView(View):
                         date=task_date,
                         quantity=float(qty)
                     )
+
+
+def services_excel_report(request, daily_id, year, month):
+    try:
+        # get daily report from id
+        day = Daily.objects.get(id=daily_id)
+
+    except Daily.DoesNotExist:
+        return redirect('daily_page', 0)
+
+    sr = ExcelServiceReport(day)
+    f_excel = sr.create_servicereport(year, month)
+
+    return FileResponse(f_excel, as_attachment=True, filename='service_report.xlsx')

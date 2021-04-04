@@ -151,7 +151,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
         self.wsw.merge_cells('H11:K11')
         set_vertical_cells(self.wsw, 'H11', ['HSE Statistics'], font_bold,
             Alignment(horizontal='center'))
-        set_horizontal_cells(self.wsw, 'I12', ['WEEK', 'Month', 'Project'], font_bold,
+        set_horizontal_cells(self.wsw, 'I12', ['Week', 'Month', 'Project'], font_bold,
             Alignment(horizontal='center'))
         set_vertical_cells(self.wsw, 'H13', [v[0] for v in self.hse_stats], font_normal,
             Alignment())
@@ -170,7 +170,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
         self.wsw.merge_cells('H24:K24')
         set_vertical_cells(self.wsw, 'H24', ['Production Statistics'], font_bold,
             Alignment(horizontal='center'))
-        set_horizontal_cells(self.wsw, 'I25', ['WEEK', 'Month', 'Project'], font_bold,
+        set_horizontal_cells(self.wsw, 'I25', ['Week', 'Month', 'Project'], font_bold,
             Alignment(horizontal='center'))
         set_vertical_cells(self.wsw, 'H26', [v[0] for v in self.prod_stats], font_normal,
             Alignment())
@@ -181,7 +181,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
         format_horizontal(self.wsw, 'I26:K26', '#,##0')
         format_horizontal(self.wsw, 'I27:K27', '#,##0')
         format_horizontal(self.wsw, 'I28:K28', '0.00%')
-        format_horizontal(self.wsw, 'I29:K29', '0,00')
+        format_horizontal(self.wsw, 'I29:K29', '#,##0')
         format_horizontal(self.wsw, 'I30:K30', '0.00')
         format_horizontal(self.wsw, 'I31:K31', '#,##0')
         format_horizontal(self.wsw, 'I32:K32', '0.00')
