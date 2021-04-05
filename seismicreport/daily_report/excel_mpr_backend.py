@@ -8,13 +8,12 @@ from openpyxl.styles import Alignment, Font
 from openpyxl.utils.dataframe import dataframe_to_rows
 from daily_report.report_backend import ReportInterface
 import daily_report.excel_services_backend as _excel_services_backend
-from seismicreport.utils.utils_funcs import calc_ratio
 from seismicreport.utils.utils_excel import (
     set_vertical_cells, set_horizontal_cells, format_vertical, format_horizontal,
     set_column_widths, set_color, save_excel,
 )
 from seismicreport.vars import (
-    CONTRACT, TCF_table, source_prod_schema, time_breakdown_schema, hse_weather_schema
+    CONTRACT, source_prod_schema, time_breakdown_schema, hse_weather_schema
 )
 
 fontname = 'Tahoma'
@@ -58,7 +57,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
             self.time_series, _, self.hse_series
         ) = r_iface.series
 
-    def get_parameters(self, prod_total, times_total, header_sourcetype):
+    def get_parameters(self, header_sourcetype):
         params = {}
         params['project'] = self.day.project.project_name
         params['crew'] = self.day.project.crew_name
@@ -70,6 +69,9 @@ class ExcelMprReport(_excel_services_backend.Mixin):
         params['vibes'] = header_sourcetype['vibes']
         params['moveup'] = header_sourcetype['moveup']
         params['rechours'] = header_sourcetype['rechours']
+        params['tcf'] = header_sourcetype['tcf']
+        params['ctm'] = header_sourcetype['ctm']
+        params['appctm'] = header_sourcetype['appctm']
         params['rate'] = header_sourcetype['rate']
         params['production_days'] = (
             self.day.production_date - self.day.project.planned_start_date).days + 1
@@ -122,13 +124,10 @@ class ExcelMprReport(_excel_services_backend.Mixin):
             vp_type['ctm'] = np.array(m_df.ctm.to_list(), dtype=float)
             vp_type['appctm'] = np.array(m_df.appctm.to_list(), dtype=float)
             vp_typesum['total'] = np.sum(vp_type['total'])
-            vp_typesum['ctm'] = np.nansum(vp_type['ctm'])
-            vp_typesum['appctm'] = calc_ratio(vp_typesum['total'], vp_typesum['ctm'])
 
             # calculate the vp terrain distributions and sums
             vp_dist = {}
             vp_distsum = {}
-            vp_typesum['tcf'] = 0
             for col in ['sp_t1', 'sp_t2', 'sp_t3', 'sp_t4', 'sp_t5', 'skips']:
                 vp_type[col] = np.array(m_df[col].to_list(), dtype=float)
                 vp_typesum[col] = np.sum(vp_type[col])
@@ -138,8 +137,6 @@ class ExcelMprReport(_excel_services_backend.Mixin):
 
                 if vp_typesum['total'] > 0:
                     vp_distsum[col] = vp_typesum[col] / vp_typesum['total']
-                    if col != 'skips':
-                        vp_typesum['tcf'] += vp_distsum[col] * TCF_table[col]
 
                 else:
                     vp_distsum[col] = 0
@@ -217,10 +214,10 @@ class ExcelMprReport(_excel_services_backend.Mixin):
         set_vertical_cells(ws, 'H9', ['Standby days for month'], font_bold, Alignment(horizontal='left'))
         set_vertical_cells(ws, 'H10', ['Effective month rate'], font_bold, Alignment(horizontal='left'))
 
-        set_vertical_cells(ws, 'K5', [vp_typesum['tcf']], font_normal, Alignment(horizontal='right'))
-        set_vertical_cells(ws, 'K6', [vp_typesum['ctm']], font_normal, Alignment(horizontal='right'))
+        set_vertical_cells(ws, 'K5', [params['tcf']], font_normal, Alignment(horizontal='right'))
+        set_vertical_cells(ws, 'K6', [params['ctm']], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'K7', [vp_typesum['total']], font_normal, Alignment(horizontal='right'))
-        set_vertical_cells(ws, 'K8', [vp_typesum['appctm']], font_normal, Alignment(horizontal='right'))
+        set_vertical_cells(ws, 'K8', [params['appctm']], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'K9', [tm_typesum['standby'] / 24], font_normal, Alignment(horizontal='right'))
         set_vertical_cells(ws, 'K10', [params['rate']], font_normal, Alignment(horizontal='right'))
 
@@ -286,7 +283,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
             tm_typesum['other_ops'], tm_typesum['ops'], tm_typesum['standby'],
             tm_typesum['downtime'], vp_distsum['sp_t1'], vp_distsum['sp_t2'],
             vp_distsum['sp_t3'], vp_distsum['sp_t4'], vp_distsum['sp_t5'],
-            vp_typesum['tcf'], vp_typesum['ctm'], vp_typesum['appctm'],
+            params['tcf'], params['ctm'], params['appctm'],
             tm_typesum['padtime'],
         ]
         set_horizontal_cells(ws, f'A{14+params["days"]}', row_sum, font_bold, Alignment())
@@ -317,10 +314,12 @@ class ExcelMprReport(_excel_services_backend.Mixin):
                 'vibes': '',
                 'moveup': '',
                 'rechours': 24,
+                'tcf': self.prod_total['month_tcf'],
+                'ctm': self.prod_total['month_ctm'],
+                'appctm': self.prod_total['month_appctm'],
                 'rate': self.prod_total['month_rate']
             }
-            params = self.get_parameters(
-                self.prod_total, self.times_total, header_sourcetype)
+            params = self.get_parameters(header_sourcetype)
             self.create_tab_mpr(self.ws_mpr, params, main_proj_df)
 
             for stype_name in self.sourcetype_names:
@@ -333,10 +332,12 @@ class ExcelMprReport(_excel_services_backend.Mixin):
                     'vibes': stype.mpr_vibes,
                     'moveup': stype.mpr_moveup,
                     'rechours': stype.mpr_rec_hours,
+                    'tcf': '',
+                    'ctm': '',
+                    'appctm': '',
                     'rate': ''
                 }
-                params = self.get_parameters(
-                    self.prod_total, self.times_total, header_sourcetype)
+                params = self.get_parameters(header_sourcetype)
                 proj_df = self.collate_mpr_data(
                     self.prod_series_by_type[stype_name], self.time_series,
                     self.hse_series
@@ -352,10 +353,12 @@ class ExcelMprReport(_excel_services_backend.Mixin):
                 'vibes': stype.mpr_vibes,
                 'moveup': stype.mpr_moveup,
                 'rechours': stype.mpr_rec_hours,
+                'tcf': self.prod_total['month_tcf'],
+                'ctm': self.prod_total['month_ctm'],
+                'appctm': self.prod_total['month_appctm'],
                 'rate': self.prod_total['month_rate']
             }
-            params = self.get_parameters(
-                self.prod_total, self.times_total, header_sourcetype)
+            params = self.get_parameters(header_sourcetype)
             self.create_tab_mpr(self.ws_mpr, params, main_proj_df)
 
         self.create_tab_proj(self.ws_proj, main_proj_df)
