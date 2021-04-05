@@ -1,5 +1,6 @@
 # common variables for seismicreport
 
+# this is for contract c3100000120, effective Jan-2021
 TCF_table = {
     'sp_t1': 0.85,
     'sp_t2': 0.60,
