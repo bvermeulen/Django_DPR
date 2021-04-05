@@ -98,10 +98,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if np.isnan(tcf) or mpr_vibes == 0 or mpr_sweep == 0 or mpr_moveup == 0:
             return np.nan
 
-        ctm = round(
-            3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours
-        )
-        return ctm
+        return 3600 / (mpr_sweep + mpr_moveup) * mpr_vibes * tcf * self.mpr_rec_hours
 
     def calc_ctm_series(self, p_series, sourcetype):
         terrain_series = list(zip(
@@ -666,6 +663,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
         return prod_total, prod_series
 
+<<<<<<< HEAD
     def calc_period_totals(self, day, times_total, prod_total, proj_series):
         proj_df = pd.DataFrame(proj_series)
         proj_df['date_series'] = pd.to_datetime(proj_df['date_series'])
@@ -729,15 +727,39 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         )
         prod_total['proj_perc_skips'] = calc_ratio(
             prod_total['proj_skips'], prod_total['proj_total'])
+=======
+    def calc_period_totals(self, day, stype, times_total, prod_total):
+        try:
+            proj_days = (day.production_date - day.project.planned_start_date).days
+            if proj_days < 1:
+                proj_days = 1
+
+        except AttributeError:
+            proj_days = 1
+
+        days = {
+            'day': 1, 'week': WEEKDAYS,
+            'month': day.production_date.day, 'proj': proj_days,
+        }
+        for period in ['day', 'week', 'month', 'proj']:
+            prod_total[f'{period}_tcf'] = self.calc_tcf(period, prod_total)
+            prod_total[f'{period}_ctm'] = self.calc_ctm(
+                stype, prod_total[f'{period}_tcf']) * days[period]
+            prod_total[f'{period}_appctm'] = calc_ratio(
+                prod_total[f'{period}_total'], prod_total[f'{period}_ctm'])
+            prod_total[f'{period}_avg'] = int(
+                prod_total[f'{period}_total'] / days[period])
+            prod_total[f'{period}_rate'] = self.calc_rate(
+                day, CTM_METHOD, prod_total[f'{period}_appctm'],
+                times_total[f'{period}_total_time'], times_total[f'{period}_standby']
+            )
+            prod_total[f'{period}_perc_skips'] = calc_ratio(
+                prod_total[f'{period}_skips'], prod_total[f'{period}_total'])
+>>>>>>> master
 
         return prod_total
 
-    def calc_prod_combined(
-        self, day, times_total, prod_totals_by_type, prod_series_by_type):
-
-        prod_total = {}
-        for ptotal in prod_totals_by_type.values():
-            prod_total = sum_keys(prod_total, ptotal)
+    def calc_combined_series(self, day, times_total, prod_series_by_type):
 
         prod_series = {}
         for pseries in prod_series_by_type.values():
@@ -771,9 +793,53 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             )
         prod_series['rate_series'] = np.array(rate_series)
 
-        prod_total = self.calc_period_totals(day, times_total, prod_total, prod_series)
+        return prod_series
 
-        return prod_total, prod_series
+    def calc_combined_production(self, day, times_total, prod_total_by_type):
+        try:
+            proj_days = (day.production_date - day.project.planned_start_date).days
+            if proj_days < 1:
+                proj_days = 1
+
+        except AttributeError:
+            proj_days = 1
+
+        days = {
+            'day': 1, 'week': WEEKDAYS,
+            'month': day.production_date.day, 'proj': proj_days,
+        }
+        prod_total = {}
+        for ptotal in prod_total_by_type.values():
+            prod_total = sum_keys(prod_total, ptotal)
+
+        for period in ['day', 'week', 'month', 'proj']:
+            # calculate weighted sum of tcf and ctm
+            tcf = 0
+            ctm = 0
+            for ptotal in prod_total_by_type.values():
+                tcf += ptotal[f'{period}_tcf'] * ptotal[f'{period}_total']
+                ctm += ptotal[f'{period}_ctm'] * ptotal[f'{period}_total']
+            prod_total[f'{period}_tcf'] = (
+                tcf / prod_total[f'{period}_total']
+                if prod_total[f'{period}_total'] > 0 else np.nan
+            )
+            prod_total[f'{period}_ctm'] = (
+                round(ctm / prod_total[f'{period}_total'])
+                if prod_total[f'{period}_total'] > 0 else np.nan
+            )
+
+            prod_total[f'{period}_appctm'] = calc_ratio(
+                prod_total[f'{period}_total'], prod_total[f'{period}_ctm'])
+            prod_total[f'{period}_avg'] = int(
+                prod_total[f'{period}_total'] / days[period])
+            prod_total[f'{period}_rate'] = self.calc_rate(
+                day, CTM_METHOD, prod_total[f'{period}_appctm'],
+                times_total[f'{period}_total_time'], times_total[f'{period}_standby']
+            )
+            prod_total[f'{period}_perc_skips'] = calc_ratio(
+                prod_total[f'{period}_skips'], prod_total[f'{period}_total'])
+
+        return prod_total
 
     @timed(logger, print_log=True)
     def calc_totals(self, daily):
@@ -790,17 +856,19 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         if daily:
             for stype in daily.project.sourcetypes.all():
                 prod, series = self.calc_prod_totals(daily, times_total, stype)
-                prod = self.calc_period_totals(daily, times_total, prod, series)
+                prod = self.calc_period_totals(daily, stype, times_total, prod)
                 prod_total_by_type[stype.sourcetype_name] = prod
                 self.prod_series_by_type[stype.sourcetype_name] = series
 
-            prod_total, self.prod_series = self.calc_prod_combined(
-                daily, times_total, prod_total_by_type, self.prod_series_by_type)
+            self.prod_series = self.calc_combined_series(
+                daily, times_total, self.prod_series_by_type)
+            prod_total = self.calc_combined_production(
+                daily, times_total, prod_total_by_type)
 
         else:
             prod_total, self.prod_series = self.calc_prod_totals(daily, times_total, None)
 
-        receivertype = daily.project.receivertypes.all()[0]
+        receivertype = daily.project.receivertypes.all()[0] if daily else None
         day_rcvr = self.day_receiver_total(daily, receivertype)
         week_rcvr = self.week_receiver_total(daily, receivertype)
         month_rcvr = self.month_receiver_total(daily, receivertype)
