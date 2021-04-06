@@ -246,7 +246,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         day.save()
 
         # create/ update source production values for source types
-        skips_done = False
         for stype, stype_name in sourcetype_names.items():
 
             # check if sourcetype name exists in the project
@@ -276,12 +275,8 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
                 np.nan_to_num(self.get_value(day_df, f'sp_t4_{stype}')))
             prod.sp_t5_sabkha = int(
                 np.nan_to_num(self.get_value(day_df, f'sp_t5_{stype}')))
-
-            # only include skips in one sourcetype
-            if not skips_done:
-                prod.skips = int(
-                    np.nan_to_num(self.get_value(day_df, f'skips')))
-                skips_done = True
+            prod.skips = int(
+                np.nan_to_num(self.get_value(day_df, f'skips_{stype}')))
             prod.save()
 
         # create/ update receiver production value
