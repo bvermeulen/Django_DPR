@@ -136,7 +136,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     @staticmethod
     def calc_rate(daily, ctm_method, app_ctm, total_time, standby_time):
-        ''' IMH opinion correct calculation of the rate is to incorpoeate
+        ''' IMH opinion correct calculation of the rate is to incorpoeate the standy time
         '''
         if ctm_method == 'Legacy':
             standby_rate = daily.project.standby_rate
