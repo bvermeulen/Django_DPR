@@ -13,7 +13,8 @@ from seismicreport.utils.utils_excel import (
     set_column_widths, set_color, save_excel,
 )
 from seismicreport.vars import (
-    CONTRACT, source_prod_schema, time_breakdown_schema, hse_weather_schema
+    CONTRACT, source_prod_schema, receiver_prod_schema, time_breakdown_schema,
+    hse_weather_schema
 )
 
 fontname = 'Tahoma'
@@ -54,7 +55,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
         _, self.prod_total, self.times_total, _, _ = r_iface.calc_totals(self.day)
         (
             self.prod_series_by_type, self.prod_series,
-            self.time_series, _, self.hse_series
+            self.time_series, self.rcvr_series, self.hse_series
         ) = r_iface.series
 
     def get_parameters(self, header_sourcetype):
@@ -77,17 +78,20 @@ class ExcelMprReport(_excel_services_backend.Mixin):
             self.day.production_date - self.day.project.planned_start_date).days + 1
         return params
 
-    def collate_mpr_data(self, prod_series, time_series, hse_series):
+    def collate_mpr_data(self, prod_series, rcvr_series, time_series, hse_series):
         prod_keys = ['date_series']
         prod_keys += [f'{key[:5]}_series' for key in source_prod_schema]
         prod_keys += ['total_sp_series', 'tcf_series', 'ctm_series', 'appctm_series']
         p_series = {f'{key[:-7]}':prod_series[key] for key in prod_keys}
 
+        rcvr_keys = [f'{key}_series' for key in receiver_prod_schema]
+        r_series = {f'{key[:-7]}':rcvr_series[key] for key in rcvr_keys}
+
         time_keys = [f'{key}_series' for key in time_breakdown_schema]
         time_keys += [
             'ops_series', 'standby_series', 'downtime_series', 'total_time_series']
         t_series = {f'{key[:-7]}': time_series[key] for key in time_keys}
-        proj_df = pd.DataFrame({**p_series, **t_series})
+        proj_df = pd.DataFrame({**p_series, **r_series, **t_series})
 
         if hse_series:
             hse_keys = ['date_series']
@@ -303,7 +307,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
 
     def create_mprreport(self):
         main_proj_df = self.collate_mpr_data(
-            self.prod_series, self.time_series, self.hse_series
+            self.prod_series, self.rcvr_series, self.time_series, self.hse_series
         )
         stype = None
         if self.ws_stypes:
@@ -339,7 +343,7 @@ class ExcelMprReport(_excel_services_backend.Mixin):
                 }
                 params = self.get_parameters(header_sourcetype)
                 proj_df = self.collate_mpr_data(
-                    self.prod_series_by_type[stype_name], self.time_series,
+                    self.prod_series_by_type[stype_name], self.rcvr_series, self.time_series,
                     self.hse_series
                 )
                 self.create_tab_mpr(self.ws_stypes[stype_name], params, proj_df)
