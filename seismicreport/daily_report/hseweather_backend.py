@@ -47,7 +47,7 @@ class Mixin:
     def week_hse_totals(daily):
         if daily:
             end_date = daily.production_date
-            start_date = end_date - timedelta(days=WEEKDAYS)
+            start_date = end_date - timedelta(days=WEEKDAYS-1)
 
             hse_query = HseWeather.objects.filter(
                 Q(daily__production_date__gte=start_date),
