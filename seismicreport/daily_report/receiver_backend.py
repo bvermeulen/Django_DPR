@@ -42,7 +42,6 @@ class Mixin:
                 Q(daily__production_date__lte=end_date),
                 receivertype = receivertype,
             )
-
         else:
             rcvr_query = None
 
@@ -54,6 +53,7 @@ class Mixin:
             f'week_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
             for key in receiver_prod_schema
         }
+        w_rcvr['week_qc_field'] /= WEEKDAYS
 
         return w_rcvr
 
@@ -78,6 +78,7 @@ class Mixin:
             f'month_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
             for key in receiver_prod_schema
         }
+        m_rcvr['month_qc_field'] /= daily.production_date.day
 
         return m_rcvr
 
@@ -100,10 +101,19 @@ class Mixin:
             f'{key}_series': nan_array([val[key] for val in rcvr_query.values()])
             for key in receiver_prod_schema
         }
-
         p_rcvr = {
             f'proj_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
             for key in receiver_prod_schema
         }
+        try:
+            proj_days = (
+                daily.production_date - daily.project.planned_start_date).days + 1
+            if proj_days < 1:
+                proj_days = 1
+
+        except AttributeError:
+            proj_days = 1
+
+        p_rcvr['proj_qc_field'] /= proj_days
 
         return p_rcvr, rcvr_series

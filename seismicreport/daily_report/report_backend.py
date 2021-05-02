@@ -19,7 +19,7 @@ from seismicreport.vars import (
 )
 from seismicreport.utils.plogger import Logger, timed
 from seismicreport.utils.utils_funcs import (
-    calc_ratio, calc_avg, nan_array, get_receivertype_name, sum_keys,
+    calc_ratio, nan_array, get_receivertype_name, sum_keys,
 )
 
 logger = Logger.getlogger()
@@ -39,6 +39,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             return np.nan
 
         r, c = BGP_DR_table[kw]
+        dummy = day_df.iat[r, c]
         try:
             return day_df.iat[r, c]
 
@@ -300,6 +301,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         rcvr.node_charged = int(np.nan_to_num(self.get_value(day_df, 'node charged')))
         rcvr.node_failure = int(np.nan_to_num(self.get_value(day_df, 'node failure')))
         rcvr.node_repair = int(np.nan_to_num(self.get_value(day_df, 'node repair')))
+        rcvr.qc_field = float(np.nan_to_num(self.get_value(day_df, 'node qc')))
         rcvr.save()
 
         # create/ update time breakdown values
@@ -323,8 +325,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             self.get_value(day_df, 'company tests'))
         time_breakdown.beyond_control = np.nan_to_num(
             self.get_value(day_df, 'beyond contractor control'))
-        time_breakdown.line_fault = np.nan_to_num(
-            self.get_value(day_df, 'line fault')) # No longer used
+        time_breakdown.line_fault = 0.0  # No longer used
         time_breakdown.rec_eqpmt_fault = np.nan_to_num(
             self.get_value(day_df, 'Rec. eqpmt fault'))
         time_breakdown.vibrator_fault = np.nan_to_num(
@@ -660,7 +661,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     def calc_period_totals(self, day, stype, times_total, prod_total):
         try:
-            proj_days = (day.production_date - day.project.planned_start_date).days
+            proj_days = (day.production_date - day.project.planned_start_date).days + 1
             if proj_days < 1:
                 proj_days = 1
 
@@ -726,7 +727,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
 
     def calc_combined_production(self, day, times_total, prod_total_by_type):
         try:
-            proj_days = (day.production_date - day.project.planned_start_date).days
+            proj_days = (day.production_date - day.project.planned_start_date).days + 1
             if proj_days < 1:
                 proj_days = 1
 
