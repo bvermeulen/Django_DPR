@@ -2,13 +2,14 @@
 '''
 from pathlib import Path
 from openpyxl import Workbook, drawing
-from openpyxl.styles import Border, Side, Alignment, Font, PatternFill
-from openpyxl.formatting.rule import CellIsRule
+from openpyxl.styles import Border, Side, Alignment, Font
 from daily_report.report_backend import ReportInterface
 from seismicreport.utils.utils_excel import (
-    set_vertical_cells, set_outer_border, save_excel
+    conditional_format, set_vertical_cells, set_outer_border, save_excel
 )
-from seismicreport.vars import AVG_PERIOD, NO_DATE_STR, SS_2, IMG_SIZE
+from seismicreport.vars import (
+    AVG_PERIOD, NO_DATE_STR, SS_2, IMG_SIZE, STOP_TARGET, PROD_TARGET, REC_TARGET
+)
 
 
 class ExcelDayReport:
@@ -38,6 +39,7 @@ class ExcelDayReport:
         '''
         fontname = 'Tahoma'
         red = '00FF0000'
+        orange = 'FFA500'
         green = '0000FF00'
         font_large_bold = Font(name=fontname, bold=True, size=11)
         font_normal = Font(name=fontname, size=9)
@@ -100,11 +102,8 @@ class ExcelDayReport:
         self.ws['I10'].number_format = '0.00'
         self.ws['I11'].number_format = '0.00'
         self.ws['I12'].number_format = '#,##0'
-        fill = PatternFill(bgColor=red)
-        self.ws.conditional_formatting.add(
-            'I7', CellIsRule(operator='lessThan', formula=[0.9], fill=fill))
-        self.ws.conditional_formatting.add(
-            'I8', CellIsRule(operator='lessThan', formula=[22], fill=fill))
+        conditional_format(self.ws, 'I7', PROD_TARGET, (red, orange, green))
+        conditional_format(self.ws, 'I8', REC_TARGET, (red, orange, green))
 
         # receiver stats
         not_shown = ['Node charged', 'Node repair']
@@ -168,12 +167,9 @@ class ExcelDayReport:
             self.ws, 'L16', [val for _, val in self.hse_stats_table.items()], font_normal,
             Alignment(horizontal='right'))
 
-        for i in range(16, 23):
+        for i in range(16, 26):
             self.ws['L'+str(i)].number_format = '0;-0;;@'
-
-        fill = PatternFill(bgColor=green)
-        self.ws.conditional_formatting.add(
-            'L23', CellIsRule(operator='greaterThan', formula=[9], fill=fill))
+        conditional_format(self.ws, 'L22', STOP_TARGET, (None, None, green))
 
         # csr comment
         self.ws.merge_cells('B17:I27')
@@ -232,7 +228,7 @@ def collate_excel_dailyreport_data(day):
         totals_time,
         totals_receiver,
         totals_hse,
-     ) = r_iface.calc_totals(day)
+    ) = r_iface.calc_totals(day)
     # no need to call create_daily_graphs as this has been done in DailyView
 
     project = day.project
@@ -342,8 +338,11 @@ def collate_excel_dailyreport_data(day):
         'FAC': totals_hse['day_fac'],
         'NM/ Incidents': totals_hse['day_incident_nm'],
         'LSR': totals_hse['day_lsr_violations'],
+        'Observations': totals_hse['day_stop'],
+        'Drills':  totals_hse['day_drills'],
         'Inspections': totals_hse['day_audits'],
-        'STOP': totals_hse['day_stop'],
+        'Medevac': totals_hse['day_medevac'],
+        'Exposure': totals_hse['day_exposure_hours'],
     }
 
     report_data['csr_comment_table'] = {

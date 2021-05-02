@@ -57,25 +57,28 @@ def format_horizontal(ws, loc_range: str, num_format: str):
 
 
 def conditional_format(ws, cell_loc: str, format_vals: tuple, colors: tuple):
-    value = ws[cell_loc].value
+    value = ws[cell_loc].value * 1.0
     if not isinstance(value, (int, float)):
         return
 
     if value < format_vals[0]:
-        ws.conditional_formatting.add(
-            cell_loc, CellIsRule(operator='lessThan',
-            formula=[format_vals[0]], fill=PatternFill(bgColor=colors[0])))
+        if colors[0]:
+            ws.conditional_formatting.add(
+                cell_loc, CellIsRule(operator='lessThan',
+                formula=[format_vals[0]], fill=PatternFill(bgColor=colors[0])))
 
     elif format_vals[0] <= value < format_vals[1]:
-        ws.conditional_formatting.add(
-            cell_loc, CellIsRule(operator='lessThan',
-            formula=[format_vals[1]],
-            fill=PatternFill(bgColor=colors[1])))
+        if colors[1]:
+            ws.conditional_formatting.add(
+                cell_loc, CellIsRule(operator='lessThan',
+                formula=[format_vals[1]],
+                fill=PatternFill(bgColor=colors[1])))
 
     else:
-        ws.conditional_formatting.add(
-            cell_loc, CellIsRule(operator='greaterThan',
-            formula=[format_vals[1]], fill=PatternFill(bgColor=colors[2])))
+        if colors[2]:
+            ws.conditional_formatting.add(
+                cell_loc, CellIsRule(operator='greaterThan',
+                formula=[format_vals[1]], fill=PatternFill(bgColor=colors[2])))
 
 
 def set_outer_border(ws, cell_range, style='thin'):
