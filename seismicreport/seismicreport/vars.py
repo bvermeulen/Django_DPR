@@ -61,7 +61,7 @@ BGP_DR_table = {
     'node charged': (41, 11),
     'node failure': (42, 11),
     'node repair': (43, 11),
-    'node_qc': (100, 1), # not yet implemented
+    'node qc': (44, 11),
     'comment 1': (0, 10),
     'comment 2': (1, 10),
     'comment 3': (2, 10),
@@ -140,8 +140,8 @@ WEEKDAYS = 7
 WEEKS = 6
 AVG_PERIOD = 14
 STOP_TARGET = (9, 9)
-PROD_TARGET = (0.9, 1)
-REC_TARGET = (21, 22)
+PROD_TARGET = (0.8, 0.9)
+REC_TARGET = (21, 23)
 NO_DATE_STR = '-'
 RIGHT_ARROW = '\u25B6'
 LEFT_ARROW = '\u25C0'

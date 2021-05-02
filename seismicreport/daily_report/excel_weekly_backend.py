@@ -85,8 +85,8 @@ class ExcelWeekReport(_graph_backend.Mixin):
         ''' method to create excel weekly report main tab
         '''
         set_column_widths(self.wsw, 'A',
-            [0.94, 0.75, 12.56, 10.22, 19.89, 4.11, 0.81,
-            11.67, 11.22, 12.56, 11.22, 0.94]
+            [0.94, 0.75, 12.56, 12.56, 12.56, 12.56,
+             0.75, 12.56, 12.56, 12.56, 12.56, 0.75]
         )
 
         # set title
@@ -104,10 +104,10 @@ class ExcelWeekReport(_graph_backend.Mixin):
         # set project general
         set_vertical_cells(self.wsw, 'D4', [k for k in self.project], font_bold,
             Alignment())
-        set_vertical_cells(self.wsw, 'E4', [v for v in self.project.values()],
+        set_vertical_cells(self.wsw, 'F4', [v for v in self.project.values()],
             font_normal, Alignment(horizontal='right'))
-        self.wsw['E5'].number_format = '#,##0'
-        self.wsw['E6'].number_format = '0.00'
+        self.wsw['F5'].number_format = '#,##0'
+        self.wsw['F6'].number_format = '0.00'
 
         # set author
         self.wsw.merge_cells('H4:I4')
@@ -126,14 +126,6 @@ class ExcelWeekReport(_graph_backend.Mixin):
             self.wsw, 'J3', [self.report_date], font_large_bold, Alignment())
         self.wsw['J3'].font = Font(name=fontname, bold=True, size=11, color=red)
 
-        # set comments
-        self.wsw.merge_cells('B11:F11')
-        self.wsw.merge_cells('B12:F35')
-        set_vertical_cells(self.wsw, 'B11', [k for k in self.comment], font_bold,
-            Alignment())
-        set_vertical_cells(self.wsw, 'B12', [v for v in self.comment.values()],
-            font_normal, Alignment(vertical='top', wrap_text=True))
-
         # set project statistics
         self.wsw.merge_cells('J4:K4')
         set_vertical_cells(self.wsw, 'J4', ['Project Statistics'], font_bold,
@@ -148,57 +140,66 @@ class ExcelWeekReport(_graph_backend.Mixin):
         self.wsw['K8'].number_format = '0.00%'
 
         # set hse statistic
-        self.wsw.merge_cells('H11:K11')
-        set_vertical_cells(self.wsw, 'H11', ['HSE Statistics'], font_bold,
+        self.wsw.merge_cells('B11:F11')
+        set_vertical_cells(self.wsw, 'B11', ['HSE Statistics'], font_bold,
+            Alignment(horizontal='center'))
+        set_horizontal_cells(self.wsw, 'D12', ['Week', 'Month', 'Project'], font_bold,
+            Alignment(horizontal='center'))
+        set_vertical_cells(self.wsw, 'C13', [v[0] for v in self.hse_stats], font_normal,
+            Alignment())
+        for row, item in enumerate(self.hse_stats):
+            set_horizontal_cells(self.wsw, f'D{row+13}', [item[1], item[2], item[3]],
+                font_normal, Alignment(horizontal='right'))
+
+        format_horizontal(self.wsw, 'D23:F23', '#,##0')
+        f_vals = np.array(STOP_TARGET) * 7
+        conditional_format(self.wsw, 'D19', f_vals, (None, None, green))
+        f_vals = np.array(STOP_TARGET) * self.month_days
+        conditional_format(self.wsw, 'E19', f_vals, (None, None, green))
+        f_vals = np.array(STOP_TARGET) * self.proj_days
+        conditional_format(self.wsw, 'F19', f_vals, (None, None, green))
+
+        # set production statistic
+        self.wsw.merge_cells('H11:L11')
+        set_vertical_cells(self.wsw, 'H11', ['Production Statistics'], font_bold,
             Alignment(horizontal='center'))
         set_horizontal_cells(self.wsw, 'I12', ['Week', 'Month', 'Project'], font_bold,
             Alignment(horizontal='center'))
-        set_vertical_cells(self.wsw, 'H13', [v[0] for v in self.hse_stats], font_normal,
+        set_vertical_cells(self.wsw, 'H13', [v[0] for v in self.prod_stats], font_normal,
             Alignment())
-        for row, item in enumerate(self.hse_stats):
+        for row, item in enumerate(self.prod_stats):
             set_horizontal_cells(self.wsw, f'I{row+13}', [item[1], item[2], item[3]],
                 font_normal, Alignment(horizontal='right'))
 
-        f_vals = np.array(STOP_TARGET) * 7
-        conditional_format(self.wsw, 'I19', f_vals, (red, orange, green))
-        f_vals = np.array(STOP_TARGET) * self.month_days
-        conditional_format(self.wsw, 'J19', f_vals, (red, orange, green))
-        f_vals = np.array(STOP_TARGET) * self.proj_days
-        conditional_format(self.wsw, 'K19', f_vals, (red, orange, green))
-
-        # set production statistic
-        self.wsw.merge_cells('H24:K24')
-        set_vertical_cells(self.wsw, 'H24', ['Production Statistics'], font_bold,
-            Alignment(horizontal='center'))
-        set_horizontal_cells(self.wsw, 'I25', ['Week', 'Month', 'Project'], font_bold,
-            Alignment(horizontal='center'))
-        set_vertical_cells(self.wsw, 'H26', [v[0] for v in self.prod_stats], font_normal,
-            Alignment())
-        for row, item in enumerate(self.prod_stats):
-            set_horizontal_cells(self.wsw, f'I{row+26}', [item[1], item[2], item[3]],
-                font_normal, Alignment(horizontal='right'))
-
-        format_horizontal(self.wsw, 'I26:K26', '#,##0')
-        format_horizontal(self.wsw, 'I27:K27', '#,##0')
-        format_horizontal(self.wsw, 'I28:K28', '0.00%')
-        format_horizontal(self.wsw, 'I29:K29', '#,##0')
-        format_horizontal(self.wsw, 'I30:K30', '0.00')
-        format_horizontal(self.wsw, 'I31:K31', '#,##0')
-        format_horizontal(self.wsw, 'I32:K32', '0.00')
-        format_horizontal(self.wsw, 'I33:K33', '#,##0')
-        format_horizontal(self.wsw, 'I34:K34', '0.00%')
+        format_horizontal(self.wsw, 'I13:K13', '#,##0')
+        format_horizontal(self.wsw, 'I14:K47', '#,##0')
+        format_horizontal(self.wsw, 'I15:K15', '0.00%')
+        format_horizontal(self.wsw, 'I16:K16', '#,##0')
+        format_horizontal(self.wsw, 'I17:K17', '0.00')
+        format_horizontal(self.wsw, 'I18:K18', '#,##0')
+        format_horizontal(self.wsw, 'I19:K19', '0.00')
+        format_horizontal(self.wsw, 'I20:K20', '#,##0')
+        format_horizontal(self.wsw, 'I21:K21', '0.00%')
 
         f_vals = np.array(PROD_TARGET) * 1
-        conditional_format(self.wsw, 'I28', f_vals, (red, orange, green))
-        conditional_format(self.wsw, 'J28', f_vals, (red, orange, green))
-        conditional_format(self.wsw, 'K28', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'I15', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'J15', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'K15', f_vals, (red, orange, green))
 
         f_vals = np.array(REC_TARGET) * 7
-        conditional_format(self.wsw, 'I29', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'I16', f_vals, (red, orange, green))
         f_vals = np.array(REC_TARGET) * self.month_days
-        conditional_format(self.wsw, 'J29', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'J16', f_vals, (red, orange, green))
         f_vals = np.array(REC_TARGET) * self.proj_days
-        conditional_format(self.wsw, 'K29', f_vals, (red, orange, green))
+        conditional_format(self.wsw, 'K16', f_vals, (red, orange, green))
+
+        # set comments
+        self.wsw.merge_cells('B24:L24')
+        self.wsw.merge_cells('B25:l48')
+        set_vertical_cells(self.wsw, 'B24', [k for k in self.comment], font_bold,
+            Alignment())
+        set_vertical_cells(self.wsw, 'B25', [v for v in self.comment.values()],
+            font_normal, Alignment(vertical='top', wrap_text=True))
 
         # add graphs
         width, height = IMG_SIZE
@@ -207,37 +208,37 @@ class ExcelWeekReport(_graph_backend.Mixin):
             self.media_dir / 'images/cumul_app_ctm.png')
         img_daily_prod.width = width
         img_daily_prod.height = height
-        self.wsw.add_image(img_daily_prod, 'C37')
+        self.wsw.add_image(img_daily_prod, 'C50')
 
         img_daily_prod = drawing.image.Image(
             self.media_dir / 'images/pie_proj_terrain.png')
         img_daily_prod.width = width
         img_daily_prod.height = height
-        self.wsw.add_image(img_daily_prod, 'H37')
+        self.wsw.add_image(img_daily_prod, 'H50')
 
         img_daily_prod = drawing.image.Image(
             self.media_dir / 'images/rec_hours.png')
         img_daily_prod.width = width
         img_daily_prod.height = height
-        self.wsw.add_image(img_daily_prod, 'C51')
+        self.wsw.add_image(img_daily_prod, 'C64')
 
         img_daily_prod = drawing.image.Image(
             self.media_dir / 'images/app_ctm_ratio.png')
         img_daily_prod.width = width
         img_daily_prod.height = height
-        self.wsw.add_image(img_daily_prod, 'H51')
+        self.wsw.add_image(img_daily_prod, 'H64')
 
         # set borders
-        set_outer_border(self.wsw, 'B2:L64')
+        set_outer_border(self.wsw, 'B2:L76')
         set_outer_border(self.wsw, 'B2:L2')
         set_outer_border(self.wsw, 'J4:L4')
         set_outer_border(self.wsw, 'J5:L9')
         set_outer_border(self.wsw, 'B11:F11')
-        set_outer_border(self.wsw, 'B12:F35')
-        set_outer_border(self.wsw, 'H11:L11')
-        set_outer_border(self.wsw, 'H12:L22')
-        set_outer_border(self.wsw, 'H24:L24')
-        set_outer_border(self.wsw, 'H25:L35')
+        set_outer_border(self.wsw, 'B12:F23')
+        set_outer_border(self.wsw, 'G11:L11')
+        set_outer_border(self.wsw, 'G12:L23')
+        set_outer_border(self.wsw, 'B24:L24')
+        set_outer_border(self.wsw, 'B25:L48')
 
     def create_tab_times(self):
         ''' method to create excel weekly tab for times
@@ -533,7 +534,8 @@ def collate_excel_weekreport_data(day):
     report_data['report_date'] = day.production_date.strftime('%#d %b %Y')
     report_data['month_days'] = day.production_date.day
     if project.start_report:
-        report_data['proj_days'] = (day.production_date - project.start_report).days + 1
+        report_data['proj_days'] = (
+            day.production_date - project.planned_start_date).days + 1
 
     else:
         report_data['proj_days'] = 1
@@ -591,10 +593,11 @@ def collate_excel_weekreport_data(day):
             'FAC': totals_hse[f'{period}_fac'],
             'NM/ Incidents': totals_hse[f'{period}_incident_nm'],
             'LSR': totals_hse[f'{period}_lsr_violations'],
-            'STOP Cards': totals_hse[f'{period}_stop'],
+            'Observations': totals_hse[f'{period}_stop'],
             'Drills': totals_hse[f'{period}_drills'],
             'Audits': totals_hse[f'{period}_audits'],
             'Medevac': totals_hse[f'{period}_medevac'],
+            'Exposure': totals_hse[f'{period}_exposure_hours']
         }
 
     # prod stats

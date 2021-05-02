@@ -23,6 +23,13 @@ def calc_ratio(a, b):
     else:
         return a / b
 
+def calc_avg(a, b):
+    if np.isnan(a) or np.isnan(b) or b == 0:
+        return np.nan
+
+    else:
+        return int(a/ b)
+
 
 def toggle_month(year: int, month: int, deltamonths: int) -> tuple:
     ''' returns year and month based on change of number of months
