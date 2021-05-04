@@ -88,7 +88,7 @@ class Mixin:
             rcvr_query = ReceiverProduction.objects.filter(
                 daily__production_date__lte=daily.production_date,
                 receivertype = receivertype,
-            )
+            ).order_by('daily__production_date')
 
         else:
             rcvr_query = None
