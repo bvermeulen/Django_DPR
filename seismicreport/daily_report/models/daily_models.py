@@ -105,7 +105,7 @@ class HseWeather(models.Model):
     lsr_violations = models.IntegerField(default=0)
     headcount = models.IntegerField(default=0)
     exposure_hours = models.FloatField(default=0)
-    weather_condition = models.CharField(max_length=NAME_LENGTH, default='')
+    weather_condition = models.CharField(max_length=DESCR_LENGTH, default='')
     rain = models.CharField(max_length=NAME_LENGTH, default='')
     temp_min = models.FloatField(default=0)
     temp_max = models.FloatField(default=0)
