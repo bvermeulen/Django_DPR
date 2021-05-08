@@ -364,20 +364,26 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_horizontal(self.wsp, format_range, int_hide_zero)
             format_range = f'D{row + key}:D{row + key}'
             format_horizontal(self.wsp, format_range, float_hide_zero)
-            format_range = f'E{row + key}:K{row + key}'
+            format_range = f'E{row + key}:L{row + key}'
             format_horizontal(self.wsp, format_range, int_hide_zero)
+            format_range = f'M{row + key}:M{row + key}'
+            format_horizontal(self.wsp, format_range, '0.000;-0;;@')
 
             weeks_total += nan_array(vals[1:]).astype(np.float)
 
+
         # skip the 3rd and 6 and 11th elements
-        weeks_total = [*weeks_total[0:2], '', *weeks_total[3:10]]
+        vals = [*weeks_total[0:2], '', *weeks_total[3:10]]
         set_vertical_cells(self.wsp, 'B10', ['Weeks total'], font_bold,
             Alignment(horizontal='center'))
-        set_horizontal_cells(self.wsp, 'C10', weeks_total, font_bold,
+        set_horizontal_cells(self.wsp, 'C10', vals, font_bold,
+            Alignment(horizontal='right'))
+        set_horizontal_cells(self.wsp, 'M10', [self.weeks_prod[5][11]], font_bold,
             Alignment(horizontal='right'))
         format_horizontal(self.wsp, 'C10:C10', '#,##0')
         format_horizontal(self.wsp, 'D10:D10', '0.00')
         format_horizontal(self.wsp, 'E10:K10', '#,##0')
+        format_horizontal(self.wsp, 'M10:M10', '0.000')
 
         # set borders
         set_border(self.wsp, 'B2:M10')
@@ -402,13 +408,14 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_horizontal(self.wsp, format_range, int_hide_zero)
             format_range = f'D{row + key}:D{row + key}'
             format_horizontal(self.wsp, format_range, float_hide_zero)
-            format_range = f'E{row + key}:K{row + key}'
+            format_range = f'E{row + key}:L{row + key}'
             format_horizontal(self.wsp, format_range, int_hide_zero)
+            format_range = f'M{row + key}:M{row + key}'
+            format_horizontal(self.wsp, format_range, '0.000;-0;;@')
 
         # set borders
         set_border(self.wsp, 'B14:M20')
         set_color(self.wsp, 'B20:M20', color=lightblue)
-
 
         # set terrain types for week
         self.wsp.merge_cells('C22:E22')
