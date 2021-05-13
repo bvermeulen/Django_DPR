@@ -57,7 +57,7 @@ class ReceiverProduction(models.Model):
     node_charged = models.IntegerField(default=0.0)
     node_failure = models.IntegerField(default=0)
     node_repair = models.IntegerField(default=0)
-    qc_field =  models.FloatField(default=0)
+    qc_field =  models.FloatField(null=True)
 
     def __str__(self):
         return f'{self.daily.production_date} - {self.receivertype.receivertype_name}'
