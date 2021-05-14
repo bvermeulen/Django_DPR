@@ -301,7 +301,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         rcvr.node_charged = int(np.nan_to_num(self.get_value(day_df, 'node charged')))
         rcvr.node_failure = int(np.nan_to_num(self.get_value(day_df, 'node failure')))
         rcvr.node_repair = int(np.nan_to_num(self.get_value(day_df, 'node repair')))
-        rcvr.qc_field = float(np.nan_to_num(self.get_value(day_df, 'node qc')))
+        rcvr.qc_field = self.get_value(day_df, 'node qc')
         rcvr.save()
 
         # create/ update time breakdown values
