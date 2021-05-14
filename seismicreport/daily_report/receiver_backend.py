@@ -4,7 +4,7 @@ from django.db.models import Q
 from daily_report.models.daily_models import ReceiverProduction
 from seismicreport.vars import WEEKDAYS, receiver_prod_schema
 from seismicreport.utils.plogger import Logger
-from seismicreport.utils.utils_funcs import nan_array
+from seismicreport.utils.utils_funcs import nan_array, nan_avg_array
 
 logger = Logger.getlogger()
 
@@ -51,9 +51,9 @@ class Mixin:
 
         w_rcvr = {
             f'week_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
-            for key in receiver_prod_schema
+            for key in receiver_prod_schema if key != 'qc_field'
         }
-        w_rcvr['week_qc_field'] /= WEEKDAYS
+        w_rcvr['week_qc_field'] = nan_avg_array([val['qc_field'] for val in rcvr_query.values()])
 
         return w_rcvr
 
@@ -76,9 +76,9 @@ class Mixin:
 
         m_rcvr = {
             f'month_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
-            for key in receiver_prod_schema
+            for key in receiver_prod_schema if key != 'qc_field'
         }
-        m_rcvr['month_qc_field'] /= daily.production_date.day
+        m_rcvr['month_qc_field'] = nan_avg_array([val['qc_field'] for val in rcvr_query.values()])
 
         return m_rcvr
 
@@ -98,22 +98,14 @@ class Mixin:
             return p_rcvr, {}
 
         rcvr_series = {
-            f'{key}_series': nan_array([val[key] for val in rcvr_query.values()])
+            f'{key}_series': [val[key] for val in rcvr_query.values()]
             for key in receiver_prod_schema
         }
         p_rcvr = {
             f'proj_{key}': sum(nan_array([val[key] for val in rcvr_query.values()]))
-            for key in receiver_prod_schema
+            for key in receiver_prod_schema if key != 'qc_field'
         }
-        try:
-            proj_days = (
-                daily.production_date - daily.project.planned_start_date).days + 1
-            if proj_days < 1:
-                proj_days = 1
 
-        except AttributeError:
-            proj_days = 1
-
-        p_rcvr['proj_qc_field'] /= proj_days
+        p_rcvr['proj_qc_field'] = nan_avg_array([val['qc_field'] for val in rcvr_query.values()])
 
         return p_rcvr, rcvr_series

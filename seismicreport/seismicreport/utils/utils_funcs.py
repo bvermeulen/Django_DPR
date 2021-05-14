@@ -13,6 +13,22 @@ def nan_array(a_list: list):
     np_array[nan_where] = 0
     return np_array
 
+def nan_avg_array(a_list: list):
+    ''' calculates average of list, ignoring NaN values
+    '''
+    counter = 0
+    sum = 0.0
+    for val in a_list:
+        if val:
+            sum += val
+            counter += 1
+
+    if counter > 0:
+        return sum / counter
+
+    else:
+        return np.nan
+
 
 def calc_ratio(a, b):
     ''' calculates ratio a/b, gives np.nan when b is zero
