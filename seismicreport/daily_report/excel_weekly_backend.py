@@ -352,7 +352,7 @@ class ExcelWeekReport(_graph_backend.Mixin):
             Alignment(horizontal='center', vertical='top', wrap_text=True,))
 
         row, col = get_row_column('B3')
-        weeks_total = np.zeros(len(self.days_prod[0])-1)
+        weeks_total = np.zeros(len(self.days_prod[0])-2)
         for key in range(0, 7):
             vals = self.days_prod[key]
             loc = col + str(row + key)
@@ -369,15 +369,20 @@ class ExcelWeekReport(_graph_backend.Mixin):
             format_range = f'M{row + key}:M{row + key}'
             format_horizontal(self.wsp, format_range, '0.000;-0;;@')
 
-            weeks_total += nan_array(vals[1:]).astype(np.float)
+            # sum for indexes 1..10, skip index 0 date and 11 qc_field
+            weeks_total += nan_array(vals[1:-1]).astype(np.float)
 
 
-        # skip the 3rd and 6 and 11th elements
-        vals = [*weeks_total[0:2], '', *weeks_total[3:10]]
+        # skip the 3rd and 6th elements
+        vals = [*weeks_total[0:2], '', *weeks_total[3:]]
         set_vertical_cells(self.wsp, 'B10', ['Weeks total'], font_bold,
             Alignment(horizontal='center'))
         set_horizontal_cells(self.wsp, 'C10', vals, font_bold,
             Alignment(horizontal='right'))
+        # average vp/ hr
+        set_horizontal_cells(self.wsp, 'E10', [self.weeks_prod[5][3]], font_bold,
+            Alignment(horizontal='right'))
+        # average qc_field
         set_horizontal_cells(self.wsp, 'M10', [self.weeks_prod[5][11]], font_bold,
             Alignment(horizontal='right'))
         format_horizontal(self.wsp, 'C10:C10', '#,##0')
