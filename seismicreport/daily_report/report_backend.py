@@ -39,7 +39,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             return np.nan
 
         r, c = BGP_DR_table[kw]
-        dummy = day_df.iat[r, c]
         try:
             return day_df.iat[r, c]
 
