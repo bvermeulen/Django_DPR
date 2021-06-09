@@ -37,35 +37,37 @@
       {% endfor %}
     </div>
   </div>
-  <input type="hidden" name="report_date"/>
-  <button class="btn btn-primary btn-sm my-1" onclick="return promptProductionDate()">Select date</button>
-  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
-  <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
-  <label class="btn btn-primary btn-sm my-1 mx-0">
-    <input type="file" style="display:none" name="daily_report_file" onchange="form.submit()"/><span>Choose report</span>
-  </label>
-  {% if form_daily.id.value %}
-    <div class="dropdown">
-      <button type="button" class="dropdown-toggle btn btn-primary btn-sm">Select staff</button>
-      <div class="dropdown-content" style="height:250px; overflow-y:scroll">
-        {% for name in form_daily.staff %}
-          <a class="btn btn-link my-0">{{ name }}</a>
-        {% endfor %}
+  {% if form_project_control.projects.value %}
+    <input type="hidden" name="report_date"/>
+    <button class="btn btn-primary btn-sm my-1" onclick="return promptProductionDate()">Select date</button>
+    <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.left }}"></input>
+    <input type="submit" class="btn btn-primary btn-sm my-1" name="button_pressed" value="{{ arrow_symbols.right }}"></input>
+    <label class="btn btn-primary btn-sm my-1 mx-0">
+      <input type="file" style="display:none" name="daily_report_file" onchange="form.submit()"/><span>Choose report</span>
+    </label>
+    {% if form_daily.id.value %}
+      <div class="dropdown">
+        <button type="button" class="dropdown-toggle btn btn-primary btn-sm">Select staff</button>
+        <div class="dropdown-content" style="height:250px; overflow-y:scroll">
+          {% for name in form_daily.staff %}
+            <a class="btn btn-link my-0">{{ name }}</a>
+          {% endfor %}
+        </div>
       </div>
-    </div>
-    {% with year=form_daily.production_date.value|date:"Y" %}
-    {% with month=form_daily.production_date.value|date:"m" %}
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'monthly_service_page' form_daily.id.value year month %}">
-      Services</a>
-    {% endwith %}
-    {% endwith %}
+      {% with year=form_daily.production_date.value|date:"Y" %}
+      {% with month=form_daily.production_date.value|date:"m" %}
+      <a class="btn btn-primary btn-sm my-1" href="{% url 'monthly_service_page' form_daily.id.value year month %}">
+        Services</a>
+      {% endwith %}
+      {% endwith %}
 
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
-    <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' form_daily.id.value %}">MPR</a>
-    <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
-      onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
-    </button>
+      <a class="btn btn-primary btn-sm my-1" href="{% url 'csr_excel_report' form_daily.id.value %}">Print</a>
+      <a class="btn btn-primary btn-sm my-1" href="{% url 'weekly_page' form_daily.id.value %}">Weekly</a>
+      <a class="btn btn-primary btn-sm my-1" href="{% url 'mpr_page' form_daily.id.value %}">MPR</a>
+      <button class="btn btn-primary btn-sm my-1" name="button_pressed" value="delete"
+        onclick="return confirmDeleteReport('{{ form_daily.production_date.value }}')">Delete
+      </button>
+    {% endif %}
   {% endif %}
 
   <p><strong>

@@ -129,15 +129,15 @@ class DailyView(View):
                     staff_selected = daily_form.cleaned_data.get('staff')
 
             try:
-                # Get the report_file from request and store it as a standard report
-                # file in media. Close the report_file to delete it.
-                # Keep the file name is session for later use.
+                # Get the report_file from request and save in the database
                 report_file = request.FILES['daily_report_file']
                 report_date = self.rprt_iface.save_report_file(project, report_file)
-                logger.info(
-                    f'user {user.username} (ip: {ip_address}) '
-                    f'uploaded {report_file} for {report_date} for {project.project_name}'
-                )
+                if report_date:
+                    logger.info(
+                        f'user {user.username} (ip: {ip_address}) '
+                        f'uploaded {report_file} for {report_date} '
+                        f'for {project.project_name}'
+                    )
 
             except MultiValueDictKeyError:
                 pass
@@ -146,7 +146,8 @@ class DailyView(View):
             if day and button_pressed == 'delete':
                 logger.info(
                     f'user {user.username} (ip: {ip_address}) '
-                    f'deleted report {day.production_date} for {day.project.project_name}'
+                    f'deleted report {day.production_date} '
+                    f'for {day.project.project_name}'
                 )
                 day.delete()
                 day = None
@@ -159,7 +160,8 @@ class DailyView(View):
                     day.save()
                     logger.info(
                         f'user {user.username} (ip: {ip_address}) made comment '
-                        f'in report {day.production_date} for {day.project.project_name}'
+                        f'in report {day.production_date} '
+                        f'for {day.project.project_name}'
                     )
 
             request.session['selected_project'] = project_name
