@@ -163,7 +163,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
     def save_report_file(self, project, report_file) -> datetime:
         report_date = self.populate_report(project, report_file.temporary_file_path())
         report_file.close()
-
         return report_date
 
     @staticmethod
@@ -202,7 +201,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             the BGP_DR_table
         '''
         day_df = pd.read_excel(daily_report_file, header=None)
-        if project.project_prefix != self.get_value(day_df, 'project'):
+        if project is None or project.project_prefix != self.get_value(day_df, 'project'):
             return None
 
         # the daily report must contain all source and receiver types defined in the
