@@ -205,7 +205,7 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
             the BGP_DR_table
         '''
         day_df = pd.read_excel(daily_report_file, header=None)
-        if project.project_prefix != self.get_value(day_df, 'project'):
+        if project is None or project.project_prefix != self.get_value(day_df, 'project'):
             return None
 
         # the daily report must contain all source and receiver types defined in the
@@ -414,7 +414,6 @@ class ReportInterface(_receiver_backend.Mixin, _hse_backend.Mixin, _graph_backen
         dp['day_total'] = np.sum(
             dp[f'day_{key[:5]}'] for key in source_prod_schema[:-1]
         )
-
         return dp
 
     @staticmethod
