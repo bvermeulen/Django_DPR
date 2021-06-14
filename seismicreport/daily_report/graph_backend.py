@@ -4,16 +4,11 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-import matplotlib.dates as mdates
+from seismicreport.vars import TICK_SPACING_PROD, TICK_SPACING_CUMUL, TICK_DATE_FORMAT
 from seismicreport.utils.utils_funcs import nan_array
 from seismicreport.utils.plogger import Logger, timed
 
 matplotlib.use('Agg')
-
-TICK_SPACING_PROD = 5  # x 1000
-TICK_SPACING_CUMUL = 1000  # x 1000
-TICK_DATE_FORMAT = mdates.DateFormatter('%d-%b-%y')
-
 logger = Logger.getlogger()
 
 
