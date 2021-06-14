@@ -1,3 +1,5 @@
+import matplotlib.dates as mdates
+
 # common variables for seismicreport
 
 # this is for contract c3100000120, effective Jan-2021
@@ -152,3 +154,6 @@ DESCR_LENGTH = 100
 TYPE_LENGTH = 10
 COMMENT_LENGTH = 5000
 WIDGET_WIDTH_PROJECT_FIELDS = 'width:100px'
+TICK_SPACING_PROD = 5      # x 1000
+TICK_SPACING_CUMUL = 500   # x 1000
+TICK_DATE_FORMAT = mdates.DateFormatter('%d-%b-%y')

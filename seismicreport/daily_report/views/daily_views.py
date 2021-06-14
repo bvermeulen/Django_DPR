@@ -138,7 +138,6 @@ class DailyView(View):
                         f'uploaded {report_file} for {report_date} '
                         f'for {project.project_name}'
                     )
-
             except MultiValueDictKeyError:
                 pass
 
